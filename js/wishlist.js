@@ -236,37 +236,17 @@ export function openWishlistSearchModal() {
 }
 
 export function searchWishlistLocation(query) {
+    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(wishlistSearchTimeout);
-    if (wishlistSearchAbortController) wishlistSearchAbortController.abort();
-
-    const resultsDiv = document.getElementById('wishlist-search-results');
-    if (!resultsDiv) return;
-
-    if (query.trim().length < 3) {
-        resultsDiv.innerHTML = '';
-        return;
+    if (wishlistSearchAbortController) {
+        wishlistSearchAbortController.abort();
+        wishlistSearchAbortController = null;
     }
-
-    wishlistSearchTimeout = setTimeout(async () => {
-        try {
-            wishlistSearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
-                signal: wishlistSearchAbortController.signal
-            });
-            const data = await res.json();
-            resultsDiv.innerHTML = data.map(item => {
-                const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
-                return `
-                <div class="search-result" onclick="selectWishlistLocation('${safeName}', ${item.lat}, ${item.lon})">
-                    <strong>${item.name || item.display_name.split(',')[0]}</strong><br><small style="color:#777;">${item.display_name.substring(0, 50)}...</small>
-                </div>`;
-            }).join('');
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error("Wishlist search failed", e);
-            }
-        }
-    }, 500);
+    const resultsDiv = document.getElementById('wishlist-search-results');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+    }
 }
 
 export function selectWishlistLocation(name, lat, lon) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.54</title>
+    <title>Trippo Travel Planner v2.3.55</title>
     <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -18,14 +18,28 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.54">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.54">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.55">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.55">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Google Places API Library -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBMvlLs5sfzrIpQlgmzw1YqTcScgIyzLDg&libraries=places"></script>
+
+    <!-- Autocomplete Stacking Context Override -->
+    <style>
+    .pac-container {
+        z-index: 10000 !important;
+        border-radius: 10px;
+        margin-top: 4px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        font-family: inherit;
+    }
+    </style>
 
     <!-- Early Interaction Queue Stubs to Prevent Mobile ReferenceErrors on Fast Tap -->
     <script>
@@ -175,7 +189,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.54</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.55</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -518,8 +532,8 @@
 
             <div class="form-group">
                 <label>Address (Auto-locates on Map)</label>
-                <input type="text" id="hotel-address-input" class="form-control" placeholder="Search or type hotel street address..." onkeyup="searchHotelAddress(this.value)" oninput="searchHotelAddress(this.value)">
-                <div id="hotel-address-results" class="autocomplete-dropdown"></div>
+                <input type="text" id="hotel-address-input" class="form-control" placeholder="Search or type hotel street address..." autocomplete="off">
+                <div id="hotel-address-results" class="autocomplete-dropdown" style="display: none;"></div>
             </div>
 
             <div class="form-group">
@@ -572,8 +586,8 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('city-search-modal')">✕</button>
             <h2 style="margin: 0 0 12px 0; font-size: 20px;">Add a Stop</h2>
-            <input type="text" id="city-search-input" class="form-control" placeholder="Search cities (e.g. Tokyo, Paris)..." onkeyup="searchCity(this.value)" oninput="searchCity(this.value)">
-            <div id="city-search-results" style="margin-top: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle);"></div>
+            <input type="text" id="city-search-input" class="form-control" placeholder="Search cities (e.g. Tokyo, Paris)..." autocomplete="off">
+            <div id="city-search-results" style="display: none;"></div>
         </div>
     </div>
 
@@ -582,8 +596,8 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('place-search-modal')">✕</button>
             <h2 style="margin: 0 0 12px 0; font-size: 20px;">Find a Place</h2>
-            <input type="text" id="place-search-input" class="form-control" placeholder="Search place (e.g. Museum, Cafe)..." onkeyup="searchPOI(this.value)" oninput="searchPOI(this.value)">
-            <div id="place-search-results" style="margin-top: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle);"></div>
+            <input type="text" id="place-search-input" class="form-control" placeholder="Search place (e.g. Museum, Cafe)..." autocomplete="off">
+            <div id="place-search-results" style="display: none;"></div>
             
             <div id="place-add-form" style="display: none; margin-top: 18px;">
                 <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin-bottom: 18px;">
@@ -625,10 +639,10 @@
 
             <div class="form-group">
                 <label>Search Global Location</label>
-                <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." onkeyup="searchWishlistLocation(this.value)" oninput="searchWishlistLocation(this.value)">
+                <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." autocomplete="off">
             </div>
             
-            <div id="wishlist-search-results" style="margin-top: 10px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle);"></div>
+            <div id="wishlist-search-results" style="display: none;"></div>
             
             <div id="wishlist-add-form" style="display: none; margin-top: 18px;">
                 <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin-bottom: 18px;">
@@ -763,6 +777,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.54"></script>
+    <script type="module" src="js/app.js?v=2.3.55"></script>
 </body>
 </html>

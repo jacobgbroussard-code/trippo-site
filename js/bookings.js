@@ -182,43 +182,17 @@ export function openLodgingModal(index) {
 }
 
 export function searchHotelAddress(query) {
+    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(hotelSearchTimeout);
-    if (hotelSearchAbortController) hotelSearchAbortController.abort();
-
-    const resultsDiv = document.getElementById('hotel-address-results');
-    if (!resultsDiv) return;
-
-    if (query.trim().length < 3) {
-        resultsDiv.style.display = 'none';
-        return;
+    if (hotelSearchAbortController) {
+        hotelSearchAbortController.abort();
+        hotelSearchAbortController = null;
     }
-
-    hotelSearchTimeout = setTimeout(async () => {
-        try {
-            hotelSearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4`, {
-                signal: hotelSearchAbortController.signal
-            });
-            const data = await res.json();
-            if (data.length > 0) {
-                resultsDiv.innerHTML = data.map(item => {
-                    const safeAddr = (item.display_name || '').replace(/['"\\]/g, ' ');
-                    return `
-                    <div class="autocomplete-item" onclick="selectHotelAddress('${safeAddr}', ${item.lat}, ${item.lon})">
-                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
-                        <small style="color:#777;">${item.display_name.substring(0, 48)}...</small>
-                    </div>`;
-                }).join('');
-                resultsDiv.style.display = 'block';
-            } else {
-                resultsDiv.style.display = 'none';
-            }
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error("Hotel address search error", e);
-            }
-        }
-    }, 500);
+    const resultsDiv = document.getElementById('hotel-address-results');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+    }
 }
 
 export function selectHotelAddress(addr, lat, lon) {

@@ -705,6 +705,40 @@ textarea.form-control {
     font-size: 14px;
 }
 
+/* --- GOOGLE PLACES AUTOCOMPLETE OVERRIDE --- */
+.pac-container {
+    z-index: 10000 !important;
+    border-radius: 10px;
+    margin-top: 4px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    font-family: inherit;
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.1));
+}
+
+body.dark-mode .pac-container {
+    background-color: var(--card-bg, #1a2321);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .pac-item {
+    border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    color: var(--text-muted, #9ba3af);
+}
+
+body.dark-mode .pac-item:hover,
+body.dark-mode .pac-item-selected {
+    background-color: var(--bg-hover, rgba(255, 255, 255, 0.06));
+}
+
+body.dark-mode .pac-item-query {
+    color: var(--text, #f0f4f3);
+}
+
+body.dark-mode .pac-matched {
+    color: var(--primary, #124b43);
+}
+
 /* --- MODALS & DIALOGS --- */
 .modal {
     display: none;

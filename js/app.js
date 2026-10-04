@@ -11,8 +11,9 @@ import * as places from './places.js';
 import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
+import * as placesAutocomplete from './places-autocomplete.js';
 
-const CURRENT_VERSION = '2.3.54';
+const CURRENT_VERSION = '2.3.55';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -39,7 +40,8 @@ Object.assign(window, {
     ...places,
     ...bookings,
     ...wishlist,
-    ...tools
+    ...tools,
+    ...placesAutocomplete
 });
 
 // Replay any early calls queued before module finished loading
@@ -72,7 +74,11 @@ Object.defineProperties(window, {
     citySearchTimeout: { get: () => planner.citySearchTimeout, configurable: true },
     poiSearchTimeout: { get: () => places.poiSearchTimeout, configurable: true },
     hotelSearchTimeout: { get: () => bookings.hotelSearchTimeout, configurable: true },
-    wishlistSearchTimeout: { get: () => wishlist.wishlistSearchTimeout, configurable: true }
+    wishlistSearchTimeout: { get: () => wishlist.wishlistSearchTimeout, configurable: true },
+    cityAutocomplete: { get: () => placesAutocomplete.cityAutocomplete, configurable: true },
+    dailyPlaceAutocomplete: { get: () => placesAutocomplete.dailyPlaceAutocomplete, configurable: true },
+    hotelAutocomplete: { get: () => placesAutocomplete.hotelAutocomplete, configurable: true },
+    wishlistAutocomplete: { get: () => placesAutocomplete.wishlistAutocomplete, configurable: true }
 });
 
 // Flatpickr initialization helper
@@ -145,6 +151,7 @@ document.querySelectorAll('.modal-content').forEach(content => {
 // Initialize on DOM Ready or immediately if document is already parsed
 function bootstrapApp() {
     initDatePickers();
+    placesAutocomplete.initGooglePlacesAutocomplete();
 
     const isDark = state.safeGetStorage('trippoDarkMode', 'false') === 'true';
     if (isDark) {

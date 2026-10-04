@@ -192,37 +192,17 @@ export function openCitySearchModal() {
 }
 
 export function searchCity(query) {
+    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(citySearchTimeout);
-    if (citySearchAbortController) citySearchAbortController.abort();
-
-    const resultsDiv = document.getElementById('city-search-results');
-    if (!resultsDiv) return;
-
-    if (query.trim().length < 3) {
-        resultsDiv.innerHTML = '';
-        return;
+    if (citySearchAbortController) {
+        citySearchAbortController.abort();
+        citySearchAbortController = null;
     }
-
-    citySearchTimeout = setTimeout(async () => {
-        try {
-            citySearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
-                signal: citySearchAbortController.signal
-            });
-            const data = await res.json();
-            resultsDiv.innerHTML = data.map(item => {
-                const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
-                return `
-                <div class="search-result" onclick="addCityStop('${safeName}', ${item.lat}, ${item.lon})">
-                    <strong>${item.name || item.display_name.split(',')[0]}</strong><br><small style="color:#777;">${item.display_name.substring(0, 48)}...</small>
-                </div>`;
-            }).join('');
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error("City search failed", e);
-            }
-        }
-    }, 500);
+    const resultsDiv = document.getElementById('city-search-results');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+    }
 }
 
 export function addCityStop(name, lat, lon) {

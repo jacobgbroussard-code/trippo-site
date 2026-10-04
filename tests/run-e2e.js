@@ -171,23 +171,17 @@ async function runModularSuite() {
         })()`);
         console.log('Result 4 (Maps & Tab Switching):', testMapInvalidation);
 
-        console.log('\nTest 5: Search Input Rate Limiting & Debouncing');
+        console.log('\nTest 5: Google Places Autocomplete & Search Input Check');
         const testSearchDebounce = await evalInBrowser(`(() => {
-            // Rapid keystroke simulation
-            searchCity('Par');
-            searchPOI('Lou');
-            searchHotelAddress('Hil');
-            searchWishlistLocation('Rom');
-            searchTransitStation('Gare', 'dep');
-            
-            // Check that debounce timeouts were properly set
-            const hasTimeouts = !!(citySearchTimeout || poiSearchTimeout || hotelSearchTimeout || wishlistSearchTimeout);
-            
             return {
-                debounceTimersSet: hasTimeouts
+                cityAutocomplete: !!cityAutocomplete,
+                dailyPlaceAutocomplete: !!dailyPlaceAutocomplete,
+                hotelAutocomplete: !!hotelAutocomplete,
+                wishlistAutocomplete: !!wishlistAutocomplete,
+                allAutocompleteActive: !!(cityAutocomplete && dailyPlaceAutocomplete && hotelAutocomplete && wishlistAutocomplete)
             };
         })()`);
-        console.log('Result 5 (Search Input Rate Limiting):', testSearchDebounce);
+        console.log('Result 5 (Google Places Autocomplete):', testSearchDebounce);
 
         console.log('\nTest 6: Hotel to Daily Map Linking (DOM Isolation Check)');
         const testHotelLinking = await evalInBrowser(`(() => {
