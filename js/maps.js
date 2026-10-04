@@ -28,6 +28,33 @@ const BASE_MAP_OPTS = {
 };
 const FALLBACK_MAP_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 
+export const GOOGLE_MAPS_KEY = 'AIzaSyBMvlLs5sfzrIpQlgmzw1YqTcScgIyzLDg';
+
+export function getStreetViewUrl(lat, lon, width = 600, height = 300) {
+    if (!lat || !lon) return '';
+    return `https://maps.googleapis.com/maps/api/streetview?size=${width}x${height}&location=${lat},${lon}&fov=90&heading=0&pitch=0&key=${GOOGLE_MAPS_KEY}`;
+}
+
+export function openStreetViewModal(lat, lon, title = 'Street View') {
+    if (!lat || !lon) {
+        showNotification("Location coordinates not available.");
+        return;
+    }
+    const modal = document.getElementById('streetview-modal');
+    const img = document.getElementById('streetview-modal-img');
+    const titleEl = document.getElementById('streetview-modal-title');
+    const gmapsLink = document.getElementById('streetview-gmaps-link');
+
+    if (titleEl) titleEl.innerText = title;
+    if (img) {
+        img.src = getStreetViewUrl(lat, lon, 640, 360);
+    }
+    if (gmapsLink) {
+        gmapsLink.href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`;
+    }
+    if (modal) modal.style.display = 'flex';
+}
+
 export function createBaseTileLayer() {
     const layer = L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS);
     layer.on('tileerror', (error) => {

@@ -24,7 +24,7 @@ import {
     getActiveTrip
 } from './state.js';
 
-import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute } from './maps.js';
+import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
 
 export let poiSearchTimeout = null;
 let poiSearchAbortController = null;
@@ -199,6 +199,34 @@ export function switchPlacesDay(dayIndex) {
     renderCityPlaces();
 }
 
+export function calculateTransitEstimate(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const distKm = getDistance(lat1, lon1, lat2, lon2);
+    if (isNaN(distKm) || distKm < 0.05) return null; // Under 50m, virtually same location
+
+    if (distKm <= 2.5) {
+        // Walk (average 4.8 km/h = 80 m/min)
+        const walkMins = Math.max(1, Math.round((distKm * 1000) / 80));
+        const distStr = distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)} km`;
+        return { icon: '🚶', text: `${walkMins} min walk (${distStr})`, mode: 'walking', distKm };
+    } else if (distKm <= 20) {
+        // Drive / City Transit (approx 30 km/h)
+        const driveMins = Math.max(2, Math.round((distKm / 30) * 60));
+        return { icon: '🚗', text: `~${driveMins} min drive (${distKm.toFixed(1)} km)`, mode: 'driving', distKm };
+    } else {
+        // Long distance transit / drive
+        const hours = Math.floor(distKm / 60);
+        const mins = Math.round(((distKm % 60) / 60) * 60);
+        const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+        return { icon: '🚆', text: `~${timeStr} (${distKm.toFixed(0)} km)`, mode: 'transit', distKm };
+    }
+}
+
+export function openDirectionsLink(lat1, lon1, lat2, lon2) {
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}`;
+    window.open(url, '_blank');
+}
+
 export function renderCityPlaces() {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip) return;
@@ -218,11 +246,35 @@ export function renderCityPlaces() {
         const isStart = index === 0;
         const badge = isStart ? `<span class="place-category-badge" style="background:var(--accent); color:white;">📍 Starting Base</span>` : `<span class="place-category-badge">${p.category}</span>`;
 
+        let connectorHTML = '';
+        if (index > 0) {
+            const prev = dayPlaces[index - 1];
+            const transit = calculateTransitEstimate(prev.lat, prev.lon, p.lat, p.lon);
+            if (transit) {
+                connectorHTML = `
+                <div class="transit-connector-row" style="display:flex; align-items:center; gap:8px; padding: 4px 0 4px 16px; margin: 2px 0;">
+                    <div style="width:2px; height:18px; background:var(--border-subtle); margin-left:14px;"></div>
+                    <div class="transit-pill" style="display:inline-flex; align-items:center; gap:6px; background:var(--primary-light); color:var(--primary); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid var(--border-subtle); cursor:pointer;" onclick="event.stopPropagation(); openDirectionsLink(${prev.lat}, ${prev.lon}, ${p.lat}, ${p.lon})" title="Open Google Maps Directions">
+                        <span>${transit.icon}</span>
+                        <span>${transit.text}</span>
+                        <span style="font-size:10px; opacity:0.7;">↗</span>
+                    </div>
+                </div>`;
+            }
+        }
+
+        const svButton = (p.lat && p.lon) ? `
+            <button type="button" class="streetview-btn" onclick="event.stopPropagation(); openStreetViewModal(${p.lat}, ${p.lon}, '${(p.name || '').replace(/['"\\]/g, ' ')}')" title="Street View" style="background:none; border:none; padding:4px 8px; font-size:15px; cursor:pointer; color:var(--primary); opacity:0.85;">👁</button>` : '';
+
         return `
+        ${connectorHTML}
         <div class="place-item-card" data-id="${p.id || p.name}" ${isStart ? 'style="border-left: 4px solid var(--accent);"' : ''}>
             <div class="drag-handle" style="color:${isStart ? 'var(--accent)' : '#b7c7c3'};">≡</div>
             <div style="flex-grow:1;" onclick="openEditPlaceModal('${p.id || p.name}')">
-                ${badge}
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    ${badge}
+                    ${svButton}
+                </div>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${p.name}</h4>
                 <p style="margin: 0; font-size: 12px; color: #728481;">📍 ${p.address ? p.address.substring(0, 36) : ''}...</p>
             </div>
@@ -456,6 +508,20 @@ export function openEditPlaceModal(placeIdentifier) {
     if (catInput) catInput.value = place.category;
     if (addrInput) addrInput.value = place.address;
     if (notesInput) notesInput.value = place.notes || '';
+
+    // Street View preview in Edit Place Modal
+    const svCard = document.getElementById('place-streetview-preview');
+    const svImg = document.getElementById('place-streetview-img');
+    const svBtn = document.getElementById('place-streetview-full-btn');
+    if (svCard && svImg && place.lat && place.lon) {
+        svImg.src = getStreetViewUrl(place.lat, place.lon, 600, 240);
+        svCard.style.display = 'block';
+        if (svBtn) {
+            svBtn.onclick = () => openStreetViewModal(place.lat, place.lon, place.name);
+        }
+    } else if (svCard) {
+        svCard.style.display = 'none';
+    }
 
     const modal = document.getElementById('edit-place-modal');
     if (modal) modal.style.display = 'flex';

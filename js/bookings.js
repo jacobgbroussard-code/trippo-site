@@ -21,7 +21,7 @@ import {
 } from './state.js';
 
 import { openPlacesCityView } from './places.js';
-import { drawPlannerMapRoute } from './maps.js';
+import { drawPlannerMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
 
 export let hotelSearchTimeout = null;
 let hotelSearchAbortController = null;
@@ -175,6 +175,17 @@ export function openLodgingModal(index) {
     if (latInput) latInput.value = l.lat || stop.lat;
     if (lonInput) lonInput.value = l.lon || stop.lon;
 
+    const svCard = document.getElementById('hotel-streetview-preview');
+    const svImg = document.getElementById('hotel-streetview-img');
+    const svLat = l.lat || stop.lat;
+    const svLon = l.lon || stop.lon;
+    if (svCard && svImg && svLat && svLon) {
+        svImg.src = getStreetViewUrl(svLat, svLon, 600, 240);
+        svCard.style.display = 'block';
+    } else if (svCard) {
+        svCard.style.display = 'none';
+    }
+
     const results = document.getElementById('hotel-address-results');
     if (results) results.style.display = 'none';
     const modal = document.getElementById('hotel-booking-modal');
@@ -232,6 +243,14 @@ export function selectHotelAddress(addr, lat, lon) {
     if (addrInput) addrInput.value = addr;
     if (latInput) latInput.value = lat;
     if (lonInput) lonInput.value = lon;
+
+    const svCard = document.getElementById('hotel-streetview-preview');
+    const svImg = document.getElementById('hotel-streetview-img');
+    if (svCard && svImg && lat && lon) {
+        svImg.src = getStreetViewUrl(lat, lon, 600, 240);
+        svCard.style.display = 'block';
+    }
+
     const results = document.getElementById('hotel-address-results');
     if (results) results.style.display = 'none';
 }
