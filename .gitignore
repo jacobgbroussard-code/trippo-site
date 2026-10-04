@@ -1,0 +1,8 @@
+.env
+*.zip
+dist.zip
+test-dist.zip
+node_modules/
+scratch_*
+tests/scratch_*
+*.log

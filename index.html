@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Trippo Travel Planner v2.3.43</title>
+    <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#124b43">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+
+    <!-- Leaflet & Vendor Styles -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.0.0/Control.FullScreen.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Modular App Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+
+    <!-- Leaflet, Sortable & Supabase Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.0.0/Control.FullScreen.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <!-- SIDEBAR DRAWER & BACKDROP -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+    <div id="sidebar-drawer">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; font-size:20px; font-weight:800; color:var(--primary);">🛠️ Trippo Tools</h2>
+            <button class="close-modal" onclick="toggleSidebar(false)">✕</button>
+        </div>
+        
+        <div class="sidebar-item" onclick="openBudgetModal()">
+            <span>💰</span> Smart Split Budget Tracker
+        </div>
+        <div class="sidebar-item" onclick="openCurrencyModal()">
+            <span>💱</span> Currency Converter
+        </div>
+        <div class="sidebar-item" onclick="openShareTripModal()">
+            <span>📤</span> Share a Trip with Friend
+        </div>
+        <div class="sidebar-item" onclick="window.open('https://us.trip.com/', '_blank')">
+            <span>🌐</span> Book Travel on Trip.com
+        </div>
+        <div class="sidebar-item" onclick="document.getElementById('import-shared-trip-input').click()">
+            <span>📥</span> Import Shared Trip File
+        </div>
+        <input type="file" id="import-shared-trip-input" accept=".json" style="display:none" onchange="importSharedTripJSON(event)">
+
+        <div class="sidebar-item" onclick="toggleDarkMode()">
+            <span id="dark-mode-icon">🌙</span> <span id="dark-mode-label">Toggle Dark Mode</span>
+        </div>
+        <div class="sidebar-item" onclick="exportAppDataJSON()">
+            <span>💾</span> Export All Data (.json)
+        </div>
+        <div class="sidebar-item" onclick="document.getElementById('import-app-json-input').click()">
+            <span>📂</span> Restore All Data (.json)
+        </div>
+        <input type="file" id="import-app-json-input" accept=".json" style="display:none" onchange="importAppDataJSON(event)">
+
+        <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
+
+        <!-- CLOUD AUTHENTICATION IN SIDEBAR -->
+        <h3 style="font-size: 13px; color: #71837f; margin: 0 0 10px 0; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Cloud Sync & Account</h3>
+        
+        <div id="sidebar-auth-logged-in" style="display:none;">
+            <p style="font-size:13px; margin-bottom:10px; color:var(--text);">Signed in as:<br><strong id="sidebar-user-email" style="color:var(--primary);"></strong></p>
+            <button class="save-btn" style="background:#2b7c62; margin-top:0; margin-bottom:8px; padding:12px; font-size:13px;" onclick="pullCloudData()">🔄 Sync Cloud Now</button>
+            <button class="optimize-btn" style="margin:0; width:100%; padding:10px; font-size:13px;" onclick="handleSignOut()">Sign Out</button>
+        </div>
+
+        <div id="sidebar-auth-form">
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="font-size:10px;">Email</label>
+                <input type="email" id="sidebar-email-input" class="form-control" style="padding:10px; font-size:13px;" placeholder="name@example.com">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="font-size:10px;">Password</label>
+                <input type="password" id="sidebar-pass-input" class="form-control" style="padding:10px; font-size:13px;" placeholder="Enter password">
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="save-btn" style="margin-top:0; padding:11px; font-size:13px; flex:1;" onclick="handlePasswordSignIn()">Sign In</button>
+                <button class="save-btn" style="margin-top:0; padding:11px; font-size:13px; flex:1; background:#2b7c62;" onclick="handlePasswordSignUp()">Sign Up</button>
+            </div>
+            <button onclick="handleMagicLinkSignIn()" style="width:100%; background:none; border:none; color:var(--primary); font-size:11px; font-weight:700; margin-top:10px; cursor:pointer;">Or Send Magic Link</button>
+        </div>
+    </div>
+
+    <!-- 1. HOME VIEW -->
+    <div id="home-view" class="view active">
+        <h1 class="header-title">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.44</span></span>
+            </div>
+            <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
+        </h1>
+        <div style="padding: 0 20px; display: flex; flex-direction: column; align-items: center;">
+            <img src="fad.jpg" alt="Travel Globe Graphic" style="width: 100%; max-width: 280px; height: auto; margin-bottom: 24px; mix-blend-mode: multiply; border-radius: 16px;" onerror="this.style.display='none'" />
+            
+            <button class="create-btn" onclick="openCreateTripModal()" style="width: 100%;">
+                <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
+                Create new trip
+            </button>
+            <div id="trip-list" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- 2. PLANNER VIEW -->
+    <div id="planner-view" class="view">
+        <div id="planner-map" class="map-container">
+            <div class="map-controls-row">
+                <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner')">⛶ Full Map</button>
+                <button class="map-btn" onclick="toggleTrails('planner')">🥾 Map Trails</button>
+                <button class="map-btn" id="planner-train-btn" onclick="cycleTrainOverlay('planner')">🚆 Trains: Off</button>
+            </div>
+        </div>
+        <div class="sheet">
+            <div class="sheet-handle" onclick="toggleMapMode('planner')" title="Tap to toggle full map / split view"></div>
+            <div class="sheet-collapsed-bar" onclick="toggleMapMode('planner')">
+                <span>▲ Show Itinerary (<span id="planner-collapsed-trip-info">Trip Route</span>)</span>
+                <span style="font-size: 12px; color: var(--text-muted, #71837f);">Open List ›</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block;">Trip Route</h2>
+                    <button onclick="exportTripICS()" style="background:var(--primary-light); border:none; border-radius:8px; padding:4px 10px; margin-left:10px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📅 Export .ics</button>
+                    <button onclick="document.getElementById('import-file-input').click()" style="background:var(--primary-light); border:none; border-radius:8px; padding:4px 10px; margin-left:10px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📥 Import</button>
+                    <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button onclick="promptDeleteTripById(activeTripId)" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--accent);" title="Delete Current Trip">🗑️</button>
+                    <strong id="total-nights" style="color: var(--primary);">0 Nights</strong>
+                </div>
+            </div>
+            
+            <button class="optimize-btn" onclick="optimizeTripRoute()" style="margin-bottom: 16px;">✨ Auto-Optimize Stop Order</button>
+            
+            <div id="itinerary-list"></div>
+        </div>
+        <button class="fab" onclick="openCitySearchModal()">+</button>
+    </div>
+
+    <!-- 3. PLACES VIEW -->
+    <div id="places-view" class="view">
+        <div id="places-master-list">
+            <h1 class="header-title">Daily Planner</h1>
+            <div id="places-trip-list" style="padding: 0 20px;"></div>
+        </div>
+
+        <div id="places-trip-detail-list" style="display: none; padding: 20px;">
+            <button class="back-btn" onclick="showPlacesMasterList()">‹ Back to Trips</button>
+            <h1 id="places-trip-title" style="margin: 0 0 16px 0; font-size: 24px;">Cities</h1>
+            <div id="places-city-list-container"></div>
+        </div>
+
+        <div id="places-city-view" style="display: none; flex-direction: column; height: 100%;">
+            <div id="places-map" class="map-container">
+                <div class="map-controls-row">
+                    <button class="map-btn" onclick="showPlacesTripDetailList()">‹ Back to Cities</button>
+                    <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places')">⛶ Full Map</button>
+                </div>
+            </div>
+            <div class="sheet">
+                <div class="sheet-handle" onclick="toggleMapMode('places')" title="Tap to toggle full map / split view"></div>
+                <div class="sheet-collapsed-bar" onclick="toggleMapMode('places')">
+                    <span>▲ Show Places in <span id="places-collapsed-city-name">City</span></span>
+                    <span style="font-size: 12px; color: var(--text-muted, #71837f);">Open List ›</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <h2 id="places-city-title" style="margin: 0; font-size: 20px;">Places</h2>
+                    <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Place</button>
+                </div>
+                
+                <div id="places-day-tabs" style="display: flex; overflow-x: auto; gap: 8px; margin: 12px 0 16px 0; padding-bottom: 6px; scrollbar-width: none;"></div>
+                
+                <p style="text-align:center; font-size:11px; color:#8fa39f; margin: 10px 0 6px 0; font-weight:600;">Drag your hotel to the top to lock it as the starting point. Tap any line on the map for walking directions.</p>
+                <button class="optimize-btn" onclick="optimizeCityRoute()">✨ Auto-Optimize from Base</button>
+                <div id="saved-places-container"></div>
+                
+                <button onclick="openPlaceSearchModal()" style="width: 100%; padding: 14px; border-radius: 16px; border: 2px dashed #b7c7c3; background: transparent; text-align: center; font-size: 15px; font-weight: 700; margin-top: 10px; cursor: pointer; color: var(--primary);">+ Add Place</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. BOOKINGS / STAYS VIEW -->
+    <div id="bookings-view" class="view" style="padding: 20px;">
+        <h1 class="header-title" style="padding: 4px 0 18px 0;">Stays & Lodging</h1>
+        <select id="booking-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'bookings')"></select>
+        <div id="bookings-list-container"></div>
+    </div>
+
+    <!-- 5. TRANSIT VIEW -->
+    <div id="transit-view" class="view" style="padding: 20px;">
+        <h1 class="header-title" style="padding: 4px 0 18px 0;">Transit</h1>
+        <select id="transit-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'transit')"></select>
+        <div id="transit-list-container"></div>
+    </div>
+
+    <!-- 6. WISHLIST VIEW (DIRECTORY + MAP SHEET) -->
+    <div id="wishlist-view" class="view">
+        <div id="wishlist-directory-view" style="padding: 20px;">
+            <h1 class="header-title" style="padding: 4px 0 16px 0;">
+                <span>Wishlists</span>
+            </h1>
+            <button class="create-btn" onclick="openCreateWishlistModal()">
+                <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
+                Create new wishlist
+            </button>
+            <div id="wishlist-collections-list"></div>
+        </div>
+
+        <div id="wishlist-detail-view" style="display: none; height: 100%; flex-direction: column;">
+            <div id="wishlist-map" class="map-container" style="cursor: crosshair;">
+                <div class="map-controls-row">
+                    <button class="map-btn" onclick="showWishlistDirectory()">‹ Back to Lists</button>
+                    <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist')">⛶ Full Map</button>
+                    <button class="map-btn" onclick="toggleTrails('wishlist')">🥾 Map Trails</button>
+                    <button class="map-btn" id="wishlist-train-btn" onclick="cycleTrainOverlay('wishlist')">🚆 Trains: Off</button>
+                    <button class="map-btn" onclick="openAllTrailsNearCenter()">🌲 AllTrails</button>
+                </div>
+            </div>
+            
+            <div class="sheet" id="wishlist-sheet">
+                <div class="sheet-handle" onclick="toggleMapMode('wishlist')" title="Tap to toggle full map / split view"></div>
+                <div class="sheet-collapsed-bar" onclick="toggleMapMode('wishlist')">
+                    <span>▲ Show Saved Pins (<span id="wishlist-collapsed-count">0</span>)</span>
+                    <span style="font-size: 12px; color: var(--text-muted, #71837f);">Open List ›</span>
+                </div>
+                <div style="text-align: center; cursor: pointer; padding-bottom: 12px; margin-top: -6px;" onclick="toggleMapMode('wishlist')">
+                    <span id="wishlist-toggle-text" style="font-size: 11px; font-weight: 700; color: #728481; text-transform: uppercase; letter-spacing: 0.5px;">▼ Minimize List / Expand Map</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <h2 id="active-wishlist-heading" style="margin: 0; font-size: 20px; display:inline-block;">Master Wishlist</h2>
+                        <button onclick="document.getElementById('wishlist-kml-input').click()" style="background:var(--primary-light); border:none; border-radius:8px; padding:5px 10px; margin-left:10px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📥 Import KML</button>
+                        <button onclick="exportWishlistKML()" style="background:var(--primary-light); border:none; border-radius:8px; padding:5px 10px; margin-left:6px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📤 Export KML</button>
+
+                        <input type="file" id="wishlist-kml-input" accept=".kml,.json" style="display:none" onchange="handleWishlistFileImport(event)">
+                    </div>
+                </div>
+
+                <div id="wishlist-filter-row" style="display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 4px; scrollbar-width: none;">
+                    <button class="day-tab active" data-category="All" onclick="filterWishlistCategory('All')">All</button>
+                    <button class="day-tab" data-category="Cities" onclick="filterWishlistCategory('Cities')">🏙 Cities</button>
+                    <button class="day-tab" data-category="Nature" onclick="filterWishlistCategory('Nature')">🌲 Nature</button>
+                    <button class="day-tab" data-category="Attractions" onclick="filterWishlistCategory('Attractions')">🏛 Attractions</button>
+                    <button class="day-tab" data-category="Fun" onclick="filterWishlistCategory('Fun')">🎉 Fun</button>
+                    <button class="day-tab" data-category="Food" onclick="filterWishlistCategory('Food')">🍽 Food</button>
+                </div>
+
+                <div id="wishlist-pins-container"></div>
+            </div>
+
+            <button class="fab" id="wishlist-fab" onclick="openWishlistSearchModal()">+</button>
+        </div>
+    </div>
+
+    <!-- BOTTOM APP NAVIGATION BAR -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-home" onclick="switchTab('home')">
+            <span class="nav-icon">🏠</span>
+            <span>Trips</span>
+        </div>
+        <div class="nav-item" id="nav-planner" onclick="switchTab('planner')">
+            <span class="nav-icon">🗺️</span>
+            <span>Route</span>
+        </div>
+        <div class="nav-item" id="nav-places" onclick="switchTab('places')">
+            <span class="nav-icon">📍</span>
+            <span>Daily</span>
+        </div>
+        <div class="nav-item" id="nav-bookings" onclick="switchTab('bookings')">
+            <span class="nav-icon">🏨</span>
+            <span>Stays</span>
+        </div>
+        <div class="nav-item" id="nav-transit" onclick="switchTab('transit')">
+            <span class="nav-icon">🚆</span>
+            <span>Transit</span>
+        </div>
+        <div class="nav-item" id="nav-wishlist" onclick="switchTab('wishlist')">
+            <span class="nav-icon">🌟</span>
+            <span>Wishlist</span>
+        </div>
+    </div>
+
+    <!-- SHARE TRIP MODAL -->
+    <div id="share-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'share-trip-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('share-trip-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">📤 Share Trip with Friends</h2>
+            <p style="color:#71837f; font-size:13px; margin-bottom:14px;">Select the trip you want to package into a shareable file. Friends can import this file directly into their Trippo app!</p>
+            <div class="form-group">
+                <label>Choose Trip</label>
+                <select id="share-trip-select" class="form-control" style="font-weight:700;"></select>
+            </div>
+            <button class="save-btn" onclick="confirmExportSharedTrip()">Download Trip File (.json)</button>
+        </div>
+    </div>
+
+    <!-- SMART SPLIT BUDGET TRACKER MODAL -->
+    <div id="budget-modal" class="modal" onclick="handleModalBackdropClick(event, 'budget-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('budget-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">💰 Smart Split Budget Tracker</h2>
+            
+            <div class="form-row" style="margin-bottom: 14px;">
+                <div class="form-group">
+                    <label>Select Trip</label>
+                    <select id="budget-trip-select" class="form-control" onchange="handleBudgetTripChange(this.value)"></select>
+                </div>
+                <div class="form-group" style="flex: 0.6;">
+                    <label>Travelers</label>
+                    <input type="number" id="budget-travelers-count" class="form-control" value="2" min="1" max="20" onchange="updateTravelersCount(this.value)">
+                </div>
+            </div>
+
+            <div style="background:var(--primary-light); padding:16px; border-radius:16px; margin-bottom:20px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="font-size:13px; font-weight:700; color:var(--primary);">Total Combined Expense:</span>
+                    <strong id="budget-total-combined" style="font-size:16px; color:var(--primary);">$0.00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="font-size:13px; font-weight:700; color:var(--primary);">Split Per Person:</span>
+                    <strong id="budget-per-person" style="font-size:16px; color:var(--accent);">$0.00</strong>
+                </div>
+            </div>
+
+            <h3 style="font-size: 15px; margin: 0 0 10px 0;">Add Expense Item</h3>
+            <div class="form-group">
+                <input type="text" id="expense-title-input" class="form-control" placeholder="Expense name (e.g. Airbnb, Dinner, Shinkansen)...">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="number" step="0.01" id="expense-amount-input" class="form-control" placeholder="Amount ($)">
+                </div>
+                <div class="form-group">
+                    <select id="expense-split-type" class="form-control" style="font-weight:700;">
+                        <option value="split">👥 Split Evenly</option>
+                        <option value="individual">👤 Personal / Individual</option>
+                    </select>
+                </div>
+            </div>
+            <button class="save-btn" onclick="addTripExpense()" style="margin-bottom: 20px;">+ Add Expense Line</button>
+
+            <h3 style="font-size: 15px; margin: 0 0 10px 0;">Recorded Expenses</h3>
+            <div id="expenses-list-container"></div>
+        </div>
+    </div>
+
+    <!-- CURRENCY CONVERTER MODAL -->
+    <div id="currency-modal" class="modal" onclick="handleModalBackdropClick(event, 'currency-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('currency-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">💱 Travel Currency Converter</h2>
+            
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="curr-amount" class="form-control" value="100" oninput="convertCurrency()">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>From</label>
+                    <select id="curr-from" class="form-control" onchange="convertCurrency()">
+                        <option value="USD" selected>USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CNY">CNY (¥)</option>
+                        <option value="AUD">AUD ($)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>To</label>
+                    <select id="curr-to" class="form-control" onchange="convertCurrency()">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="JPY" selected>JPY (¥)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CNY">CNY (¥)</option>
+                        <option value="AUD">AUD ($)</option>
+                    </select>
+                </div>
+            </div>
+            <div style="background:var(--primary-light); padding:20px; border-radius:16px; text-align:center; margin-top:10px; border:1px solid var(--border-subtle);">
+                <span style="font-size:12px; font-weight:700; color:var(--primary); text-transform:uppercase;">Converted Result</span>
+                <div id="curr-result" style="font-size:28px; font-weight:800; color:var(--primary); margin-top:6px;">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Wishlist Modal -->
+    <div id="create-wishlist-modal" class="modal" onclick="handleModalBackdropClick(event, 'create-wishlist-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('create-wishlist-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">Create Wishlist</h2>
+            <div class="form-group">
+                <label>Wishlist Name</label>
+                <input type="text" id="new-wishlist-name" class="form-control" placeholder="e.g. Dream Cafes, Japan Castles, Peaks">
+            </div>
+            <button class="save-btn" onclick="saveNewWishlistCollection()">Create Collection</button>
+        </div>
+    </div>
+
+    <!-- Lodging Modal -->
+    <div id="hotel-booking-modal" class="modal" onclick="handleModalBackdropClick(event, 'hotel-booking-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('hotel-booking-modal')">✕</button>
+            <h2 id="hotel-modal-city" style="margin: 0 0 4px 0; font-size: 20px;">Hotel Reservation</h2>
+            <p id="hotel-modal-dates" style="color: #6a7d79; font-size: 13px; margin: 0 0 16px 0;"></p>
+            
+            <div class="form-group">
+                <label>Hotel / Stay Name</label>
+                <input type="text" id="hotel-name-input" class="form-control" placeholder="e.g. Grand Hyatt Tokyo">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Confirmation / Booking #</label>
+                    <input type="text" id="hotel-conf-input" class="form-control" placeholder="e.g. HY827391">
+                </div>
+                <div class="form-group">
+                    <label>Check-in Time</label>
+                    <input type="text" id="hotel-checkin-time" class="form-control" placeholder="e.g. 3:00 PM">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Address (Auto-locates on Map)</label>
+                <input type="text" id="hotel-address-input" class="form-control" placeholder="Search or type hotel street address..." onkeyup="searchHotelAddress(this.value)" oninput="searchHotelAddress(this.value)">
+                <div id="hotel-address-results" class="autocomplete-dropdown"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Hotel Link / Booking URL</label>
+                <input type="url" id="hotel-url-input" class="form-control" placeholder="https://trip.com/... or https://booking.com/...">
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#287dfa; justify-content:center;" onclick="searchHotelOnTripCom()">🔍 Search Trip.com</button>
+                    <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#003580; justify-content:center;" onclick="searchHotelOnBookingCom()">🔍 Search Booking.com</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notes & Access Details</label>
+                <textarea id="hotel-notes-input" class="form-control" placeholder="Door code, key lockbox, breakfast included, luggage drop..."></textarea>
+            </div>
+
+            <input type="hidden" id="hotel-lat-input">
+            <input type="hidden" id="hotel-lon-input">
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="save-btn" style="flex:1; margin-top:0;" onclick="saveLodgingBooking()">Save Stay Info</button>
+                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteLodgingBooking()">🗑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Trip Modal -->
+    <div id="create-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'create-trip-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('create-trip-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">Create New Trip</h2>
+            <div class="form-group">
+                <label>Trip Name</label>
+                <input type="text" id="new-trip-name" class="form-control" placeholder="e.g. European Explorer">
+            </div>
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="text" id="new-trip-date" class="form-control date-picker" placeholder="Select departure date">
+            </div>
+            <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="new-trip-roundtrip" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                <label for="new-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);">🔁 Round-Trip Itinerary</label>
+            </div>
+            <button class="save-btn" onclick="saveNewTrip()">Create Itinerary</button>
+        </div>
+    </div>
+
+    <!-- City Search Modal -->
+    <div id="city-search-modal" class="modal" onclick="handleModalBackdropClick(event, 'city-search-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('city-search-modal')">✕</button>
+            <h2 style="margin: 0 0 12px 0; font-size: 20px;">Add a Stop</h2>
+            <input type="text" id="city-search-input" class="form-control" placeholder="Search cities (e.g. Tokyo, Paris)..." onkeyup="searchCity(this.value)" oninput="searchCity(this.value)">
+            <div id="city-search-results" style="margin-top: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle);"></div>
+        </div>
+    </div>
+
+    <!-- Place Search Modal -->
+    <div id="place-search-modal" class="modal" onclick="handleModalBackdropClick(event, 'place-search-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('place-search-modal')">✕</button>
+            <h2 style="margin: 0 0 12px 0; font-size: 20px;">Find a Place</h2>
+            <input type="text" id="place-search-input" class="form-control" placeholder="Search place (e.g. Museum, Cafe)..." onkeyup="searchPOI(this.value)" oninput="searchPOI(this.value)">
+            <div id="place-search-results" style="margin-top: 14px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle);"></div>
+            
+            <div id="place-add-form" style="display: none; margin-top: 18px;">
+                <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin-bottom: 18px;">
+                <div class="form-group"><label>Name</label><input type="text" id="add-poi-name" class="form-control"></div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="add-poi-category" class="form-control">
+                        <option>● See & Do</option>
+                        <option>🍽 Food & Drink</option>
+                        <option>🛍 Shopping</option>
+                        <option>☕ Cafe & Chill</option>
+                        <option>🏨 Hotel / Base</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Address</label><input type="text" id="add-poi-address" class="form-control"></div>
+                <div class="form-group"><label>Notes</label><textarea id="add-poi-notes" class="form-control" placeholder="Highlights, tips, reservation details..."></textarea></div>
+                <input type="hidden" id="add-poi-lat"><input type="hidden" id="add-poi-lon">
+                <button class="save-btn" onclick="saveNewPlaceToTrip()">Drop Pin on Selected Day</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wishlist Search & Add Modal -->
+    <div id="wishlist-search-modal" class="modal" onclick="handleModalBackdropClick(event, 'wishlist-search-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('wishlist-search-modal')">✕</button>
+            <h2 style="margin: 0 0 14px 0; font-size: 20px;">Add Wishlist Pin</h2>
+            
+            <div class="form-group">
+                <label>Category</label>
+                <select id="add-wish-cat" class="form-control" style="font-weight:700;">
+                    <option value="Cities">🏙 Cities</option>
+                    <option value="Nature">🌲 Nature</option>
+                    <option value="Attractions">🏛 Attractions</option>
+                    <option value="Fun">🎉 Fun</option>
+                    <option value="Food">🍽 Food</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Search Global Location</label>
+                <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." onkeyup="searchWishlistLocation(this.value)" oninput="searchWishlistLocation(this.value)">
+            </div>
+            
+            <div id="wishlist-search-results" style="margin-top: 10px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-subtle);"></div>
+            
+            <div id="wishlist-add-form" style="display: none; margin-top: 18px;">
+                <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin-bottom: 18px;">
+                <div class="form-group"><label>Destination Name</label><input type="text" id="add-wish-name" class="form-control"></div>
+                <div class="form-group"><label>Personal Notes & Why Visit</label><textarea id="add-wish-notes" class="form-control" placeholder="Must try the food, architecture, scenery..."></textarea></div>
+                <input type="hidden" id="add-wish-lat"><input type="hidden" id="add-wish-lon">
+                <button class="save-btn" onclick="saveWishlistPin()">Save to Wishlist</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Place Details Modal -->
+    <div id="edit-place-modal" class="modal" onclick="handleModalBackdropClick(event, 'edit-place-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('edit-place-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">Edit Place</h2>
+            <div class="form-group"><label>Name</label><input type="text" id="edit-poi-name" class="form-control"></div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="edit-poi-category" class="form-control">
+                    <option>● See & Do</option>
+                    <option>🍽 Food & Drink</option>
+                    <option>🛍 Shopping</option>
+                    <option>☕ Cafe & Chill</option>
+                    <option>🏨 Hotel / Base</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Move to Day</label><select id="edit-poi-day" class="form-control"></select></div>
+            <div class="form-group"><label>Address</label><input type="text" id="edit-poi-address" class="form-control"></div>
+            <div class="form-group"><label>Personal Notes</label><textarea id="edit-poi-notes" class="form-control"></textarea></div>
+            <div style="display:flex; gap:10px; margin-top:16px;">
+                <button class="save-btn" style="flex:1; margin-top:0;" onclick="savePlaceEdits()">Save Details</button>
+                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deletePlaceFromEdit()">🗑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Notes Modal -->
+    <div id="daily-notes-modal" class="modal" onclick="handleModalBackdropClick(event, 'daily-notes-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('daily-notes-modal')">✕</button>
+            <h2 id="notes-city-title" style="margin: 0 0 16px 0; font-size: 20px;">City Notes</h2>
+            <div id="daily-notes-container"></div>
+            <button class="save-btn" onclick="saveDailyNotes()">Save Notes</button>
+        </div>
+    </div>
+
+    <!-- Transit Booking Modal -->
+    <div id="transit-booking-modal" class="modal" onclick="handleModalBackdropClick(event, 'transit-booking-modal')">
+        <div class="modal-content" style="overflow: visible;" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('transit-booking-modal')">✕</button>
+            <h2 id="transit-modal-title" style="margin: 0 0 4px 0; font-size: 20px;">Book Transit</h2>
+            <p id="transit-modal-date" style="color: #6a7d79; font-size: 13px; margin: 0 0 16px 0;"></p>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Method</label>
+                    <select id="transit-method" class="form-control">
+                        <option value="plane">✈ Plane</option>
+                        <option value="train">🚆 Train</option>
+                        <option value="bus">🚌 Bus</option>
+                        <option value="car">🚗 Car</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Booking #</label>
+                    <input type="text" id="transit-booking-num" class="form-control" placeholder="e.g. DL1284">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Travel Date</label>
+                <input type="text" id="transit-date" class="form-control date-picker">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Dep. Station / Airport</label>
+                    <input type="text" id="transit-dep-station" class="form-control" placeholder="e.g. DFW or Tokyo" onkeyup="searchTransitStation(this.value, 'dep')" oninput="searchTransitStation(this.value, 'dep')" autocomplete="off">
+                    <div id="dep-station-results" class="autocomplete-dropdown"></div>
+                </div>
+                <div class="form-group" style="flex: 0.65;">
+                    <label>Dep. Time</label>
+                    <input type="time" id="transit-dep-time" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Arr. Station / Airport</label>
+                    <input type="text" id="transit-arr-station" class="form-control" placeholder="e.g. PVG or Kyoto" onkeyup="searchTransitStation(this.value, 'arr')" oninput="searchTransitStation(this.value, 'arr')" autocomplete="off">
+                    <div id="arr-station-results" class="autocomplete-dropdown"></div>
+                </div>
+                <div class="form-group" style="flex: 0.65;">
+                    <label>Arr. Time</label>
+                    <input type="time" id="transit-arr-time" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notes & Terminal Info</label>
+                <textarea id="transit-notes" class="form-control" style="height: 65px;" placeholder="Seat number, luggage limit, terminal..."></textarea>
+            </div>
+
+            <div class="form-row" style="margin-top: 10px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Flight Search Mode</label>
+                    <select id="transit-flight-type" class="form-control" onchange="toggleTransitReturnDateField()">
+                        <option value="ow" selected>➡️ One-Way</option>
+                        <option value="rt">🔁 Round-Trip</option>
+                    </select>
+                </div>
+                <div class="form-group" id="transit-return-group" style="flex: 1; display: none;">
+                    <label>Return Date</label>
+                    <input type="text" id="transit-return-date" class="form-control date-picker" placeholder="Select return">
+                </div>
+            </div>
+
+            <div style="margin-top: 10px; margin-bottom: 12px;">
+                <div style="font-size:11px; color:#8fa09c; margin-bottom:6px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Fares Online</div>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="partner-btn" style="padding:8px 12px; font-size:12px; margin:0; flex:1; color:#0f294d; justify-content:center;" onclick="searchTransitOnTripCom()">✈️ Trip.com</button>
+                    <button type="button" class="partner-btn" style="padding:8px 12px; font-size:12px; margin:0; flex:1; color:#1a73e8; justify-content:center;" onclick="searchTransitOnGoogleFlights()">✈ Google Flights</button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="save-btn" style="flex:1; margin-top:0;" onclick="saveTransitBooking()">Save Transit Details</button>
+                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteTransitBooking()">🗑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application ES Module Entry Point -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

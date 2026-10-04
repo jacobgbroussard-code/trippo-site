@@ -1,0 +1,723 @@
+/* ==========================================================================
+   Trippo Travel Planner - Components & UI Elements
+   Cards, Drawers, Modals, Navigation, Sheets, Forms, Buttons, Badges
+   ========================================================================== */
+
+/* --- SIDEBAR DRAWER & BACKDROP --- */
+#sidebar-drawer {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100%;
+    height: 100dvh;
+    background: var(--card-bg);
+    color: var(--text);
+    z-index: 4000;
+    box-shadow: 6px 0 30px rgba(0, 0, 0, 0.15);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    overflow-y: auto;
+}
+
+#sidebar-drawer.open {
+    left: 0;
+}
+
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 3500;
+    display: none;
+}
+
+.sidebar-backdrop.open {
+    display: block;
+}
+
+.sidebar-item {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border-subtle);
+    transition: transform 0.1s ease;
+}
+
+.sidebar-item:active {
+    transform: scale(0.98);
+}
+
+/* --- BOTTOM APP NAVIGATION BAR --- */
+.bottom-nav {
+    position: fixed;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 480px;
+    height: 68px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 3000;
+    box-shadow: 0 10px 30px rgba(18, 75, 67, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-subtle);
+}
+
+.nav-item {
+    text-align: center;
+    color: #8fa39f;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    transition: color 0.25s ease;
+    user-select: none;
+}
+
+.nav-item.active {
+    color: var(--primary);
+}
+
+.nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+    display: block;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-item.active .nav-icon {
+    transform: translateY(-3px) scale(1.15);
+}
+
+.nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    width: 4px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-item.active::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* --- BUTTONS & ACTIONS --- */
+.create-btn {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: none;
+    padding: 14px 18px;
+    border-radius: 16px;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.1s ease;
+}
+
+.create-btn:active {
+    transform: scale(0.98);
+}
+
+.save-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 16px;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+.optimize-btn {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid var(--border-subtle);
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    width: 100%;
+    justify-content: center;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fab {
+    position: fixed;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    right: 20px;
+    width: 58px;
+    height: 58px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    box-shadow: 0 6px 16px rgba(255, 71, 87, 0.4);
+    border: none;
+    z-index: 2000;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.partner-btn {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border-subtle);
+    background: var(--card-bg);
+    color: var(--text);
+    text-align: left;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.partner-btn span {
+    font-weight: 500;
+    font-size: 12px;
+    color: #8c9f9b;
+}
+
+.type-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.type-pill.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+
+/* --- MAPS, SHEETS & FAB CONTROLS --- */
+.map-container {
+    height: 42vh;
+    height: 42dvh;
+    min-height: 240px;
+    width: 100%;
+    background: #e5ece8;
+    z-index: 1;
+    flex-shrink: 0;
+    position: relative;
+    transition: height 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Fullscreen / Expanded Map Mode */
+.view.map-expanded .map-container,
+.map-view-fullscreen .map-container,
+#places-city-view.map-expanded .map-container,
+#wishlist-detail-view.map-expanded .map-container {
+    height: calc(100% - 138px) !important;
+    min-height: calc(100% - 138px) !important;
+    flex-grow: 1 !important;
+}
+
+.view.map-expanded .sheet,
+.map-view-fullscreen .sheet,
+#places-city-view.map-expanded .sheet,
+#wishlist-detail-view.map-expanded .sheet {
+    flex-grow: 0 !important;
+    height: 138px !important;
+    min-height: 138px !important;
+    max-height: 138px !important;
+    overflow: hidden !important;
+    padding: 10px 20px 84px 20px !important;
+    margin-top: 0 !important;
+    cursor: pointer;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.16);
+    background: var(--card-bg);
+}
+
+.view.map-expanded .sheet > *:not(.sheet-handle):not(.sheet-collapsed-bar),
+#places-city-view.map-expanded .sheet > *:not(.sheet-handle):not(.sheet-collapsed-bar),
+#wishlist-detail-view.map-expanded .sheet > *:not(.sheet-handle):not(.sheet-collapsed-bar) {
+    display: none !important;
+}
+
+.sheet-handle {
+    width: 44px;
+    height: 5px;
+    background: #cbd5e1;
+    border-radius: 4px;
+    margin: 0 auto 10px auto;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sheet-handle:hover,
+.sheet-handle:active {
+    background: var(--primary);
+    transform: scaleX(1.15);
+}
+
+.sheet-collapsed-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    padding: 2px 4px;
+    user-select: none;
+}
+
+.view.map-expanded .sheet .sheet-collapsed-bar,
+#places-city-view.map-expanded .sheet .sheet-collapsed-bar,
+#wishlist-detail-view.map-expanded .sheet .sheet-collapsed-bar {
+    display: flex !important;
+}
+
+.map-controls-row {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: calc(100% - 28px);
+}
+
+.map-btn {
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.map-btn:active {
+    transform: scale(0.96);
+}
+
+.map-btn.active-mode {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.sheet {
+    flex-grow: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--card-bg);
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+    padding: 16px 20px 120px 20px;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.06);
+    position: relative;
+    z-index: 10;
+    margin-top: -18px;
+    transition: height 0.3s cubic-bezier(0.2, 0, 0, 1), padding 0.3s ease;
+}
+
+#wishlist-expand-fab {
+    position: fixed;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    right: 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 6px 16px rgba(18, 75, 67, 0.3);
+    z-index: 2500;
+    cursor: pointer;
+    display: none;
+    transition: transform 0.15s ease;
+}
+
+
+/* --- CARDS & LIST ITEMS --- */
+.trip-card {
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.trip-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.trip-card-content {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.trip-card-content h3 {
+    margin: 0 0 5px 0;
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trip-card-content p {
+    margin: 0;
+    color: #71837f;
+    font-size: 13px;
+}
+
+.example-badge {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border-subtle);
+}
+
+.stop-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.drag-handle {
+    color: #b7c7c3;
+    font-size: 22px;
+    padding-right: 12px;
+    cursor: grab;
+    user-select: none;
+}
+
+.nights-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.nights-btn {
+    border: none;
+    background: none;
+    font-size: 17px;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--primary);
+    padding: 2px 6px;
+}
+
+.day-tab {
+    padding: 8px 16px;
+    border-radius: 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1px solid var(--border-subtle);
+    transition: all 0.2s ease;
+}
+
+.day-tab.active {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.place-item-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+}
+
+.place-category-badge {
+    display: inline-block;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.transit-ticket,
+.confirmed-card {
+    background: var(--primary-light);
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 14px;
+    border: 1.5px solid var(--border-subtle);
+    cursor: pointer;
+}
+
+.ticket-header,
+.confirmed-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.ticket-route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.ticket-station,
+.confirmed-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.ticket-time,
+.confirmed-sub {
+    font-size: 13px;
+    color: #71837f;
+}
+
+.ticket-notes,
+.confirmed-notes {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--card-bg);
+    padding: 8px 12px;
+    border-radius: 10px;
+}
+
+/* --- FORMS & AUTOCOMPLETE --- */
+.form-group {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    color: #71837f;
+    margin-bottom: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 13px 15px;
+    border-radius: 14px;
+    border: 1px solid var(--border-subtle);
+    font-size: 15px;
+    background: var(--card-bg);
+    color: var(--text);
+    outline: none;
+}
+
+select.form-control option {
+    background-color: var(--card-bg);
+    color: var(--text);
+}
+
+textarea.form-control {
+    resize: none;
+    height: 90px;
+}
+
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    z-index: 5500;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.autocomplete-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.search-result {
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    background: var(--card-bg);
+    font-size: 14px;
+}
+
+/* --- MODALS & DIALOGS --- */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 5000;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    color: var(--text);
+    width: 100%;
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    padding: 24px 20px 40px 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-modal {
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    float: right;
+    color: #728481;
+    padding: 4px;
+}
+
+/* Leaflet DivIcons & Custom Markers */
+.transit-div-icon div {
+    transition: transform 0.15s ease;
+}
+
+.wishlist-bubble-card {
+    min-width: 220px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
