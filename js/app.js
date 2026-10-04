@@ -12,6 +12,20 @@ import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 
+const CURRENT_VERSION = '2.3.48';
+if (localStorage.getItem('trippo_app_version') !== CURRENT_VERSION) {
+    localStorage.setItem('trippo_app_version', CURRENT_VERSION);
+    if ('caches' in window) {
+        caches.keys().then(keys => {
+            keys.forEach(k => {
+                if (k !== 'trippo-cache-' + CURRENT_VERSION) {
+                    caches.delete(k);
+                }
+            });
+        });
+    }
+}
+
 // Expose all public module APIs to window for zero-breakage HTML onclick handlers
 Object.assign(window, {
     ...state,

@@ -45,6 +45,47 @@ export const trainLayers = {
     wishlist: { standard: null, maxspeed: null }
 };
 
+const mapObservers = new WeakMap();
+
+export function attachMapResizeObserver(mapInstance) {
+    if (!mapInstance || typeof ResizeObserver === 'undefined') return;
+    let container = null;
+    try {
+        container = mapInstance.getContainer();
+    } catch (e) {
+        return;
+    }
+    if (!container || mapObservers.has(mapInstance)) return;
+
+    let debounceTimer = null;
+    const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            const width = entry.contentRect.width;
+            const height = entry.contentRect.height;
+            if (width > 0 && height > 0) {
+                if (mapInstance && typeof mapInstance.invalidateSize === 'function') {
+                    mapInstance.invalidateSize({ debounceMove: true });
+                }
+                if (mapInstance && mapInstance._pendingBounds && typeof mapInstance.fitBounds === 'function') {
+                    try {
+                        mapInstance.fitBounds(mapInstance._pendingBounds, { padding: [40, 40], maxZoom: 14 });
+                        mapInstance._pendingBounds = null;
+                    } catch (e) {}
+                }
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    if (mapInstance && typeof mapInstance.invalidateSize === 'function') {
+                        mapInstance.invalidateSize({ debounceMove: true });
+                    }
+                }, 320);
+            }
+        }
+    });
+
+    ro.observe(container);
+    mapObservers.set(mapInstance, ro);
+}
+
 export function safeInvalidate(mapInstance, extraDelay = 0) {
     if (!mapInstance) return;
     setTimeout(() => {
@@ -75,9 +116,12 @@ export function initPlannerMap() {
                 boxZoom: true
             }).setView([30.2241, -92.0198], 3);
             createBaseTileLayer().addTo(plannerMap);
+            attachMapResizeObserver(plannerMap);
         }
     }
     if (plannerMap) {
+        window.plannerMap = plannerMap;
+        attachMapResizeObserver(plannerMap);
         safeInvalidate(plannerMap, 100);
         safeInvalidate(plannerMap, 300);
     }
@@ -99,9 +143,12 @@ export function initPlacesMap() {
                 boxZoom: true
             }).setView([30.2241, -92.0198], 12);
             createBaseTileLayer().addTo(placesMap);
+            attachMapResizeObserver(placesMap);
         }
     }
     if (placesMap) {
+        window.placesMap = placesMap;
+        attachMapResizeObserver(placesMap);
         safeInvalidate(placesMap, 100);
         safeInvalidate(placesMap, 300);
     }
@@ -123,12 +170,15 @@ export function initWishlistMap() {
                 boxZoom: true
             }).setView([20, 0], 2);
             createBaseTileLayer().addTo(wishlistMap);
+            attachMapResizeObserver(wishlistMap);
             if (window.handleWishlistMapClick) {
                 wishlistMap.on('click', window.handleWishlistMapClick);
             }
         }
     }
     if (wishlistMap) {
+        window.wishlistMap = wishlistMap;
+        attachMapResizeObserver(wishlistMap);
         safeInvalidate(wishlistMap, 100);
         safeInvalidate(wishlistMap, 300);
     }
@@ -278,8 +328,14 @@ export function drawPlannerMapRoute() {
     requestAnimationFrame(() => {
         if (plannerMap) {
             plannerMap.invalidateSize();
+            const size = plannerMap.getSize ? plannerMap.getSize() : null;
             if (bounds.isValid()) {
-                plannerMap.fitBounds(bounds, { padding: [40, 40] });
+                if (!size || size.x === 0 || size.y === 0) {
+                    plannerMap._pendingBounds = bounds;
+                } else {
+                    plannerMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+                    plannerMap._pendingBounds = null;
+                }
             }
         }
     });
@@ -367,7 +423,13 @@ export async function drawPlacesMapRoute(dayPlaces) {
     }
 
     if (placesMap && bounds.isValid()) {
-        placesMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        const size = placesMap.getSize ? placesMap.getSize() : null;
+        if (!size || size.x === 0 || size.y === 0) {
+            placesMap._pendingBounds = bounds;
+        } else {
+            placesMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+            placesMap._pendingBounds = null;
+        }
         safeInvalidate(placesMap);
     }
 }

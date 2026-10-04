@@ -279,6 +279,10 @@
     user-select: none;
 }
 
+.leaflet-container {
+    background: #e5ece8 !important;
+}
+
 /* Fullscreen / Expanded Map Mode */
 .view.map-expanded .map-container,
 .map-view-fullscreen .map-container,
