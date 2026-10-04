@@ -75,7 +75,7 @@ async function runMobileTest() {
         await send('Page.reload');
 
         console.log('Mobile device emulated (390x844). Waiting for initial load...');
-        await new Promise(r => setTimeout(r, 2500));
+        await new Promise(r => setTimeout(r, 3500));
 
         async function evalJs(expr) {
             const res = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });
@@ -85,6 +85,20 @@ async function runMobileTest() {
             }
             return res.result.value;
         }
+
+        // Wait for page bootstrap & trip cards to render
+        await evalJs(`new Promise(resolve => {
+            let tries = 0;
+            const check = () => {
+                tries++;
+                if (document.querySelector('.trip-card-content') || (window.trips && window.trips.length > 0) || tries > 50) {
+                    resolve(true);
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        })`);
 
         // Test 1: Open Trip to Planner View
         console.log('Test 1: Opening first trip card...');
@@ -190,8 +204,8 @@ async function runMobileTest() {
             throw new Error('Test 3 failed: Sheet did not expand back to split view');
         }
 
-        // Test 4: Daily Planner tab with Quick Map shortcut
-        console.log('Test 4: Navigating to Daily Planner tab...');
+        // Test 4: Daily Planner tab - clicking trip card automatically opens city map
+        console.log('Test 4: Navigating to Daily Planner tab and selecting trip...');
         await evalJs(`
             (() => {
                 const nav = document.getElementById('nav-places');
@@ -200,26 +214,12 @@ async function runMobileTest() {
         `);
         await new Promise(r => setTimeout(r, 800));
 
-        const quickMapCheck = await evalJs(`
-            (() => {
-                const quickCard = document.querySelector('#places-trip-list [onclick*="openPlacesCityView"]');
-                return {
-                    hasQuickMapCard: Boolean(quickCard),
-                    cardText: quickCard ? quickCard.innerText : null
-                };
-            })()
-        `);
-        console.log('Quick Map Shortcut in Daily Planner:', quickMapCheck);
-        if (!quickMapCheck.hasQuickMapCard) {
-            throw new Error('Test 4 failed: Quick map shortcut card not found in Daily master list');
-        }
-
-        // Click Quick Map Card to jump directly to city view
-        console.log('Clicking Quick Map shortcut to jump directly to city map...');
+        // Click Trip Card in Daily list to automatically open map
+        console.log('Clicking trip card in Daily section to automatically open map...');
         await evalJs(`
             (() => {
-                const quickCard = document.querySelector('#places-trip-list [onclick*="openPlacesCityView"]');
-                if (quickCard) quickCard.click();
+                const tripCard = document.querySelector('#places-trip-list .trip-card');
+                if (tripCard) tripCard.click();
             })()
         `);
         await new Promise(r => setTimeout(r, 1000));

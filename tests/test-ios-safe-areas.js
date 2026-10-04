@@ -105,7 +105,8 @@ async function testIOSSafeAreas() {
             returnByValue: true
         });
 
-        console.log('Safe Area Test Result:', evaluation.result.value);
+        const val = evaluation.result?.value !== undefined ? evaluation.result.value : evaluation.result?.result?.value;
+        console.log('Safe Area Test Result:', val);
 
         // Take a screenshot of the corrected Home view
         await send('Runtime.evaluate', { expression: `switchTab('home')` });
