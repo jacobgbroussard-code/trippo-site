@@ -192,17 +192,47 @@ export function openCitySearchModal() {
 }
 
 export function searchCity(query) {
-    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(citySearchTimeout);
     if (citySearchAbortController) {
         citySearchAbortController.abort();
         citySearchAbortController = null;
     }
     const resultsDiv = document.getElementById('city-search-results');
-    if (resultsDiv) {
+    if (!resultsDiv) return;
+
+    if (!query || query.trim().length < 2) {
         resultsDiv.innerHTML = '';
         resultsDiv.style.display = 'none';
+        return;
     }
+
+    citySearchTimeout = setTimeout(async () => {
+        try {
+            citySearchAbortController = new AbortController();
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
+                signal: citySearchAbortController.signal
+            });
+            const data = await res.json();
+            if (data && data.length > 0) {
+                resultsDiv.innerHTML = data.map(item => {
+                    const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
+                    return `
+                    <div class="search-result" onclick="addCityStop('${safeName}', ${item.lat}, ${item.lon})">
+                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 48)}...</small>
+                    </div>`;
+                }).join('');
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsDiv.innerHTML = `<div style="padding: 12px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No cities found for "${query}"</div>`;
+                resultsDiv.style.display = 'block';
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error("City search failed:", e);
+            }
+        }
+    }, 300);
 }
 
 export function addCityStop(name, lat, lon) {

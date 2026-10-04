@@ -690,11 +690,31 @@ textarea.form-control {
     border: 1px solid var(--border-subtle);
 }
 
+/* --- SEARCH RESULTS & AUTOCOMPLETE DROPDOWNS --- */
+#city-search-results,
+#place-search-results,
+#wishlist-search-results,
+#hotel-address-results {
+    max-height: 250px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    margin-top: 10px;
+    background: var(--card-bg);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
 .autocomplete-item {
     padding: 12px 14px;
     border-bottom: 1px solid var(--border-subtle);
     cursor: pointer;
     font-size: 13px;
+    transition: background 0.15s ease;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item:active {
+    background: var(--bg-hover, rgba(0, 0, 0, 0.04));
 }
 
 .search-result {
@@ -703,9 +723,38 @@ textarea.form-control {
     cursor: pointer;
     background: var(--card-bg);
     font-size: 14px;
+    transition: background 0.15s ease;
 }
 
-/* --- GOOGLE PLACES AUTOCOMPLETE OVERRIDE --- */
+.search-result:last-child,
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.search-result:hover,
+.search-result:active {
+    background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+body.dark-mode .search-result:hover,
+body.dark-mode .search-result:active,
+body.dark-mode .autocomplete-item:hover,
+body.dark-mode .autocomplete-item:active {
+    background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+}
+
+/* --- GOOGLE MAPS AUTOCOMPLETE & ERROR SUPPRESSION --- */
+input.gm-err-autocomplete,
+.form-control.gm-err-autocomplete {
+    background-image: none !important;
+    padding-right: 14px !important;
+}
+
+.gm-err-container,
+.gm-err-content {
+    display: none !important;
+}
+
 .pac-container {
     z-index: 10000 !important;
     border-radius: 10px;

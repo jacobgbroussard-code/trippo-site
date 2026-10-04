@@ -236,22 +236,55 @@ export function openWishlistSearchModal() {
 }
 
 export function searchWishlistLocation(query) {
-    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(wishlistSearchTimeout);
     if (wishlistSearchAbortController) {
         wishlistSearchAbortController.abort();
         wishlistSearchAbortController = null;
     }
     const resultsDiv = document.getElementById('wishlist-search-results');
-    if (resultsDiv) {
+    if (!resultsDiv) return;
+
+    if (!query || query.trim().length < 2) {
         resultsDiv.innerHTML = '';
         resultsDiv.style.display = 'none';
+        return;
     }
+
+    wishlistSearchTimeout = setTimeout(async () => {
+        try {
+            wishlistSearchAbortController = new AbortController();
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
+                signal: wishlistSearchAbortController.signal
+            });
+            const data = await res.json();
+            if (data && data.length > 0) {
+                resultsDiv.innerHTML = data.map(item => {
+                    const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
+                    return `
+                    <div class="search-result" onclick="selectWishlistLocation('${safeName}', ${item.lat}, ${item.lon})">
+                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 50)}...</small>
+                    </div>`;
+                }).join('');
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No locations found for "${query}"</div>`;
+                resultsDiv.style.display = 'block';
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error("Wishlist search failed:", e);
+            }
+        }
+    }, 300);
 }
 
 export function selectWishlistLocation(name, lat, lon) {
     const results = document.getElementById('wishlist-search-results');
-    if (results) results.innerHTML = '';
+    if (results) {
+        results.innerHTML = '';
+        results.style.display = 'none';
+    }
     const form = document.getElementById('wishlist-add-form');
     if (form) form.style.display = 'block';
 

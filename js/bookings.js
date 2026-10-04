@@ -182,17 +182,47 @@ export function openLodgingModal(index) {
 }
 
 export function searchHotelAddress(query) {
-    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(hotelSearchTimeout);
     if (hotelSearchAbortController) {
         hotelSearchAbortController.abort();
         hotelSearchAbortController = null;
     }
     const resultsDiv = document.getElementById('hotel-address-results');
-    if (resultsDiv) {
+    if (!resultsDiv) return;
+
+    if (!query || query.trim().length < 2) {
         resultsDiv.innerHTML = '';
         resultsDiv.style.display = 'none';
+        return;
     }
+
+    hotelSearchTimeout = setTimeout(async () => {
+        try {
+            hotelSearchAbortController = new AbortController();
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
+                signal: hotelSearchAbortController.signal
+            });
+            const data = await res.json();
+            if (data && data.length > 0) {
+                resultsDiv.innerHTML = data.map(item => {
+                    const safeAddr = (item.display_name || '').replace(/['"\\]/g, ' ');
+                    return `
+                    <div class="autocomplete-item" onclick="selectHotelAddress('${safeAddr}', ${item.lat}, ${item.lon})">
+                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 48)}...</small>
+                    </div>`;
+                }).join('');
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No addresses found</div>`;
+                resultsDiv.style.display = 'block';
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error("Hotel address search error", e);
+            }
+        }
+    }, 300);
 }
 
 export function selectHotelAddress(addr, lat, lon) {

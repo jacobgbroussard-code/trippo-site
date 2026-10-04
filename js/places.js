@@ -307,22 +307,81 @@ export function openPlaceSearchModal() {
 }
 
 export function searchPOI(query) {
-    // Deprecated Nominatim handler - disabled in favor of Google Places Autocomplete
     clearTimeout(poiSearchTimeout);
     if (poiSearchAbortController) {
         poiSearchAbortController.abort();
         poiSearchAbortController = null;
     }
     const resultsDiv = document.getElementById('place-search-results');
-    if (resultsDiv) {
+    if (!resultsDiv) return;
+
+    if (!query || query.trim().length < 2) {
         resultsDiv.innerHTML = '';
         resultsDiv.style.display = 'none';
+        return;
     }
+
+    poiSearchTimeout = setTimeout(async () => {
+        try {
+            poiSearchAbortController = new AbortController();
+            const trip = trips.find(t => t.id === activePlacesTripId);
+            const stop = trip?.stops?.[activePlacesStopIndex];
+            
+            // Search query with stop name context if available, fallback to pure query
+            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`;
+            if (stop && stop.name && !query.toLowerCase().includes(stop.name.toLowerCase())) {
+                searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' ' + stop.name)}&limit=6`;
+            }
+
+            let res = await fetch(searchUrl, { signal: poiSearchAbortController.signal });
+            let data = await res.json();
+
+            // If contextual search returned nothing, fallback to global query
+            if ((!data || data.length === 0) && stop && stop.name) {
+                res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`, {
+                    signal: poiSearchAbortController.signal
+                });
+                data = await res.json();
+            }
+
+            if (data && data.length > 0) {
+                resultsDiv.innerHTML = data.map(item => {
+                    const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
+                    const safeAddr = (item.display_name || '').replace(/['"\\]/g, ' ');
+                    return `
+                    <div class="search-result" onclick="selectPOI('${safeName}', '${safeAddr}', ${item.lat}, ${item.lon})">
+                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 52)}...</small>
+                    </div>`;
+                }).join('');
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsDiv.innerHTML = `
+                    <div style="padding: 12px 16px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">
+                        No matches found for "${query}". You can fill in the details manually below.
+                    </div>`;
+                resultsDiv.style.display = 'block';
+                const form = document.getElementById('place-add-form');
+                if (form) {
+                    form.style.display = 'block';
+                    const nameInput = document.getElementById('add-poi-name');
+                    if (nameInput && !nameInput.value) nameInput.value = query;
+                }
+            }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error("POI search failed:", e);
+            }
+        }
+    }, 300);
 }
 
 export function selectPOI(name, address, lat, lon) {
     const results = document.getElementById('place-search-results');
-    if (results) results.innerHTML = '';
+    if (results) {
+        results.innerHTML = '';
+        results.style.display = 'none';
+    }
     const form = document.getElementById('place-add-form');
     if (form) form.style.display = 'block';
 

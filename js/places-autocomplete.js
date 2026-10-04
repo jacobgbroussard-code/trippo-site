@@ -1,6 +1,7 @@
 /* ==========================================================================
    Trippo Travel Planner - Google Places Autocomplete Engine
    js/places-autocomplete.js
+   Robust hybrid search engine with input armor & resilient fallback
    ========================================================================== */
 
 import { addCityStop } from './planner.js';
@@ -14,16 +15,57 @@ export let wishlistAutocomplete = null;
 let isInitialized = false;
 
 /**
+ * Protect a search input from being disabled or styled with error backgrounds
+ * if Google Maps API throws an auth/activation error.
+ */
+export function protectSearchInput(input) {
+    if (!input) return;
+
+    // 1. Intercept 'disabled' property to prevent external scripts from locking the field
+    try {
+        Object.defineProperty(input, 'disabled', {
+            get() { return false; },
+            set(val) {
+                // Ignore attempts to disable search inputs
+            },
+            configurable: true
+        });
+    } catch (e) {}
+
+    // 2. Observer to immediately clean error attributes & classes
+    const cleanErrors = () => {
+        if (input.classList.contains('gm-err-autocomplete')) {
+            input.classList.remove('gm-err-autocomplete');
+        }
+        if (input.hasAttribute('disabled')) {
+            input.removeAttribute('disabled');
+        }
+    };
+
+    const observer = new MutationObserver(() => cleanErrors());
+    observer.observe(input, { attributes: true, attributeFilter: ['disabled', 'class'] });
+    cleanErrors();
+}
+
+/**
  * Initialize Google Places Autocomplete across Trippo's search inputs.
- * Binds place_changed listeners and sets up safety catches for Enter key navigation.
+ * Binds place_changed listeners and arms search fields against failure.
  */
 export function initGooglePlacesAutocomplete() {
+    // Always arm the inputs immediately, regardless of Google API load state
+    const cityInput = document.getElementById('city-search-input');
+    const placeInput = document.getElementById('place-search-input');
+    const hotelInput = document.getElementById('hotel-address-input');
+    const wishlistInput = document.getElementById('wishlist-search-input');
+
+    [cityInput, placeInput, hotelInput, wishlistInput].forEach(protectSearchInput);
+
     if (isInitialized) return;
 
     if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
         // Polling retry for asynchronous or delayed script load
         let attempts = 0;
-        const maxAttempts = 60; // 6 seconds
+        const maxAttempts = 50; // 5 seconds
         const timer = setInterval(() => {
             attempts++;
             if (typeof google !== 'undefined' && google.maps && google.maps.places) {
@@ -31,7 +73,7 @@ export function initGooglePlacesAutocomplete() {
                 setupAutocompleteInstances();
             } else if (attempts >= maxAttempts) {
                 clearInterval(timer);
-                console.warn('[Trippo] Google Places library did not initialize within expected time.');
+                console.warn('[Trippo] Google Places library not active. Built-in OpenStreetMap search active.');
             }
         }, 100);
         return;
@@ -44,10 +86,17 @@ function setupAutocompleteInstances() {
     if (isInitialized) return;
     if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
 
+    const cityInput = document.getElementById('city-search-input');
+    const placeInput = document.getElementById('place-search-input');
+    const hotelInput = document.getElementById('hotel-address-input');
+    const wishlistInput = document.getElementById('wishlist-search-input');
+
+    // Double check armor on all inputs
+    [cityInput, placeInput, hotelInput, wishlistInput].forEach(protectSearchInput);
+
     isInitialized = true;
 
     // 1. City / Stop Search (#city-search-input)
-    const cityInput = document.getElementById('city-search-input');
     if (cityInput) {
         try {
             cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
@@ -65,15 +114,16 @@ function setupAutocompleteInstances() {
 
                 addCityStop(name, lat, lon);
                 cityInput.value = '';
+                const results = document.getElementById('city-search-results');
+                if (results) results.style.display = 'none';
                 closeModal('city-search-modal');
             });
         } catch (err) {
-            console.error('[Trippo] Error initializing City Autocomplete:', err);
+            console.warn('[Trippo] City Autocomplete fallback active:', err);
         }
     }
 
     // 2. Daily Places Search (#place-search-input)
-    const placeInput = document.getElementById('place-search-input');
     if (placeInput) {
         try {
             dailyPlaceAutocomplete = new google.maps.places.Autocomplete(placeInput, {
@@ -94,16 +144,18 @@ function setupAutocompleteInstances() {
                 if (latInput) latInput.value = place.geometry.location.lat();
                 if (lonInput) lonInput.value = place.geometry.location.lng();
 
+                const results = document.getElementById('place-search-results');
+                if (results) results.style.display = 'none';
+
                 const form = document.getElementById('place-add-form');
                 if (form) form.style.display = 'block';
             });
         } catch (err) {
-            console.error('[Trippo] Error initializing Daily Place Autocomplete:', err);
+            console.warn('[Trippo] Daily Place Autocomplete fallback active:', err);
         }
     }
 
     // 3. Hotel / Lodging Address Search (#hotel-address-input)
-    const hotelInput = document.getElementById('hotel-address-input');
     if (hotelInput) {
         try {
             hotelAutocomplete = new google.maps.places.Autocomplete(hotelInput, {
@@ -131,14 +183,16 @@ function setupAutocompleteInstances() {
                 if (nameInput && !nameInput.value.trim() && place.name) {
                     nameInput.value = place.name;
                 }
+
+                const results = document.getElementById('hotel-address-results');
+                if (results) results.style.display = 'none';
             });
         } catch (err) {
-            console.error('[Trippo] Error initializing Hotel Autocomplete:', err);
+            console.warn('[Trippo] Hotel Autocomplete fallback active:', err);
         }
     }
 
     // 4. Wishlist Search (#wishlist-search-input)
-    const wishlistInput = document.getElementById('wishlist-search-input');
     if (wishlistInput) {
         try {
             wishlistAutocomplete = new google.maps.places.Autocomplete(wishlistInput, {
@@ -161,24 +215,47 @@ function setupAutocompleteInstances() {
                     if (lonInput) lonInput.value = place.geometry.location.lng();
                 }
 
+                const results = document.getElementById('wishlist-search-results');
+                if (results) results.style.display = 'none';
+
                 const form = document.getElementById('wishlist-add-form');
                 if (form) form.style.display = 'block';
             });
         } catch (err) {
-            console.error('[Trippo] Error initializing Wishlist Autocomplete:', err);
+            console.warn('[Trippo] Wishlist Autocomplete fallback active:', err);
         }
     }
 
-    // Safety Catch: Prevent modal forms from inadvertently submitting or closing
-    // if the user presses Enter while navigating Google Places autocomplete suggestions
-    [cityInput, placeInput, hotelInput, wishlistInput].forEach(input => {
+    // Intelligent Enter Key Handler:
+    // If a Google Places or Nominatim result is available, select it on Enter;
+    // otherwise allow smooth typing without accidentally closing modals.
+    const setupEnterNav = (input, resultsContainerId) => {
         if (!input) return;
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                e.preventDefault();
+                const resultsContainer = document.getElementById(resultsContainerId);
+                const firstResult = resultsContainer ? resultsContainer.querySelector('.search-result, .autocomplete-item') : null;
+                const hasPacSelected = !!document.querySelector('.pac-container .pac-item-selected');
+
+                if (hasPacSelected) {
+                    // Let Google Places Autocomplete select its highlighted item
+                    return;
+                }
+
+                if (firstResult && resultsContainer && resultsContainer.style.display !== 'none') {
+                    e.preventDefault();
+                    firstResult.click();
+                } else {
+                    e.preventDefault();
+                }
             }
         });
-    });
+    };
 
-    console.log('[Trippo] Google Places Autocomplete initialized successfully for 4 search inputs.');
+    setupEnterNav(cityInput, 'city-search-results');
+    setupEnterNav(placeInput, 'place-search-results');
+    setupEnterNav(hotelInput, 'hotel-address-results');
+    setupEnterNav(wishlistInput, 'wishlist-search-results');
+
+    console.log('[Trippo] Places Autocomplete initialized with input protection and fallback support.');
 }
