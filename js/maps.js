@@ -20,12 +20,24 @@ export let wMarkers = [];
 
 let activeRouteToken = null;
 
-const BASE_MAP_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+const BASE_MAP_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const BASE_MAP_OPTS = {
     maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
 };
+const FALLBACK_MAP_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+
+export function createBaseTileLayer() {
+    const layer = L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS);
+    layer.on('tileerror', (error) => {
+        if (error.tile && !error.tile.dataset.fallback) {
+            error.tile.dataset.fallback = 'true';
+            const { z, x, y } = error.coords;
+            error.tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
+        }
+    });
+    return layer;
+}
 
 export const trainOverlayModes = { planner: 'off', wishlist: 'off' };
 export const trainLayers = {
@@ -62,7 +74,7 @@ export function initPlannerMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([30.2241, -92.0198], 3);
-            L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS).addTo(plannerMap);
+            createBaseTileLayer().addTo(plannerMap);
         }
     }
     if (plannerMap) {
@@ -86,7 +98,7 @@ export function initPlacesMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([30.2241, -92.0198], 12);
-            L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS).addTo(placesMap);
+            createBaseTileLayer().addTo(placesMap);
         }
     }
     if (placesMap) {
@@ -110,7 +122,7 @@ export function initWishlistMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([20, 0], 2);
-            L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS).addTo(wishlistMap);
+            createBaseTileLayer().addTo(wishlistMap);
             if (window.handleWishlistMapClick) {
                 wishlistMap.on('click', window.handleWishlistMapClick);
             }
