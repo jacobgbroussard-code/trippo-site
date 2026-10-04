@@ -42,6 +42,15 @@
     display: block;
 }
 
+.sidebar-section-title {
+    font-size: 11px;
+    color: var(--text-muted, #71837f);
+    margin: 16px 0 10px 0;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
 .sidebar-item {
     padding: 14px 16px;
     border-radius: 14px;

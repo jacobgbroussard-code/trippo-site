@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.51</title>
+    <title>Trippo Travel Planner v2.3.52</title>
     <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -18,8 +18,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.51">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.51">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.52">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.52">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -98,11 +98,12 @@
     <!-- SIDEBAR DRAWER & BACKDROP -->
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
     <div id="sidebar-drawer">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0; font-size:20px; font-weight:800; color:var(--primary);">🛠️ Trippo Tools</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0; font-size:20px; font-weight:800; color:var(--primary);">🛠️ Trippo Menu</h2>
             <button class="close-modal" onclick="toggleSidebar(false)">✕</button>
         </div>
         
+        <h3 class="sidebar-section-title">Trip Tools</h3>
         <div class="sidebar-item" onclick="openBudgetModal()">
             <span>💰</span> Smart Split Budget Tracker
         </div>
@@ -112,9 +113,6 @@
         <div class="sidebar-item" onclick="openShareTripModal()">
             <span>📤</span> Share a Trip with Friend
         </div>
-        <div class="sidebar-item" onclick="window.open('https://us.trip.com/', '_blank')">
-            <span>🌐</span> Book Travel on Trip.com
-        </div>
         <div class="sidebar-item" onclick="document.getElementById('import-shared-trip-input').click()">
             <span>📥</span> Import Shared Trip File
         </div>
@@ -123,6 +121,11 @@
         <div class="sidebar-item" onclick="toggleDarkMode()">
             <span id="dark-mode-icon">🌙</span> <span id="dark-mode-label">Toggle Dark Mode</span>
         </div>
+
+        <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
+
+        <!-- SETTINGS & DATA SUBCATEGORY -->
+        <h3 class="sidebar-section-title">⚙️ Settings & Data</h3>
         <div class="sidebar-item" onclick="exportAppDataJSON()">
             <span>💾</span> Export All Data (.json)
         </div>
@@ -133,10 +136,11 @@
         <div class="sidebar-item" onclick="forceAppRefresh()">
             <span>🔄</span> Check for Updates / Refresh App
         </div>
+
         <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
 
         <!-- CLOUD AUTHENTICATION IN SIDEBAR -->
-        <h3 style="font-size: 13px; color: #71837f; margin: 0 0 10px 0; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Cloud Sync & Account</h3>
+        <h3 class="sidebar-section-title">☁️ Cloud Sync & Account</h3>
         
         <div id="sidebar-auth-logged-in" style="display:none;">
             <p style="font-size:13px; margin-bottom:10px; color:var(--text);">Signed in as:<br><strong id="sidebar-user-email" style="color:var(--primary);"></strong></p>
@@ -166,7 +170,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.51</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.52</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -204,7 +208,6 @@
                     <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <button onclick="promptDeleteTripById(activeTripId)" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--accent);" title="Delete Current Trip">🗑️</button>
                     <strong id="total-nights" style="color: var(--primary);">0 Nights</strong>
                 </div>
             </div>
@@ -232,7 +235,7 @@
         <div id="places-city-view" style="display: none; flex-direction: column; height: 100%;">
             <div id="places-map" class="map-container">
                 <div class="map-controls-row">
-                    <button class="map-btn" onclick="showPlacesTripDetailList()">‹ Back to Cities</button>
+                    <button class="map-btn" onclick="showPlacesMasterList()">‹ All Trips</button>
                     <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places')">⛶ Full Map</button>
                 </div>
             </div>
@@ -243,7 +246,10 @@
                     <span style="font-size: 12px; color: var(--text-muted, #71837f);">Open List ›</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <h2 id="places-city-title" style="margin: 0; font-size: 20px;">Places</h2>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h2 id="places-city-title" style="margin: 0; font-size: 20px;">Places</h2>
+                        <select id="places-city-select" class="form-control" style="padding: 4px 10px; font-size: 13px; font-weight: 700; width: auto; max-width: 170px; border-radius: 10px; display: none;" onchange="openPlacesCityView(Number(this.value))"></select>
+                    </div>
                     <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Place</button>
                 </div>
                 
@@ -748,6 +754,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.51"></script>
+    <script type="module" src="js/app.js?v=2.3.52"></script>
 </body>
 </html>

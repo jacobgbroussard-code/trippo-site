@@ -17,6 +17,7 @@ import {
     setActiveTripId,
     activePlacesTripId,
     setActivePlacesTripId,
+    activePlacesStopIndex,
     parseLocalDate,
     formatLocalDate,
     showNotification,
@@ -26,7 +27,7 @@ import {
 
 import { initPlannerMap, safeInvalidate, plannerMap } from './maps.js';
 import { renderPlanner } from './planner.js';
-import { renderPlacesMasterList } from './places.js';
+import { renderPlacesMasterList, openPlacesCityView } from './places.js';
 import { renderBookingsView, renderBookingsList, renderTransitView, renderTransitList } from './bookings.js';
 import { showWishlistDirectory, cancelDroppedPin } from './wishlist.js';
 
@@ -168,8 +169,19 @@ export function switchTab(tabId) {
         [50, 150, 300, 500].forEach(d => safeInvalidate(plannerMap, d));
     }
     if (tabId === 'places') {
-        if (!activePlacesTripId && trips.length > 0) setActivePlacesTripId(activeTripId || trips[0].id);
-        renderPlacesMasterList();
+        const targetTripId = activePlacesTripId || activeTripId || (trips.length > 0 ? trips[0].id : null);
+        if (targetTripId) {
+            setActivePlacesTripId(targetTripId);
+            const targetTrip = trips.find(t => t.id === targetTripId);
+            if (targetTrip && Array.isArray(targetTrip.stops) && targetTrip.stops.length > 0) {
+                const stopIdx = (activePlacesStopIndex >= 0 && activePlacesStopIndex < targetTrip.stops.length) ? activePlacesStopIndex : 0;
+                openPlacesCityView(stopIdx);
+            } else {
+                renderPlacesMasterList();
+            }
+        } else {
+            renderPlacesMasterList();
+        }
     }
     if (tabId === 'bookings') renderBookingsView();
     if (tabId === 'transit') renderTransitView();
@@ -425,7 +437,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.3.44",
+        version: "2.3.52",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

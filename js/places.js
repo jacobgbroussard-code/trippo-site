@@ -45,22 +45,13 @@ export function renderPlacesMasterList() {
     const listEl = document.getElementById('places-trip-list');
     if (!listEl) return;
 
-    const activeTrip = trips.find(t => t.id === activePlacesTripId) || trips[0];
-    let quickMapCard = '';
-    if (activeTrip && activeTrip.stops && activeTrip.stops.length > 0) {
-        const firstStop = activeTrip.stops[activePlacesStopIndex || 0] || activeTrip.stops[0];
-        quickMapCard = `
-        <div style="background:var(--primary-light); border:1.5px solid var(--border-subtle); border-radius:18px; padding:16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openPlacesCityView(${activePlacesStopIndex || 0})">
-            <div>
-                <span style="font-size:11px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; display:block;">🗺️ Active City Map</span>
-                <strong style="font-size:16px; color:var(--primary);">${firstStop.name} (${activeTrip.name})</strong>
-            </div>
-            <span style="background:var(--primary); color:white; font-size:12px; font-weight:700; padding:6px 12px; border-radius:12px;">Open Map ›</span>
-        </div>`;
+    if (!trips || trips.length === 0) {
+        listEl.innerHTML = `<p style="text-align:center; color:#8fa09c; margin-top:40px; font-size:14px;">No trips created yet.<br>Go to Trips to create your first trip!</p>`;
+        return;
     }
 
-    listEl.innerHTML = quickMapCard + trips.map(trip => `
-        <div class="trip-card" onclick="openPlacesTripDetail('${trip.id}')">
+    listEl.innerHTML = trips.map(trip => `
+        <div class="trip-card" onclick="openPlacesForTrip('${trip.id}')">
             <div class="trip-card-content">
                 <h3>☀ ${trip.name}</h3>
                 <p>${trip.stops ? trip.stops.length : 0} Cities • ${trip.places ? trip.places.length : 0} Saved Places</p>
@@ -70,7 +61,7 @@ export function renderPlacesMasterList() {
     `).join('');
 }
 
-export function openPlacesTripDetail(tripId) {
+export function openPlacesForTrip(tripId) {
     if (window.placesSortable) {
         window.placesSortable.destroy();
         window.placesSortable = null;
@@ -81,35 +72,17 @@ export function openPlacesTripDetail(tripId) {
         showPlacesMasterList();
         return;
     }
+    if (!Array.isArray(trip.stops) || trip.stops.length === 0) {
+        showNotification("This trip has no cities yet. Add a stop in Route!");
+        if (window.switchTab) window.switchTab('planner');
+        return;
+    }
+    const stopIdx = (activePlacesStopIndex >= 0 && activePlacesStopIndex < trip.stops.length) ? activePlacesStopIndex : 0;
+    openPlacesCityView(stopIdx);
+}
 
-    const masterList = document.getElementById('places-master-list');
-    const tripDetail = document.getElementById('places-trip-detail-list');
-    const cityView = document.getElementById('places-city-view');
-
-    if (masterList) masterList.style.display = 'none';
-    if (tripDetail) tripDetail.style.display = 'block';
-    if (cityView) cityView.style.display = 'none';
-
-    const titleEl = document.getElementById('places-trip-title');
-    if (titleEl) titleEl.innerText = trip.name;
-
-    const stops = Array.isArray(trip.stops) ? trip.stops : [];
-    const places = Array.isArray(trip.places) ? trip.places : [];
-
-    const container = document.getElementById('places-city-list-container');
-    if (!container) return;
-
-    container.innerHTML = stops.map((stop, index) => {
-        const cityPlaces = places.filter(p => p.cityIndex === index).length;
-        return `
-        <div class="trip-card" onclick="openPlacesCityView(${index})">
-            <div class="trip-card-content">
-                <h3>${stop.name}</h3>
-                <p>${cityPlaces} saved locations</p>
-            </div>
-            <div style="color: #b7c7c3; font-size:22px;">›</div>
-        </div>`;
-    }).join('');
+export function openPlacesTripDetail(tripId) {
+    openPlacesForTrip(tripId);
 }
 
 export function showPlacesMasterList() {
@@ -123,13 +96,7 @@ export function showPlacesMasterList() {
 }
 
 export function showPlacesTripDetailList() {
-    const placesView = document.getElementById('places-view');
-    const cityView = document.getElementById('places-city-view');
-    if (placesView) placesView.classList.remove('has-city-open');
-    if (cityView) cityView.classList.remove('map-expanded');
-    const btn = document.getElementById('places-fullscreen-btn');
-    if (btn) { btn.innerHTML = '⛶ Full Map'; btn.classList.remove('active-mode'); }
-    openPlacesTripDetail(activePlacesTripId);
+    showPlacesMasterList();
 }
 
 export function getWeatherEmoji(code) {
@@ -156,8 +123,12 @@ export async function fetchCityWeather(lat, lon) {
 export function openPlacesCityView(stopIndex) {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip || !trip.stops || !trip.stops[stopIndex]) {
-        showPlacesTripDetailList();
-        return;
+        if (trip && trip.stops && trip.stops.length > 0) {
+            stopIndex = 0;
+        } else {
+            showPlacesMasterList();
+            return;
+        }
     }
     setActivePlacesStopIndex(stopIndex);
     setActivePlacesDayIndex(0);
@@ -180,6 +151,19 @@ export function openPlacesCityView(stopIndex) {
 
     const colCityName = document.getElementById('places-collapsed-city-name');
     if (colCityName) colCityName.innerText = stop.name;
+
+    // City selector dropdown if multiple stops
+    const citySelect = document.getElementById('places-city-select');
+    if (citySelect) {
+        if (trip.stops.length > 1) {
+            citySelect.style.display = 'inline-block';
+            citySelect.innerHTML = trip.stops.map((s, idx) => `
+                <option value="${idx}" ${idx === stopIndex ? 'selected' : ''}>📍 ${s.name}</option>
+            `).join('');
+        } else {
+            citySelect.style.display = 'none';
+        }
+    }
 
     initPlacesMap();
     setCityWeather(null);
