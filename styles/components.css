@@ -274,6 +274,9 @@
     flex-shrink: 0;
     position: relative;
     transition: height 0.3s cubic-bezier(0.2, 0, 0, 1);
+    touch-action: pan-x pan-y pinch-zoom;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* Fullscreen / Expanded Map Mode */
@@ -351,9 +354,11 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     max-width: calc(100% - 28px);
+    pointer-events: none;
 }
 
 .map-btn {
+    pointer-events: auto;
     background: var(--card-bg);
     color: var(--text);
     padding: 8px 12px;

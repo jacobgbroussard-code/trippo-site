@@ -28,6 +28,7 @@ async function main() {
         res.on('data', c => data += c);
         res.on('end', () => {
             console.log('Direct Data Length:', data.length);
+            console.log('Live Title:', data.match(/<title>.*?<\/title>/i)?.[0]);
             console.log('Contains planner-fullscreen-btn:', data.includes('planner-fullscreen-btn'));
             console.log('Contains one-way:', data.includes('transit-flight-type'));
         });

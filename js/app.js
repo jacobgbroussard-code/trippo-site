@@ -69,7 +69,10 @@ window.initDatePickers = initDatePickers;
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('[Trippo SW] Registered with scope:', reg.scope))
+            .then(reg => {
+                console.log('[Trippo SW] Registered with scope:', reg.scope);
+                reg.update();
+            })
             .catch(err => console.warn('[Trippo SW] Registration failed:', err));
     });
 }

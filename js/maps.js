@@ -20,10 +20,11 @@ export let wMarkers = [];
 
 let activeRouteToken = null;
 
-const BASE_MAP_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const BASE_MAP_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const BASE_MAP_OPTS = {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
 };
 
 export const trainOverlayModes = { planner: 'off', wishlist: 'off' };
@@ -54,10 +55,19 @@ export function initPlannerMap() {
             plannerMap = L.map('planner-map', {
                 tap: false,
                 zoomControl: true,
-                fullscreenControl: true
+                fullscreenControl: true,
+                dragging: true,
+                touchZoom: true,
+                scrollWheelZoom: true,
+                doubleClickZoom: true,
+                boxZoom: true
             }).setView([30.2241, -92.0198], 3);
             L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS).addTo(plannerMap);
         }
+    }
+    if (plannerMap) {
+        safeInvalidate(plannerMap, 100);
+        safeInvalidate(plannerMap, 300);
     }
     return plannerMap;
 }
@@ -69,10 +79,19 @@ export function initPlacesMap() {
             placesMap = L.map('places-map', {
                 tap: false,
                 zoomControl: true,
-                fullscreenControl: true
+                fullscreenControl: true,
+                dragging: true,
+                touchZoom: true,
+                scrollWheelZoom: true,
+                doubleClickZoom: true,
+                boxZoom: true
             }).setView([30.2241, -92.0198], 12);
             L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS).addTo(placesMap);
         }
+    }
+    if (placesMap) {
+        safeInvalidate(placesMap, 100);
+        safeInvalidate(placesMap, 300);
     }
     return placesMap;
 }
@@ -84,13 +103,22 @@ export function initWishlistMap() {
             wishlistMap = L.map('wishlist-map', {
                 tap: false,
                 zoomControl: true,
-                fullscreenControl: true
+                fullscreenControl: true,
+                dragging: true,
+                touchZoom: true,
+                scrollWheelZoom: true,
+                doubleClickZoom: true,
+                boxZoom: true
             }).setView([20, 0], 2);
             L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS).addTo(wishlistMap);
             if (window.handleWishlistMapClick) {
                 wishlistMap.on('click', window.handleWishlistMapClick);
             }
         }
+    }
+    if (wishlistMap) {
+        safeInvalidate(wishlistMap, 100);
+        safeInvalidate(wishlistMap, 300);
     }
     return wishlistMap;
 }

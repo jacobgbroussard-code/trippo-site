@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.3.44';
+const CACHE_NAME = 'trippo-cache-v2.3.45';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -44,20 +44,18 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch: Stale-while-revalidate for local static assets, Network-first for external APIs
+// Fetch: Stale-while-revalidate for local static assets
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Bypass non-GET requests (Supabase mutations, etc.)
+    // Bypass non-GET requests
     if (event.request.method !== 'GET') {
         return;
     }
 
-    // External APIs (Nominatim, Open-Meteo, OSRM, Supabase, Tile servers) -> Network first
+    // External requests (CartoDB/OSM Tiles, Nominatim, Open-Meteo, OSRM, Supabase):
+    // DO NOT intercept! Let browser handle natively to prevent WebKit cross-origin image bugs
     if (url.origin !== self.location.origin) {
-        event.respondWith(
-            fetch(event.request).catch(() => caches.match(event.request))
-        );
         return;
     }
 
