@@ -460,3 +460,30 @@ export function importAppDataJSON(event) {
     };
     reader.readAsText(file);
 }
+
+export async function forceAppRefresh() {
+    showNotification("Clearing cache and updating app...");
+    if ('serviceWorker' in navigator) {
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const reg of registrations) {
+                await reg.unregister();
+            }
+        } catch (e) {
+            console.warn('SW unregister error:', e);
+        }
+    }
+    if ('caches' in window) {
+        try {
+            const keys = await caches.keys();
+            for (const key of keys) {
+                await caches.delete(key);
+            }
+        } catch (e) {
+            console.warn('Caches delete error:', e);
+        }
+    }
+    setTimeout(() => {
+        window.location.reload();
+    }, 300);
+}

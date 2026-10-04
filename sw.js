@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.3.46';
+const CACHE_NAME = 'trippo-cache-v2.3.47';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -56,6 +56,24 @@ self.addEventListener('fetch', (event) => {
     // External requests (CartoDB/OSM Tiles, Nominatim, Open-Meteo, OSRM, Supabase):
     // DO NOT intercept! Let browser handle natively to prevent WebKit cross-origin image bugs
     if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    // HTML Navigation requests: Network-First with cache fallback
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseToCache = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => caches.match('./index.html') || caches.match('./'))
+        );
         return;
     }
 

@@ -13,7 +13,7 @@ import {
     closeModal
 } from './state.js';
 
-import { drawPlannerMapRoute } from './maps.js';
+import { drawPlannerMapRoute, plannerMap, pMarkers } from './maps.js';
 
 export let citySearchTimeout = null;
 let citySearchAbortController = null;
@@ -49,7 +49,8 @@ export function renderPlanner() {
                     <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${stop.name}</h3>
                     <p style="margin: 0; font-size: 12px; color: #728481;">${arr.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${dep.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="focusStopOnMap(event, ${index})" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 8px; font-size:13px; cursor:pointer;" title="View on map">🗺️</button>
                     <div class="nights-control">
                         <button class="nights-btn" onclick="updateNights(${index}, -1)">−</button>
                         <strong style="font-size: 14px; min-width: 18px; text-align: center;">${stop.nights}</strong>
@@ -107,6 +108,23 @@ export function updateNights(index, delta) {
     }
     saveTrips();
     renderPlanner();
+}
+
+export function focusStopOnMap(event, index) {
+    if (event) event.stopPropagation();
+    const trip = getActiveTrip();
+    if (!trip || !trip.stops || !trip.stops[index] || !plannerMap) return;
+    const stop = trip.stops[index];
+    if (stop.lat === 0 && stop.lon === 0) return;
+
+    plannerMap.flyTo([stop.lat, stop.lon], 11, { duration: 1.2 });
+    if (pMarkers && pMarkers[index]) {
+        setTimeout(() => {
+            if (pMarkers[index] && typeof pMarkers[index].openPopup === 'function') {
+                pMarkers[index].openPopup();
+            }
+        }, 1250);
+    }
 }
 
 export function deleteStop(index) {
