@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.52</title>
+    <title>Trippo Travel Planner v2.3.53</title>
     <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -18,8 +18,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.52">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.52">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.53">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.53">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -122,19 +122,24 @@
             <span id="dark-mode-icon">🌙</span> <span id="dark-mode-label">Toggle Dark Mode</span>
         </div>
 
-        <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
-
-        <!-- SETTINGS & DATA SUBCATEGORY -->
-        <h3 class="sidebar-section-title">⚙️ Settings & Data</h3>
-        <div class="sidebar-item" onclick="exportAppDataJSON()">
-            <span>💾</span> Export All Data (.json)
+        <!-- SETTINGS & DATA COLLAPSIBLE ACCORDION -->
+        <div class="sidebar-item" onclick="toggleSidebarSettings()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand settings">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>⚙️</span> Settings & Data
+            </div>
+            <span id="sidebar-settings-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
         </div>
-        <div class="sidebar-item" onclick="document.getElementById('import-app-json-input').click()">
-            <span>📂</span> Restore All Data (.json)
-        </div>
-        <input type="file" id="import-app-json-input" accept=".json" style="display:none" onchange="importAppDataJSON(event)">
-        <div class="sidebar-item" onclick="forceAppRefresh()">
-            <span>🔄</span> Check for Updates / Refresh App
+        <div id="sidebar-settings-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="exportAppDataJSON()">
+                <span>💾</span> Export All Data (.json)
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="document.getElementById('import-app-json-input').click()">
+                <span>📂</span> Restore All Data (.json)
+            </div>
+            <input type="file" id="import-app-json-input" accept=".json" style="display:none" onchange="importAppDataJSON(event)">
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="forceAppRefresh()">
+                <span>🔄</span> Check for Updates / Refresh App
+            </div>
         </div>
 
         <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
@@ -170,7 +175,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.52</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.53</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -754,6 +759,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.52"></script>
+    <script type="module" src="js/app.js?v=2.3.53"></script>
 </body>
 </html>
