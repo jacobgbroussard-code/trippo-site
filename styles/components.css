@@ -274,13 +274,14 @@
     flex-shrink: 0;
     position: relative;
     transition: height 0.3s cubic-bezier(0.2, 0, 0, 1);
-    touch-action: pan-x pan-y pinch-zoom;
+    touch-action: none !important;
     -webkit-user-select: none;
     user-select: none;
 }
 
 .leaflet-container {
     background: #e5ece8 !important;
+    touch-action: none !important;
 }
 
 /* Fullscreen / Expanded Map Mode */

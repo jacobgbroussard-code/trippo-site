@@ -12,7 +12,7 @@ import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 
-const CURRENT_VERSION = '2.3.48';
+const CURRENT_VERSION = '2.3.49';
 if (localStorage.getItem('trippo_app_version') !== CURRENT_VERSION) {
     localStorage.setItem('trippo_app_version', CURRENT_VERSION);
     if ('caches' in window) {

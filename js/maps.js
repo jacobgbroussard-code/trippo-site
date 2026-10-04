@@ -47,11 +47,17 @@ export const trainLayers = {
 
 const mapObservers = new WeakMap();
 
-export function attachMapResizeObserver(mapInstance) {
+export function attachMapResizeObserver(mapInstance, containerId) {
+    if (typeof window !== 'undefined' && typeof window.attachMapResizeObserver === 'function') {
+        const id = containerId || (mapInstance && mapInstance.getContainer ? mapInstance.getContainer().id : null);
+        if (id) {
+            return window.attachMapResizeObserver(mapInstance, id);
+        }
+    }
     if (!mapInstance || typeof ResizeObserver === 'undefined') return;
     let container = null;
     try {
-        container = mapInstance.getContainer();
+        container = typeof containerId === 'string' ? document.getElementById(containerId) : mapInstance.getContainer();
     } catch (e) {
         return;
     }
@@ -116,12 +122,12 @@ export function initPlannerMap() {
                 boxZoom: true
             }).setView([30.2241, -92.0198], 3);
             createBaseTileLayer().addTo(plannerMap);
-            attachMapResizeObserver(plannerMap);
+            attachMapResizeObserver(plannerMap, 'planner-map');
         }
     }
     if (plannerMap) {
         window.plannerMap = plannerMap;
-        attachMapResizeObserver(plannerMap);
+        attachMapResizeObserver(plannerMap, 'planner-map');
         safeInvalidate(plannerMap, 100);
         safeInvalidate(plannerMap, 300);
     }
@@ -143,12 +149,12 @@ export function initPlacesMap() {
                 boxZoom: true
             }).setView([30.2241, -92.0198], 12);
             createBaseTileLayer().addTo(placesMap);
-            attachMapResizeObserver(placesMap);
+            attachMapResizeObserver(placesMap, 'places-map');
         }
     }
     if (placesMap) {
         window.placesMap = placesMap;
-        attachMapResizeObserver(placesMap);
+        attachMapResizeObserver(placesMap, 'places-map');
         safeInvalidate(placesMap, 100);
         safeInvalidate(placesMap, 300);
     }
@@ -170,7 +176,7 @@ export function initWishlistMap() {
                 boxZoom: true
             }).setView([20, 0], 2);
             createBaseTileLayer().addTo(wishlistMap);
-            attachMapResizeObserver(wishlistMap);
+            attachMapResizeObserver(wishlistMap, 'wishlist-map');
             if (window.handleWishlistMapClick) {
                 wishlistMap.on('click', window.handleWishlistMapClick);
             }
@@ -178,7 +184,7 @@ export function initWishlistMap() {
     }
     if (wishlistMap) {
         window.wishlistMap = wishlistMap;
-        attachMapResizeObserver(wishlistMap);
+        attachMapResizeObserver(wishlistMap, 'wishlist-map');
         safeInvalidate(wishlistMap, 100);
         safeInvalidate(wishlistMap, 300);
     }

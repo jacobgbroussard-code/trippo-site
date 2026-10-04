@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.48</title>
+    <title>Trippo Travel Planner v2.3.49</title>
     <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -19,8 +19,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.48">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.48">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.49">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.49">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -28,6 +28,33 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Leaflet Mobile Map Resilient ResizeObserver -->
+    <script>
+    function attachMapResizeObserver(mapInstance, containerId) {
+        const el = document.getElementById(containerId);
+        if (!el || !window.ResizeObserver) return null;
+        if (el._trippoResizeObserverAttached) return null;
+        el._trippoResizeObserverAttached = true;
+        const observer = new ResizeObserver(() => {
+            const targetMap = mapInstance || (containerId === 'planner-map' ? window.plannerMap : containerId === 'places-map' ? window.placesMap : window.wishlistMap);
+            if (targetMap && el.offsetParent !== null) {
+                requestAnimationFrame(() => {
+                    targetMap.invalidateSize();
+                    if (targetMap._pendingBounds && typeof targetMap.fitBounds === 'function') {
+                        try {
+                            targetMap.fitBounds(targetMap._pendingBounds, { padding: [40, 40], maxZoom: 14 });
+                            targetMap._pendingBounds = null;
+                        } catch (e) {}
+                    }
+                });
+            }
+        });
+        observer.observe(el);
+        return observer;
+    }
+    window.attachMapResizeObserver = attachMapResizeObserver;
+    </script>
 </head>
 <body>
 
@@ -102,7 +129,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.48</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.49</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -684,6 +711,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.48"></script>
+    <script type="module" src="js/app.js?v=2.3.49"></script>
 </body>
 </html>
