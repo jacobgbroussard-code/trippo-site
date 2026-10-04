@@ -12,9 +12,10 @@ import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 
-const CURRENT_VERSION = '2.3.50';
-if (localStorage.getItem('trippo_app_version') !== CURRENT_VERSION) {
-    localStorage.setItem('trippo_app_version', CURRENT_VERSION);
+const CURRENT_VERSION = '2.3.51';
+const storedVersion = state.safeGetStorage('trippo_app_version', null);
+if (storedVersion !== CURRENT_VERSION) {
+    state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
     if ('caches' in window) {
         caches.keys().then(keys => {
             keys.forEach(k => {
@@ -40,6 +41,16 @@ Object.assign(window, {
     ...wishlist,
     ...tools
 });
+
+// Replay any early calls queued before module finished loading
+if (window._trippoEarlyQueue && Array.isArray(window._trippoEarlyQueue)) {
+    const queue = window._trippoEarlyQueue.splice(0);
+    queue.forEach(({ fn, args }) => {
+        if (typeof window[fn] === 'function') {
+            try { window[fn](...args); } catch (e) { console.warn(e); }
+        }
+    });
+}
 
 // Define dynamic live getters on window for reactive state, maps and search timeouts
 Object.defineProperties(window, {
@@ -131,11 +142,11 @@ document.querySelectorAll('.modal-content').forEach(content => {
     }, { passive: true });
 });
 
-// Initialize on DOM Ready
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize on DOM Ready or immediately if document is already parsed
+function bootstrapApp() {
     initDatePickers();
 
-    const isDark = localStorage.getItem('trippoDarkMode') === 'true';
+    const isDark = state.safeGetStorage('trippoDarkMode', 'false') === 'true';
     if (isDark) {
         document.body.classList.add('dark-mode');
         const icon = document.getElementById('dark-mode-icon');
@@ -150,4 +161,10 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         db.checkAuthSession();
     }, 150);
-});
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', bootstrapApp);
+} else {
+    bootstrapApp();
+}

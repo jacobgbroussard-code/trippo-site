@@ -72,9 +72,10 @@ async function runMobileTest() {
             screenOrientation: { angle: 0, type: 'portraitPrimary' }
         });
         await send('Emulation.setTouchEmulationEnabled', { enabled: true });
+        await send('Page.reload');
 
         console.log('Mobile device emulated (390x844). Waiting for initial load...');
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 2500));
 
         async function evalJs(expr) {
             const res = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });

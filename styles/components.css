@@ -274,14 +274,28 @@
     flex-shrink: 0;
     position: relative;
     transition: height 0.3s cubic-bezier(0.2, 0, 0, 1);
-    touch-action: none !important;
+    touch-action: pan-x pan-y !important;
     -webkit-user-select: none;
     user-select: none;
 }
 
 .leaflet-container {
     background: #e5ece8 !important;
-    touch-action: none !important;
+    touch-action: pan-x pan-y !important;
+    outline: none;
+}
+
+/* Mobile WebKit & Android hardware acceleration: prevent tile drops & flickering */
+.leaflet-tile {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    image-rendering: auto;
+}
+
+.leaflet-tile-container {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
 }
 
 /* Fullscreen / Expanded Map Mode */

@@ -38,6 +38,8 @@ async function testTouchInteraction() {
             ws.onerror = reject;
         });
 
+        const pageErrors = [];
+        const consoleLogs = [];
         ws.onmessage = (event) => {
             const msg = JSON.parse(event.data);
             if (msg.id && pending.has(msg.id)) {
@@ -45,11 +47,17 @@ async function testTouchInteraction() {
                 pending.delete(msg.id);
                 if (msg.error) reject(msg.error);
                 else resolve(msg.result);
+            } else if (msg.method === 'Runtime.exceptionThrown') {
+                pageErrors.push(msg.params.exceptionDetails);
+                console.error('EXCEPTION:', msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text);
+            } else if (msg.method === 'Runtime.consoleAPICalled') {
+                console.log('CONSOLE:', msg.params.type, msg.params.args.map(a => a.value || a.description));
             }
         };
 
         await send('Page.enable');
         await send('Runtime.enable');
+        await send('Network.enable');
 
         await send('Emulation.setUserAgentOverride', {
             userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1'
@@ -62,8 +70,9 @@ async function testTouchInteraction() {
             screenOrientation: { angle: 0, type: 'portraitPrimary' }
         });
         await send('Emulation.setTouchEmulationEnabled', { enabled: true });
+        await send('Page.reload');
 
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 2500));
 
         async function evalJs(expr) {
             const res = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });

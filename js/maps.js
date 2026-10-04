@@ -20,9 +20,10 @@ export let wMarkers = [];
 
 let activeRouteToken = null;
 
-const BASE_MAP_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const BASE_MAP_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const BASE_MAP_OPTS = {
     maxZoom: 19,
+    subdomains: ['a', 'b', 'c'],
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
 };
 const FALLBACK_MAP_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
@@ -48,20 +49,18 @@ export const trainLayers = {
 const mapObservers = new WeakMap();
 
 export function attachMapResizeObserver(mapInstance, containerId) {
-    if (typeof window !== 'undefined' && typeof window.attachMapResizeObserver === 'function') {
-        const id = containerId || (mapInstance && mapInstance.getContainer ? mapInstance.getContainer().id : null);
-        if (id) {
-            return window.attachMapResizeObserver(mapInstance, id);
-        }
-    }
-    if (!mapInstance || typeof ResizeObserver === 'undefined') return;
+    if (!mapInstance || typeof ResizeObserver === 'undefined') return null;
     let container = null;
     try {
-        container = typeof containerId === 'string' ? document.getElementById(containerId) : mapInstance.getContainer();
+        container = typeof containerId === 'string'
+            ? document.getElementById(containerId)
+            : (mapInstance.getContainer ? mapInstance.getContainer() : null);
     } catch (e) {
-        return;
+        return null;
     }
-    if (!container || mapObservers.has(mapInstance)) return;
+    if (!container) return null;
+    if (container._trippoObserverAttached) return null;
+    container._trippoObserverAttached = true;
 
     let debounceTimer = null;
     const ro = new ResizeObserver((entries) => {
@@ -83,13 +82,14 @@ export function attachMapResizeObserver(mapInstance, containerId) {
                     if (mapInstance && typeof mapInstance.invalidateSize === 'function') {
                         mapInstance.invalidateSize({ debounceMove: true });
                     }
-                }, 320);
+                }, 200);
             }
         }
     });
 
     ro.observe(container);
     mapObservers.set(mapInstance, ro);
+    return ro;
 }
 
 export function safeInvalidate(mapInstance, extraDelay = 0) {

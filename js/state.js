@@ -6,13 +6,50 @@
 import { pushLocalToCloud } from './db.js';
 import { safeInvalidate, plannerMap, wishlistMap, placesMap } from './maps.js';
 
+// --- SAFE STORAGE HELPERS (Private Browsing & Mobile WebViews Resilient) ---
+const memoryFallback = {};
+
+export function safeGetStorage(key, defaultValue = null) {
+    try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const val = window.localStorage.getItem(key);
+            return val !== null ? val : defaultValue;
+        }
+    } catch (e) {
+        console.warn(`[Trippo Storage] localStorage.getItem blocked for "${key}":`, e);
+    }
+    return key in memoryFallback ? memoryFallback[key] : defaultValue;
+}
+
+export function safeSetStorage(key, value) {
+    try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(key, value);
+        }
+    } catch (e) {
+        console.warn(`[Trippo Storage] localStorage.setItem blocked for "${key}":`, e);
+    }
+    memoryFallback[key] = value;
+}
+
+export function safeParseStorage(key, defaultValue) {
+    const raw = safeGetStorage(key, null);
+    if (!raw) return defaultValue;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        console.warn(`[Trippo Storage] Failed to parse JSON for "${key}":`, e);
+        return defaultValue;
+    }
+}
+
 // --- DARK MODE STATE ---
-export let isDarkMode = localStorage.getItem('trippoDarkMode') === 'true';
+export let isDarkMode = safeGetStorage('trippoDarkMode', 'false') === 'true';
 
 export function toggleDarkMode() {
     isDarkMode = !isDarkMode;
     document.body.classList.toggle('dark-mode', isDarkMode);
-    localStorage.setItem('trippoDarkMode', isDarkMode);
+    safeSetStorage('trippoDarkMode', isDarkMode);
     const icon = document.getElementById('dark-mode-icon');
     const label = document.getElementById('dark-mode-label');
     if (icon) icon.innerText = isDarkMode ? '☀️' : '🌙';
@@ -99,16 +136,16 @@ export function getCategoryVisuals(categoryStr) {
 }
 
 // --- STATE STORAGE & INITIALIZATION ---
-export let trips = JSON.parse(localStorage.getItem('myTrips')) || [];
+export let trips = safeParseStorage('myTrips', []);
 
-export let wishlistCollections = JSON.parse(localStorage.getItem('myWishlistCollections')) || [
+export let wishlistCollections = safeParseStorage('myWishlistCollections', [
     { id: 'master', name: '🌟 Master Wishlist', isMaster: true }
-];
+]);
 
-let rawSavedPins = JSON.parse(localStorage.getItem('myWishlist')) || [
+let rawSavedPins = safeParseStorage('myWishlist', [
     { id: '1', wishlistId: 'master', name: 'Kyoto Bamboo Forest', lat: 35.0116, lon: 135.6767, category: 'Nature', notes: 'Must visit during early morning light.' },
     { id: '2', wishlistId: 'master', name: 'Amalfi Coast', lat: 40.6340, lon: 14.6027, category: 'Cities', notes: 'Cliffside scenic views.' }
-];
+]);
 
 export let wishlistPins = rawSavedPins.map(p => ({
     ...p,
@@ -139,7 +176,7 @@ if (trips.length === 0) {
             { id: "poi_4", cityIndex: 2, dayIndex: 0, name: "Jingshan Park", category: "● See & Do", address: "44 Jingshan W St, Xicheng, Beijing", notes: "Panoramic view over the palace", lat: 39.9248, lon: 116.3980 }
         ]
     });
-    localStorage.setItem('myTrips', JSON.stringify(trips));
+    safeSetStorage('myTrips', JSON.stringify(trips));
 }
 
 // Active navigation pointers
@@ -184,12 +221,12 @@ export function getActiveTrip() {
 }
 
 export function saveTrips() {
-    localStorage.setItem('myTrips', JSON.stringify(trips));
+    safeSetStorage('myTrips', JSON.stringify(trips));
     pushLocalToCloud();
 }
 
 export function saveWishlist() {
-    localStorage.setItem('myWishlist', JSON.stringify(wishlistPins));
-    localStorage.setItem('myWishlistCollections', JSON.stringify(wishlistCollections));
+    safeSetStorage('myWishlist', JSON.stringify(wishlistPins));
+    safeSetStorage('myWishlistCollections', JSON.stringify(wishlistCollections));
     pushLocalToCloud();
 }
