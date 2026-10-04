@@ -189,7 +189,7 @@ export function drawPlannerMapRoute() {
         if (stop.lat === 0 && stop.lon === 0) return;
         const marker = L.circleMarker([stop.lat, stop.lon], {
             radius: 8,
-            fillColor: "var(--primary)",
+            fillColor: "#124b43",
             color: "#ffffff",
             weight: 2.5,
             fillOpacity: 1

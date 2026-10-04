@@ -5,21 +5,21 @@
 
 const CACHE_NAME = 'trippo-cache-v2.3.44';
 const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/styles/main.css',
-    '/styles/components.css',
-    '/js/app.js',
-    '/js/state.js',
-    '/js/db.js',
-    '/js/maps.js',
-    '/js/planner.js',
-    '/js/places.js',
-    '/js/bookings.js',
-    '/js/wishlist.js',
-    '/js/tools.js',
-    '/manifest.webmanifest',
-    '/fad.jpg'
+    './',
+    './index.html',
+    './styles/main.css',
+    './styles/components.css',
+    './js/app.js',
+    './js/state.js',
+    './js/db.js',
+    './js/maps.js',
+    './js/planner.js',
+    './js/places.js',
+    './js/bookings.js',
+    './js/wishlist.js',
+    './js/tools.js',
+    './manifest.webmanifest',
+    './fad.jpg'
 ];
 
 // Install: Cache core local assets

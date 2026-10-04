@@ -87,13 +87,27 @@ async function runMobileTest() {
 
         // Test 1: Open Trip to Planner View
         console.log('Test 1: Opening first trip card...');
-        await evalJs(`
+        const cardStatus = await evalJs(`
             (() => {
                 const card = document.querySelector('.trip-card-content');
-                if (card) card.click();
+                const list = document.getElementById('trip-list');
+                const tripsCount = window.trips ? window.trips.length : -1;
+                const activeView = document.querySelector('.view.active')?.id;
+                if (card) {
+                    card.click();
+                } else if (typeof openTrip === 'function' && window.trips && window.trips.length > 0) {
+                    openTrip(window.trips[0].id);
+                }
+                return {
+                    cardFound: !!card,
+                    tripListHTML: list ? list.innerHTML.slice(0, 150) : null,
+                    tripsCount,
+                    activeView
+                };
             })()
         `);
-        await new Promise(r => setTimeout(r, 1000));
+        console.log('Card Status:', cardStatus);
+        await new Promise(r => setTimeout(r, 1500));
 
         const plannerInitial = await evalJs(`
             (() => {
