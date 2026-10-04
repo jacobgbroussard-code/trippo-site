@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.53</title>
+    <title>Trippo Travel Planner v2.3.54</title>
     <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
     
     <!-- PWA & Mobile Web App Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
@@ -18,8 +18,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.53">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.53">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.54">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.54">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -175,7 +175,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.53</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.54</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -270,30 +270,34 @@
     </div>
 
     <!-- 4. BOOKINGS / STAYS VIEW -->
-    <div id="bookings-view" class="view" style="padding: 20px;">
-        <h1 class="header-title" style="padding: 4px 0 18px 0;">Stays & Lodging</h1>
-        <select id="booking-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'bookings')"></select>
-        <div id="bookings-list-container"></div>
+    <div id="bookings-view" class="view">
+        <h1 class="header-title">Stays & Lodging</h1>
+        <div style="padding: 0 20px;">
+            <select id="booking-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'bookings')"></select>
+            <div id="bookings-list-container"></div>
+        </div>
     </div>
 
     <!-- 5. TRANSIT VIEW -->
-    <div id="transit-view" class="view" style="padding: 20px;">
-        <h1 class="header-title" style="padding: 4px 0 18px 0;">Transit</h1>
-        <select id="transit-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'transit')"></select>
-        <div id="transit-list-container"></div>
+    <div id="transit-view" class="view">
+        <h1 class="header-title">Transit</h1>
+        <div style="padding: 0 20px;">
+            <select id="transit-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'transit')"></select>
+            <div id="transit-list-container"></div>
+        </div>
     </div>
 
     <!-- 6. WISHLIST VIEW (DIRECTORY + MAP SHEET) -->
     <div id="wishlist-view" class="view">
-        <div id="wishlist-directory-view" style="padding: 20px;">
-            <h1 class="header-title" style="padding: 4px 0 16px 0;">
-                <span>Wishlists</span>
-            </h1>
-            <button class="create-btn" onclick="openCreateWishlistModal()">
-                <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
-                Create new wishlist
-            </button>
-            <div id="wishlist-collections-list"></div>
+        <div id="wishlist-directory-view">
+            <h1 class="header-title">Wishlists</h1>
+            <div style="padding: 0 20px;">
+                <button class="create-btn" onclick="openCreateWishlistModal()">
+                    <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
+                    Create new wishlist
+                </button>
+                <div id="wishlist-collections-list"></div>
+            </div>
         </div>
 
         <div id="wishlist-detail-view" style="display: none; height: 100%; flex-direction: column;">
@@ -759,6 +763,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.53"></script>
+    <script type="module" src="js/app.js?v=2.3.54"></script>
 </body>
 </html>

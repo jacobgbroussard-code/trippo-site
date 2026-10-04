@@ -52,7 +52,7 @@ body, html {
     width: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 120px;
+    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
 }
 
 .view.active {
@@ -91,7 +91,7 @@ body, html {
 }
 
 .header-title {
-    padding: 24px 20px 12px 20px;
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 12px 20px;
     margin: 0;
     font-size: 26px;
     font-weight: 800;

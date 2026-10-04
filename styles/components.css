@@ -18,7 +18,7 @@
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
-    padding: 24px 20px;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
     overflow-y: auto;
 }
 
@@ -374,8 +374,8 @@
 
 .map-controls-row {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    right: calc(14px + env(safe-area-inset-right, 0px));
     z-index: 1000;
     display: flex;
     gap: 6px;
@@ -729,7 +729,7 @@ textarea.form-control {
     max-height: 88dvh;
     border-top-left-radius: 28px;
     border-top-right-radius: 28px;
-    padding: 24px 20px 40px 20px;
+    padding: 24px 20px calc(36px + env(safe-area-inset-bottom, 0px)) 20px;
     box-sizing: border-box;
     overflow-y: auto;
     position: relative;

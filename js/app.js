@@ -12,7 +12,7 @@ import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 
-const CURRENT_VERSION = '2.3.53';
+const CURRENT_VERSION = '2.3.54';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
