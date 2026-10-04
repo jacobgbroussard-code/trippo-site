@@ -127,7 +127,7 @@ export function openWishlistDetail(colId) {
 
     initWishlistMap();
     renderWishlistPins(true);
-    safeInvalidate(wishlistMap, 150);
+    [50, 150, 300, 500].forEach(d => safeInvalidate(wishlistMap, d));
 }
 
 export async function handleWishlistMapClick(e) {

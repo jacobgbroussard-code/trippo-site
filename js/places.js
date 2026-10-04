@@ -186,7 +186,7 @@ export function openPlacesCityView(stopIndex) {
     renderPlacesDayTabs();
     fetchCityWeather(stop.lat, stop.lon);
     renderCityPlaces();
-    safeInvalidate(placesMap, 100);
+    [50, 150, 300, 500].forEach(d => safeInvalidate(placesMap, d));
 }
 
 export function renderPlacesDayTabs() {

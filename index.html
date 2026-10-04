@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.49</title>
+    <title>Trippo Travel Planner v2.3.50</title>
     <!-- Live sync enabled: Local edits automatically deploy to https://trippo.top -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -15,21 +15,30 @@
 
     <!-- Leaflet & Vendor Styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.0.0/Control.FullScreen.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.49">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.49">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.50">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.50">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.0.0/Control.FullScreen.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Leaflet Mobile Map Resilient ResizeObserver -->
+    <!-- iOS Safari Leaflet Fix: Disable hardware 3D transforms to prevent WebKit tile drops -->
+    <script>
+    if (typeof L !== 'undefined' && L.Browser) {
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+            L.Browser.any3d = false;
+        }
+    }
+    </script>
+
+    <!-- Leaflet Mobile Map Resilient ResizeObserver & MutationObserver -->
     <script>
     function attachMapResizeObserver(mapInstance, containerId) {
         const el = document.getElementById(containerId);
@@ -54,6 +63,26 @@
         return observer;
     }
     window.attachMapResizeObserver = attachMapResizeObserver;
+
+    // Resilient View Observer for iOS Safari (WebKit display:none workaround)
+    document.addEventListener('DOMContentLoaded', () => {
+        const viewObserver = new MutationObserver(() => {
+            requestAnimationFrame(() => {
+                if (window.plannerMap && document.getElementById('planner-map') && document.getElementById('planner-map').offsetParent !== null) {
+                    window.plannerMap.invalidateSize();
+                }
+                if (window.placesMap && document.getElementById('places-map') && document.getElementById('places-map').offsetParent !== null) {
+                    window.placesMap.invalidateSize();
+                }
+                if (window.wishlistMap && document.getElementById('wishlist-map') && document.getElementById('wishlist-map').offsetParent !== null) {
+                    window.wishlistMap.invalidateSize();
+                }
+            });
+        });
+        document.querySelectorAll('.view, #places-city-view, #wishlist-detail-view').forEach(el => {
+            viewObserver.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
+        });
+    });
     </script>
 </head>
 <body>
@@ -129,7 +158,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.49</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.50</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -711,6 +740,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.49"></script>
+    <script type="module" src="js/app.js?v=2.3.50"></script>
 </body>
 </html>

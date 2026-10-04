@@ -12,16 +12,19 @@ import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 
-const CURRENT_VERSION = '2.3.49';
+const CURRENT_VERSION = '2.3.50';
 if (localStorage.getItem('trippo_app_version') !== CURRENT_VERSION) {
     localStorage.setItem('trippo_app_version', CURRENT_VERSION);
     if ('caches' in window) {
         caches.keys().then(keys => {
             keys.forEach(k => {
-                if (k !== 'trippo-cache-' + CURRENT_VERSION) {
-                    caches.delete(k);
-                }
+                caches.delete(k);
             });
+        });
+    }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.update());
         });
     }
 }

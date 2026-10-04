@@ -118,6 +118,16 @@ export function openTrip(id) {
     setActiveTripId(id);
     setActivePlacesTripId(id);
     switchTab('planner');
+    [50, 150, 300, 500].forEach(d => {
+        setTimeout(() => {
+            if (plannerMap) {
+                plannerMap.invalidateSize();
+                if (plannerMap._pendingBounds) {
+                    try { plannerMap.fitBounds(plannerMap._pendingBounds, { padding: [40, 40], maxZoom: 14 }); } catch(e){}
+                }
+            }
+        }, d);
+    });
 }
 
 export function promptDeleteTripById(tripId) {
@@ -155,7 +165,7 @@ export function switchTab(tabId) {
         if (!activeTripId && trips.length > 0) setActiveTripId(trips[0].id);
         initPlannerMap();
         renderPlanner();
-        safeInvalidate(plannerMap, 150);
+        [50, 150, 300, 500].forEach(d => safeInvalidate(plannerMap, d));
     }
     if (tabId === 'places') {
         if (!activePlacesTripId && trips.length > 0) setActivePlacesTripId(activeTripId || trips[0].id);

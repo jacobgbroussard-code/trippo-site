@@ -114,7 +114,7 @@ export function initPlannerMap() {
             plannerMap = L.map('planner-map', {
                 tap: false,
                 zoomControl: true,
-                fullscreenControl: true,
+                fullscreenControl: false,
                 dragging: true,
                 touchZoom: true,
                 scrollWheelZoom: true,
@@ -128,8 +128,7 @@ export function initPlannerMap() {
     if (plannerMap) {
         window.plannerMap = plannerMap;
         attachMapResizeObserver(plannerMap, 'planner-map');
-        safeInvalidate(plannerMap, 100);
-        safeInvalidate(plannerMap, 300);
+        [50, 150, 300, 500].forEach(d => safeInvalidate(plannerMap, d));
     }
     return plannerMap;
 }
@@ -141,7 +140,7 @@ export function initPlacesMap() {
             placesMap = L.map('places-map', {
                 tap: false,
                 zoomControl: true,
-                fullscreenControl: true,
+                fullscreenControl: false,
                 dragging: true,
                 touchZoom: true,
                 scrollWheelZoom: true,
@@ -155,8 +154,7 @@ export function initPlacesMap() {
     if (placesMap) {
         window.placesMap = placesMap;
         attachMapResizeObserver(placesMap, 'places-map');
-        safeInvalidate(placesMap, 100);
-        safeInvalidate(placesMap, 300);
+        [50, 150, 300, 500].forEach(d => safeInvalidate(placesMap, d));
     }
     return placesMap;
 }
@@ -168,7 +166,7 @@ export function initWishlistMap() {
             wishlistMap = L.map('wishlist-map', {
                 tap: false,
                 zoomControl: true,
-                fullscreenControl: true,
+                fullscreenControl: false,
                 dragging: true,
                 touchZoom: true,
                 scrollWheelZoom: true,
@@ -185,8 +183,7 @@ export function initWishlistMap() {
     if (wishlistMap) {
         window.wishlistMap = wishlistMap;
         attachMapResizeObserver(wishlistMap, 'wishlist-map');
-        safeInvalidate(wishlistMap, 100);
-        safeInvalidate(wishlistMap, 300);
+        [50, 150, 300, 500].forEach(d => safeInvalidate(wishlistMap, d));
     }
     return wishlistMap;
 }
