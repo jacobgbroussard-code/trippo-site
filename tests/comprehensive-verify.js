@@ -24,10 +24,19 @@ async function runComprehensiveVerification() {
         '--window-size=393,852'
     ]);
 
-    await new Promise(r => setTimeout(r, 1500));
+    let newTabRes = null;
+    for (let attempt = 0; attempt < 8; attempt++) {
+        await new Promise(r => setTimeout(r, 600));
+        try {
+            newTabRes = await fetch('http://127.0.0.1:9270/json/new?http://127.0.0.1:8080/', { method: 'PUT' });
+            if (newTabRes.ok) break;
+        } catch (e) {
+            // Chrome still initializing
+        }
+    }
+    if (!newTabRes) throw new Error('Could not connect to Chrome on port 9270');
 
     try {
-        const newTabRes = await fetch('http://127.0.0.1:9270/json/new?http://127.0.0.1:8080/', { method: 'PUT' });
         const targetTab = await newTabRes.json();
         const ws = new WebSocket(targetTab.webSocketDebuggerUrl);
 
@@ -124,10 +133,10 @@ async function runComprehensiveVerification() {
                                           wInput?.classList.contains('pac-target-input')),
                 enterKeyProtectedCount: defaultPreventedCount,
                 obsoleteContainersHidden: (
-                    window.getComputedStyle(document.getElementById('city-search-results')).display === 'none' &&
-                    window.getComputedStyle(document.getElementById('place-search-results')).display === 'none' &&
-                    window.getComputedStyle(document.getElementById('hotel-address-results')).display === 'none' &&
-                    window.getComputedStyle(document.getElementById('wishlist-search-results')).display === 'none'
+                    (!document.getElementById('city-search-results') || window.getComputedStyle(document.getElementById('city-search-results')).display === 'none') &&
+                    (!document.getElementById('place-search-results') || window.getComputedStyle(document.getElementById('place-search-results')).display === 'none') &&
+                    (!document.getElementById('hotel-address-results') || window.getComputedStyle(document.getElementById('hotel-address-results')).display === 'none') &&
+                    (!document.getElementById('wishlist-search-results') || window.getComputedStyle(document.getElementById('wishlist-search-results')).display === 'none')
                 )
             };
         })()`);

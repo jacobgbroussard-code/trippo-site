@@ -402,6 +402,9 @@ export function getPlaceModeStyle(mode) {
     }
 }
 
+export let activeSegmentPopupPlaceId = null;
+export let activeSegmentPopupLatLng = null;
+
 export function getSegmentPopupHTML(fromPlace, toPlace, fromIdx, toIdx, currentMode) {
     const safePlaceId = escapeJS(toPlace.id || toPlace.name);
     const distKm = getDistance(fromPlace.lat, fromPlace.lon, toPlace.lat, toPlace.lon);
@@ -410,43 +413,37 @@ export function getSegmentPopupHTML(fromPlace, toPlace, fromIdx, toIdx, currentM
         text: `${distKm.toFixed(1)} km`,
         mode: currentMode
     };
+    const modeLabel = currentMode === 'walking' ? 'Walk' : (currentMode === 'driving' ? 'Drive' : 'Transit');
 
     return `
-    <div class="map-segment-popup" style="min-width: 205px; padding: 4px 2px; font-family: inherit;">
-        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #8fa09c; font-weight: 700; margin-bottom: 3px;">
-            Leg ${fromIdx + 1} ➔ ${toIdx + 1}
-        </div>
-        <div style="font-weight: 700; font-size: 13px; color: #1d2b29; margin-bottom: 8px; line-height: 1.3;">
-            ${escapeHTML(fromPlace.name)} ➔ ${escapeHTML(toPlace.name)}
-        </div>
-        <div style="display: flex; gap: 4px; background: #eef5f3; padding: 3px; border-radius: 12px; margin-bottom: 8px;">
-            <button type="button" class="segment-mode-btn ${currentMode === 'walking' ? 'active' : ''}" 
+    <div class="map-segment-popup">
+        <div class="map-segment-header">Leg ${fromIdx + 1} ➔ ${toIdx + 1}</div>
+        <div class="map-segment-title">${escapeHTML(fromPlace.name)} ➔ ${escapeHTML(toPlace.name)}</div>
+        <div class="map-segment-chips">
+            <button type="button" class="segment-mode-btn mode-walk ${currentMode === 'walking' ? 'active' : ''}" 
                 onclick="window.setPlaceTransitMode('${safePlaceId}', 'walking')" 
-                style="flex: 1; border: none; background: ${currentMode === 'walking' ? '#124b43' : 'transparent'}; color: ${currentMode === 'walking' ? '#fff' : '#124b43'}; font-weight: 700; font-size: 11px; padding: 5px 3px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px;"
-                title="Walking">
+                title="Walking directions">
                 🚶 Walk
             </button>
-            <button type="button" class="segment-mode-btn ${currentMode === 'driving' ? 'active' : ''}" 
+            <button type="button" class="segment-mode-btn mode-drive ${currentMode === 'driving' ? 'active' : ''}" 
                 onclick="window.setPlaceTransitMode('${safePlaceId}', 'driving')" 
-                style="flex: 1; border: none; background: ${currentMode === 'driving' ? '#2563eb' : 'transparent'}; color: ${currentMode === 'driving' ? '#fff' : '#124b43'}; font-weight: 700; font-size: 11px; padding: 5px 3px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px;"
-                title="Driving">
+                title="Driving directions">
                 🚗 Drive
             </button>
-            <button type="button" class="segment-mode-btn ${currentMode === 'transit' ? 'active' : ''}" 
+            <button type="button" class="segment-mode-btn mode-transit ${currentMode === 'transit' ? 'active' : ''}" 
                 onclick="window.setPlaceTransitMode('${safePlaceId}', 'transit')" 
-                style="flex: 1; border: none; background: ${currentMode === 'transit' ? '#8b5cf6' : 'transparent'}; color: ${currentMode === 'transit' ? '#fff' : '#124b43'}; font-weight: 700; font-size: 11px; padding: 5px 3px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px;"
-                title="Transit / Train">
+                title="Transit / Train directions">
                 🚆 Transit
             </button>
         </div>
-        <div style="font-size: 12px; font-weight: 700; color: #124b43; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; background: rgba(18, 75, 67, 0.06); padding: 5px 8px; border-radius: 8px;">
+        <div class="map-segment-estimate">
             <span style="font-size: 14px;">${transit.icon}</span>
             <span>${transit.text}</span>
         </div>
-        <button type="button" 
+        <button type="button" class="map-segment-gmaps-btn"
             onclick="window.openDirectionsLink(${fromPlace.lat}, ${fromPlace.lon}, ${toPlace.lat}, ${toPlace.lon}, '${currentMode}')" 
-            style="width: 100%; padding: 7px 10px; background: #124b43; color: white; border: none; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            <span>Open in Google Maps (${currentMode})</span>
+            title="Open in Google Maps (${modeLabel})">
+            <span>Open in Google Maps (${modeLabel})</span>
             <span style="font-size: 12px;">↗</span>
         </button>
     </div>`;
@@ -454,6 +451,10 @@ export function getSegmentPopupHTML(fromPlace, toPlace, fromIdx, toIdx, currentM
 
 export async function drawPlacesMapRoute(dayPlaces) {
     if (!placesMap) return;
+
+    const preservePopupPlaceId = activeSegmentPopupPlaceId;
+    const preservePopupLatLng = activeSegmentPopupLatLng;
+
     cMarkers.forEach(m => placesMap.removeLayer(m));
     cLines.forEach(p => placesMap.removeLayer(p));
     cMarkers = [];
@@ -512,6 +513,18 @@ export async function drawPlacesMapRoute(dayPlaces) {
             }).addTo(placesMap);
 
             segmentLayer.bindPopup(popupHTML);
+            segmentLayer.on('popupopen', function (e) {
+                activeSegmentPopupPlaceId = toPlace.id || toPlace.name;
+                activeSegmentPopupLatLng = e.popup.getLatLng();
+            });
+            segmentLayer.on('popupclose', function () {
+                setTimeout(() => {
+                    if (!placesMap || !placesMap._popup) {
+                        activeSegmentPopupPlaceId = null;
+                        activeSegmentPopupLatLng = null;
+                    }
+                }, 180);
+            });
             segmentLayer.on('mouseover', function () {
                 this.setStyle({ weight: modeStyle.weight + 2, opacity: 1 });
             });
@@ -531,14 +544,31 @@ export async function drawPlacesMapRoute(dayPlaces) {
             });
             const badgeMarker = L.marker([midLat, midLon], { icon: badgeIcon, zIndexOffset: 750 }).addTo(placesMap);
             badgeMarker.bindPopup(popupHTML);
+            badgeMarker.on('popupopen', function (e) {
+                activeSegmentPopupPlaceId = toPlace.id || toPlace.name;
+                activeSegmentPopupLatLng = e.popup.getLatLng();
+            });
+            badgeMarker.on('popupclose', function () {
+                setTimeout(() => {
+                    if (!placesMap || !placesMap._popup) {
+                        activeSegmentPopupPlaceId = null;
+                        activeSegmentPopupLatLng = null;
+                    }
+                }, 180);
+            });
             cMarkers.push(badgeMarker);
+
+            // Restore popup if user was viewing this segment when mode switched
+            if (preservePopupPlaceId && (toPlace.id === preservePopupPlaceId || toPlace.name === preservePopupPlaceId) && preservePopupLatLng) {
+                segmentLayer.openPopup(preservePopupLatLng);
+            }
 
             // 3. Asynchronously fetch detailed road geometry for walking and driving
             if (currentMode === 'walking' || currentMode === 'driving') {
                 const osrmProfile = currentMode === 'walking' ? 'walking' : 'driving';
                 const coords = `${fromPlace.lon.toFixed(5)},${fromPlace.lat.toFixed(5)};${toPlace.lon.toFixed(5)},${toPlace.lat.toFixed(5)}`;
 
-                (async (capturedLayer, segToken) => {
+                (async (capturedLayer, segToken, targetToPlace) => {
                     try {
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 1800);
@@ -550,6 +580,9 @@ export async function drawPlacesMapRoute(dayPlaces) {
                         if (activeRouteToken !== segToken) return;
 
                         if (data.routes && data.routes[0] && data.routes[0].geometry) {
+                            const isCapturedPopupOpen = placesMap && placesMap.hasLayer(capturedLayer) && capturedLayer.isPopupOpen && capturedLayer.isPopupOpen();
+                            const currentPopupLatLng = (isCapturedPopupOpen && placesMap._popup) ? placesMap._popup.getLatLng() : null;
+
                             if (placesMap && placesMap.hasLayer(capturedLayer)) {
                                 placesMap.removeLayer(capturedLayer);
                                 const idx = cLines.indexOf(capturedLayer);
@@ -564,6 +597,18 @@ export async function drawPlacesMapRoute(dayPlaces) {
                                 }
                             }).addTo(placesMap);
                             osrmLayer.bindPopup(popupHTML);
+                            osrmLayer.on('popupopen', function (e) {
+                                activeSegmentPopupPlaceId = targetToPlace.id || targetToPlace.name;
+                                activeSegmentPopupLatLng = e.popup.getLatLng();
+                            });
+                            osrmLayer.on('popupclose', function () {
+                                setTimeout(() => {
+                                    if (!placesMap || !placesMap._popup) {
+                                        activeSegmentPopupPlaceId = null;
+                                        activeSegmentPopupLatLng = null;
+                                    }
+                                }, 180);
+                            });
                             osrmLayer.on('mouseover', function () {
                                 this.setStyle({ weight: modeStyle.weight + 2, opacity: 1 });
                             });
@@ -571,11 +616,15 @@ export async function drawPlacesMapRoute(dayPlaces) {
                                 this.setStyle({ weight: modeStyle.weight, opacity: modeStyle.opacity });
                             });
                             cLines.push(osrmLayer);
+
+                            if (isCapturedPopupOpen && currentPopupLatLng) {
+                                osrmLayer.openPopup(currentPopupLatLng);
+                            }
                         }
                     } catch (e) {
                         // Gracefully retain straight polyline if network fails or times out
                     }
-                })(segmentLayer, currentToken);
+                })(segmentLayer, currentToken, toPlace);
             }
         }
     }

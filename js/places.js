@@ -27,6 +27,7 @@ import {
     escapeJS,
     wishlistPins,
     getCategoryVisuals,
+    getDistance,
     calculateTransitEstimate,
     openDirectionsLink
 } from './state.js';
@@ -212,8 +213,9 @@ export { calculateTransitEstimate, openDirectionsLink };
 export function setPlaceTransitMode(placeId, mode) {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip || !Array.isArray(trip.places)) return;
-    const place = trip.places.find(p => (p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex) && (String(p.id) === String(placeId) || p.name === placeId))
-        || trip.places.find(p => String(p.id) === String(placeId) || p.name === placeId);
+    const normalizedId = String(placeId).replace(/\u2019/g, "'");
+    const place = trip.places.find(p => (p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex) && (String(p.id) === String(placeId) || p.name === placeId || p.name === normalizedId))
+        || trip.places.find(p => String(p.id) === String(placeId) || p.name === placeId || p.name === normalizedId);
     if (place) {
         place.transitMode = mode;
         saveTrips();
@@ -227,6 +229,17 @@ export function renderCityPlaces() {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip) return;
     if (!Array.isArray(trip.places)) trip.places = [];
+
+    // Ensure all places have stable unique IDs
+    let hasGeneratedId = false;
+    trip.places.forEach((p, idx) => {
+        if (!p.id) {
+            p.id = `poi_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`;
+            hasGeneratedId = true;
+        }
+    });
+    if (hasGeneratedId) saveTrips();
+
     const container = document.getElementById('saved-places-container');
     if (!container) return;
 
@@ -323,13 +336,6 @@ export function renderCityPlaces() {
         });
     }
     drawPlacesMapRoute(dayPlaces);
-}
-
-function getDistance(lat1, lon1, lat2, lon2) {
-    const p = 0.017453292519943295;
-    const c = Math.cos;
-    const a = 0.5 - c((lat2 - lat1) * p) / 2 + c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-    return 12742 * Math.asin(Math.sqrt(a));
 }
 
 export function optimizeCityRoute() {
@@ -623,7 +629,8 @@ export function saveNewPlaceToTrip() {
 export function openEditPlaceModal(placeIdentifier) {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip || !Array.isArray(trip.places)) return;
-    const place = trip.places.find(p => (String(p.id) === String(placeIdentifier) || p.name === placeIdentifier));
+    const normalized = String(placeIdentifier).replace(/\u2019/g, "'");
+    const place = trip.places.find(p => (String(p.id) === String(placeIdentifier) || p.name === placeIdentifier || p.name === normalized));
     if (!place) return;
     setActiveEditPlaceId(place.id || place.name);
 

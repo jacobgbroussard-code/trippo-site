@@ -305,8 +305,13 @@ export function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 export function calculateTransitEstimate(lat1, lon1, lat2, lon2, preferredMode = null) {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-    const distKm = getDistance(lat1, lon1, lat2, lon2);
+    if (lat1 === undefined || lat1 === null || lon1 === undefined || lon1 === null ||
+        lat2 === undefined || lat2 === null || lon2 === undefined || lon2 === null) return null;
+    const nLat1 = Number(lat1), nLon1 = Number(lon1), nLat2 = Number(lat2), nLon2 = Number(lon2);
+    if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return null;
+    if ((nLat1 === 0 && nLon1 === 0) || (nLat2 === 0 && nLon2 === 0)) return null;
+
+    const distKm = getDistance(nLat1, nLon1, nLat2, nLon2);
     if (isNaN(distKm) || distKm < 0.05) return null; // Under 50m, virtually same location
 
     let mode = preferredMode;
@@ -358,6 +363,8 @@ export function calculateTransitEstimate(lat1, lon1, lat2, lon2, preferredMode =
 }
 
 export function openDirectionsLink(lat1, lon1, lat2, lon2, mode = 'walking') {
+    if (lat1 === undefined || lat1 === null || lon1 === undefined || lon1 === null ||
+        lat2 === undefined || lat2 === null || lon2 === undefined || lon2 === null) return;
     const validModes = ['walking', 'driving', 'transit'];
     const travelmode = validModes.includes(mode) ? mode : 'walking';
     const url = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=${travelmode}`;
