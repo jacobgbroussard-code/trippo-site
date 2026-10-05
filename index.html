@@ -391,12 +391,20 @@
                 <span>▲ Show Itinerary (<span id="planner-collapsed-trip-info">Trip Route</span>)</span>
                 <span style="font-size: 12px; color: var(--text-muted, #71837f);">Open List ›</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                 <div>
-                    <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block;">Trip Route</h2>
-                    <button onclick="exportTripICS()" style="background:var(--primary-light); border:none; border-radius:8px; padding:4px 10px; margin-left:10px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📅 Export .ics</button>
-                    <button onclick="document.getElementById('import-file-input').click()" style="background:var(--primary-light); border:none; border-radius:8px; padding:4px 10px; margin-left:10px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📥 Import</button>
-                    <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block; cursor:pointer;" onclick="openEditTripModal()" title="Click to edit trip details">Trip Route</h2>
+                        <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates">✏️</button>
+                    </div>
+                    <div style="margin-top: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button id="planner-date-chip" onclick="openEditTripModal()" class="planner-date-chip" title="Click to set or change trip departure date">
+                            <span id="planner-date-chip-text">📅 Set Start Date</span>
+                        </button>
+                        <button onclick="exportTripICS()" style="background:var(--primary-light); border:none; border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);" title="Export to Apple/Google Calendar">📅 .ics</button>
+                        <button onclick="document.getElementById('import-file-input').click()" style="background:var(--primary-light); border:none; border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);" title="Import route or stops">📥 Import</button>
+                        <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
+                    </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <strong id="total-nights" style="color: var(--primary);">0 Nights</strong>
@@ -910,14 +918,41 @@
                 <input type="text" id="new-trip-name" class="form-control" placeholder="e.g. European Explorer">
             </div>
             <div class="form-group">
-                <label>Start Date</label>
-                <input type="text" id="new-trip-date" class="form-control date-picker" placeholder="Select departure date">
+                <label>Start Date <span style="font-size: 11px; font-weight: normal; color: var(--text-muted, #8fa39f);">(Optional – choose later anytime)</span></label>
+                <input type="text" id="new-trip-date" class="form-control date-picker" placeholder="Select departure date (optional)">
             </div>
             <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="new-trip-roundtrip" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
                 <label for="new-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);">🔁 Round-Trip Itinerary</label>
             </div>
             <button class="save-btn" onclick="saveNewTrip()">Create Itinerary</button>
+        </div>
+    </div>
+
+    <!-- Edit Trip Modal -->
+    <div id="edit-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'edit-trip-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('edit-trip-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">Trip Details & Dates</h2>
+            <div class="form-group">
+                <label>Trip Name</label>
+                <input type="text" id="edit-trip-name" class="form-control" placeholder="e.g. European Explorer">
+            </div>
+            <div class="form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <label style="margin:0;">Start Date <span style="font-size: 11px; font-weight: normal; color: var(--text-muted, #8fa39f);">(Optional)</span></label>
+                    <button type="button" onclick="clearEditTripDate()" style="background:none; border:none; color:var(--accent, #e11d48); font-size:12px; font-weight:600; cursor:pointer; padding:0; text-decoration:underline;">Clear Date (TBD)</button>
+                </div>
+                <input type="text" id="edit-trip-date" class="form-control date-picker" placeholder="Select departure date or leave blank">
+            </div>
+            <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="edit-trip-roundtrip" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                <label for="edit-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);">🔁 Round-Trip Itinerary</label>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="save-btn" onclick="saveEditedTrip()" style="flex:1;">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('edit-trip-modal')" style="background:var(--border-subtle, #e2e8f0); color:var(--text, #1e293b); border:none; border-radius:10px; padding:10px 16px; font-weight:600; cursor:pointer;">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -1216,6 +1251,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.70"></script>
+    <script type="module" src="js/app.js?v=2.3.71"></script>
 </body>
 </html>

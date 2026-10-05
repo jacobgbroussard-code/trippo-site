@@ -73,7 +73,8 @@ export function renderBookingsList() {
         return;
     }
 
-    let currentDate = parseLocalDate(trip.startDate);
+    const hasDate = Boolean(trip.startDate && trip.startDate.trim());
+    let currentDate = hasDate ? parseLocalDate(trip.startDate) : new Date();
     let html = '';
 
     if (!Array.isArray(trip.stops)) trip.stops = [];
@@ -115,6 +116,9 @@ export function renderBookingsList() {
         }
 
         const hotelInfo = getHotelPricingInsights(safeStopName, inStr, outStr);
+        const dateSubStr = hasDate
+            ? `${checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} nights`
+            : `Dates TBD • ${stop.nights} nights`;
 
         html += `
         <div style="background: var(--card-bg); border-radius: 18px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
@@ -122,7 +126,7 @@ export function renderBookingsList() {
                 <h4 style="margin: 0; font-size: 18px; font-weight:700;">Stay in ${safeStopName}</h4>
                 <span class="flight-deal-price-badge" style="font-size:11px;" title="Estimated nightly hotel rate">Est. ${hotelInfo.estimatedNightly}/nt</span>
             </div>
-            <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 16px;">${checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} nights</span>
+            <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 16px;">${dateSubStr}</span>
             
             ${lodgingCardHTML}
 
@@ -169,7 +173,8 @@ export function openLodgingModal(index) {
     setActiveLodgingStopIndex(index);
     const stop = trip.stops[index];
 
-    let checkInDate = parseLocalDate(trip.startDate);
+    const hasDate = Boolean(trip.startDate && trip.startDate.trim());
+    let checkInDate = hasDate ? parseLocalDate(trip.startDate) : new Date();
     for (let i = 0; i < index; i++) checkInDate.setDate(checkInDate.getDate() + (Number(trip.stops[i].nights) || 0));
     let checkOutDate = new Date(checkInDate);
     checkOutDate.setDate(checkOutDate.getDate() + (Number(stop.nights) || 0));
@@ -177,7 +182,11 @@ export function openLodgingModal(index) {
     const cityEl = document.getElementById('hotel-modal-city');
     const datesEl = document.getElementById('hotel-modal-dates');
     if (cityEl) cityEl.innerText = `${stop.name} Stay Details`;
-    if (datesEl) datesEl.innerText = `${checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} Nights`;
+    if (datesEl) {
+        datesEl.innerText = hasDate
+            ? `${checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} Nights`
+            : `Dates TBD • ${stop.nights} Nights`;
+    }
 
     const l = stop.lodging || { name: '', bookingNumber: '', address: '', checkInTime: '3:00 PM', url: '', notes: '', lat: stop.lat, lon: stop.lon };
 

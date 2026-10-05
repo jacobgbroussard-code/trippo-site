@@ -50,40 +50,51 @@ export function renderHome() {
 
     listEl.innerHTML = trips.map(trip => {
         const totalNights = trip.stops ? trip.stops.reduce((sum, stop) => sum + (Number(stop.nights) || 0), 0) : 0;
-        const sDate = parseLocalDate(trip.startDate);
+        const hasDate = Boolean(trip.startDate && trip.startDate.trim());
+        const sDate = hasDate ? parseLocalDate(trip.startDate) : null;
         const exampleBadge = trip.isExample ? `<span class="example-badge">Sample Trip</span>` : '';
         const safeName = escapeHTML(trip.name);
         const safeTripId = escapeJS(trip.id);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tripDate = new Date(sDate);
-        tripDate.setHours(0, 0, 0, 0);
-        const diffTime = tripDate.getTime() - today.getTime();
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
+        let dateDisplay = '';
         let countdownBadge = '';
-        if (diffDays > 1) {
-            countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs in ${diffDays} days</span>`;
-        } else if (diffDays === 1) {
-            countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs Tomorrow!</span>`;
-        } else if (diffDays === 0) {
-            countdownBadge = `<span class="trip-countdown-badge today">🎉 Departs Today!</span>`;
-        } else if (diffDays < 0 && Math.abs(diffDays) < (totalNights || 1)) {
-            countdownBadge = `<span class="trip-countdown-badge in-progress">📍 Day ${Math.abs(diffDays) + 1} of ${totalNights}</span>`;
-        } else if (totalNights > 0 && Math.abs(diffDays) >= totalNights) {
-            countdownBadge = `<span class="trip-countdown-badge completed">✨ Completed</span>`;
+
+        if (hasDate && sDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tripDate = new Date(sDate);
+            tripDate.setHours(0, 0, 0, 0);
+            const diffTime = tripDate.getTime() - today.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 1) {
+                countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs in ${diffDays} days</span>`;
+            } else if (diffDays === 1) {
+                countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs Tomorrow!</span>`;
+            } else if (diffDays === 0) {
+                countdownBadge = `<span class="trip-countdown-badge today">🎉 Departs Today!</span>`;
+            } else if (diffDays < 0 && Math.abs(diffDays) < (totalNights || 1)) {
+                countdownBadge = `<span class="trip-countdown-badge in-progress">📍 Day ${Math.abs(diffDays) + 1} of ${totalNights}</span>`;
+            } else if (totalNights > 0 && Math.abs(diffDays) >= totalNights) {
+                countdownBadge = `<span class="trip-countdown-badge completed">✨ Completed</span>`;
+            }
+
+            dateDisplay = `${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${totalNights} Nights`;
+        } else {
+            dateDisplay = `🗓️ Flexible Dates • ${totalNights} Nights`;
+            countdownBadge = `<span class="trip-countdown-badge tbd">🗓️ Dates TBD</span>`;
         }
 
         return `
         <div class="trip-card">
             <div class="trip-card-content" onclick="openTrip('${safeTripId}')">
                 <h3>${safeName} ${exampleBadge}</h3>
-                <p>${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${totalNights} Nights</p>
+                <p>${dateDisplay}</p>
                 ${countdownBadge ? `<div style="margin-top:2px;">${countdownBadge}</div>` : ''}
             </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <button onclick="promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete Trip">🗑️</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button onclick="event.stopPropagation(); openEditTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--primary);" title="Edit Trip Details & Dates">✏️</button>
+                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete Trip">🗑️</button>
                 <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${safeTripId}')">›</div>
             </div>
         </div>`;
@@ -111,15 +122,15 @@ export function saveNewTrip() {
     const nameEl = document.getElementById('new-trip-name');
     const dateEl = document.getElementById('new-trip-date');
     const name = nameEl ? nameEl.value.trim() : '';
-    const date = dateEl ? dateEl.value : '';
+    const date = dateEl ? dateEl.value.trim() : '';
 
-    if (name && date) {
+    if (name) {
         const roundTripEl = document.getElementById('new-trip-roundtrip');
         const isRoundTrip = roundTripEl ? roundTripEl.checked : false;
         const newTrip = {
             id: Date.now().toString(),
             name,
-            startDate: date,
+            startDate: date || '',
             isExample: false,
             isRoundTrip: isRoundTrip,
             stops: [],
@@ -138,8 +149,86 @@ export function saveNewTrip() {
         }
         openTrip(newTrip.id);
     } else {
-        showNotification("Please provide both trip name and start date.");
+        showNotification("Please provide a trip name.");
     }
+}
+
+let currentEditingTripId = null;
+
+export function openEditTripModal(tripId) {
+    const targetId = tripId || activeTripId;
+    const trip = trips.find(t => t.id === targetId) || getActiveTrip();
+    if (!trip) {
+        showNotification("No trip found to edit.");
+        return;
+    }
+
+    currentEditingTripId = trip.id;
+    const nameInput = document.getElementById('edit-trip-name');
+    if (nameInput) nameInput.value = trip.name || '';
+
+    const dateInput = document.getElementById('edit-trip-date');
+    if (dateInput) {
+        if (!dateInput._flatpickr && typeof window !== 'undefined' && window.initDatePickers) {
+            window.initDatePickers();
+        }
+        if (dateInput._flatpickr) {
+            if (trip.startDate) {
+                dateInput._flatpickr.setDate(trip.startDate, true);
+            } else {
+                dateInput._flatpickr.clear();
+            }
+        } else {
+            dateInput.value = trip.startDate || '';
+        }
+    }
+
+    const roundTripInput = document.getElementById('edit-trip-roundtrip');
+    if (roundTripInput) roundTripInput.checked = Boolean(trip.isRoundTrip);
+
+    const modal = document.getElementById('edit-trip-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+export function clearEditTripDate() {
+    const dateInput = document.getElementById('edit-trip-date');
+    if (dateInput) {
+        if (dateInput._flatpickr) dateInput._flatpickr.clear();
+        dateInput.value = '';
+    }
+    showNotification("Date cleared (Flexible / TBD). Tap 'Save Changes' to apply.");
+}
+
+export function saveEditedTrip() {
+    const trip = trips.find(t => t.id === currentEditingTripId) || getActiveTrip();
+    if (!trip) return;
+
+    const nameEl = document.getElementById('edit-trip-name');
+    const dateEl = document.getElementById('edit-trip-date');
+    const roundTripEl = document.getElementById('edit-trip-roundtrip');
+
+    const name = nameEl ? nameEl.value.trim() : '';
+    const date = dateEl ? dateEl.value.trim() : '';
+
+    if (!name) {
+        showNotification("Please provide a trip name.");
+        return;
+    }
+
+    trip.name = name;
+    trip.startDate = date || '';
+    if (roundTripEl) trip.isRoundTrip = roundTripEl.checked;
+
+    saveTrips();
+    closeModal('edit-trip-modal');
+
+    // Re-render UI
+    if (window.renderPlanner) window.renderPlanner();
+    renderHome();
+    if (window.renderBookings && document.getElementById('bookings-view')?.classList.contains('active')) {
+        window.renderBookings();
+    }
+    showNotification("Trip details saved!");
 }
 
 export function openTrip(id) {
@@ -874,6 +963,11 @@ export function exportTripToICS() {
         showNotification("Please select or create a trip with stops first.");
         return;
     }
+    if (!trip.startDate || !trip.startDate.trim()) {
+        showNotification("Please set a departure date to export calendar (.ics) events.");
+        openEditTripModal(trip.id);
+        return;
+    }
 
     const pad = (n) => String(n).padStart(2, '0');
     const formatICSDate = (d) => {
@@ -1016,8 +1110,9 @@ export function printPocketItinerary() {
     }
 
     const totalNights = trip.stops.reduce((sum, s) => sum + (Number(s.nights) || 0), 0);
-    const sDate = parseLocalDate(trip.startDate);
-    const dateRangeStr = sDate ? `${formatLocalDate(sDate)} (${totalNights} Nights)` : `${totalNights} Nights`;
+    const hasDate = Boolean(trip.startDate && trip.startDate.trim());
+    const sDate = hasDate ? parseLocalDate(trip.startDate) : null;
+    const dateRangeStr = (hasDate && sDate) ? `${formatLocalDate(sDate)} (${totalNights} Nights)` : `Flexible Dates • ${totalNights} Nights`;
 
     let html = `
         <div class="print-itinerary-sheet">
@@ -1044,20 +1139,29 @@ export function printPocketItinerary() {
     `;
 
     // DAY-BY-DAY / STOP BREAKDOWN
-    let runningDate = parseLocalDate(trip.startDate) || new Date();
+    let runningDate = (hasDate && sDate) ? new Date(sDate) : null;
+    let runningDay = 1;
     html += `<h3 style="margin:20px 0 10px 0; font-size:15px; color:#124b43; border-bottom:1.5px solid #e5e7eb; padding-bottom:6px;">📍 Stops & Itinerary Details</h3>`;
 
     trip.stops.forEach((stop, sIdx) => {
         const nights = Number(stop.nights) || 1;
-        const stopStartDate = new Date(runningDate);
-        const stopEndDate = new Date(runningDate);
-        stopEndDate.setDate(stopEndDate.getDate() + nights);
+        let dateSnippet = '';
+        if (runningDate) {
+            const stopStartDate = new Date(runningDate);
+            const stopEndDate = new Date(runningDate);
+            stopEndDate.setDate(stopEndDate.getDate() + nights);
+            dateSnippet = `${formatLocalDate(stopStartDate)} – ${formatLocalDate(stopEndDate)} (${nights} Night${nights > 1 ? 's' : ''})`;
+            runningDate = stopEndDate;
+        } else {
+            dateSnippet = (nights <= 1) ? `Day ${runningDay} (${nights} Night)` : `Days ${runningDay}–${runningDay + nights} (${nights} Nights)`;
+            runningDay += nights;
+        }
 
         html += `
             <div class="print-card">
                 <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
                     <h4 style="margin:0; font-size:15px; color:#111827;">Stop ${sIdx + 1}: <strong>${escapeHTML(stop.name)}</strong></h4>
-                    <span style="font-size:12px; font-weight:600; color:#4b5563;">${formatLocalDate(stopStartDate)} – ${formatLocalDate(stopEndDate)} (${nights} Night${nights > 1 ? 's' : ''})</span>
+                    <span style="font-size:12px; font-weight:600; color:#4b5563;">${dateSnippet}</span>
                 </div>
         `;
 
@@ -1152,6 +1256,9 @@ if (typeof window !== 'undefined') {
     window.openEsimModal = openEsimModal;
     window.openCurrencyModal = openCurrencyModal;
     window.convertCurrency = convertCurrency;
+    window.openEditTripModal = openEditTripModal;
+    window.clearEditTripDate = clearEditTripDate;
+    window.saveEditedTrip = saveEditedTrip;
 }
 
 /* ==========================================================================

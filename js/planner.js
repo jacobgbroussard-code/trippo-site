@@ -28,12 +28,29 @@ export function renderPlanner() {
     const titleEl = document.getElementById('planner-trip-title');
     if (titleEl) titleEl.innerText = trip.name;
 
+    const hasDate = Boolean(trip.startDate && trip.startDate.trim());
+    const dateChip = document.getElementById('planner-date-chip');
+    const dateChipText = document.getElementById('planner-date-chip-text');
+    if (dateChip && dateChipText) {
+        if (hasDate) {
+            const sDate = parseLocalDate(trip.startDate);
+            dateChipText.innerText = `📅 Departs ${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            dateChip.classList.remove('tbd');
+            dateChip.title = "Departure date set. Click to change or clear.";
+        } else {
+            dateChipText.innerText = `🗓️ Dates TBD • Set start date`;
+            dateChip.classList.add('tbd');
+            dateChip.title = "No departure date set. Click to set a date.";
+        }
+    }
+
     const list = document.getElementById('itinerary-list');
     if (!list) return;
     list.innerHTML = '';
 
     let totalNights = 0;
-    let currentD = parseLocalDate(trip.startDate);
+    let currentD = hasDate ? parseLocalDate(trip.startDate) : null;
+    let runningDay = 1;
 
     if (!Array.isArray(trip.stops)) trip.stops = [];
 
@@ -44,16 +61,32 @@ export function renderPlanner() {
         if (stop.transit === undefined) stop.transit = null;
         if (stop.lodging === undefined) stop.lodging = null;
 
-        const arr = new Date(currentD);
-        currentD.setDate(currentD.getDate() + (Number(stop.nights) || 0));
-        const dep = new Date(currentD);
+        const nights = Number(stop.nights) || 0;
+        let dateSubtitle = '';
+        let notesDateParam = '';
+
+        if (hasDate && currentD) {
+            const arr = new Date(currentD);
+            currentD.setDate(currentD.getDate() + nights);
+            const dep = new Date(currentD);
+            dateSubtitle = `${arr.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${dep.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            notesDateParam = formatLocalDate(arr);
+        } else {
+            if (nights <= 1) {
+                dateSubtitle = `Day ${runningDay} (${nights} Night)`;
+            } else {
+                dateSubtitle = `Days ${runningDay}–${runningDay + nights} (${nights} Nights)`;
+            }
+            runningDay += nights;
+            notesDateParam = '';
+        }
 
         list.innerHTML += `
             <div class="stop-card ${stop.locked ? 'is-locked' : ''}">
                 <div class="drag-handle" title="${stop.locked ? 'Stop locked in place' : 'Drag to reorder'}">≡</div>
-                <div style="flex-grow:1; cursor:pointer;" onclick="openDailyNotes(${index}, '${formatLocalDate(arr)}')">
+                <div style="flex-grow:1; cursor:pointer;" onclick="openDailyNotes(${index}, '${notesDateParam}')">
                     <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${escapeHTML(stop.name)} ${stop.locked ? '<span style="font-size:12px; vertical-align:middle;" title="Locked in place">🔒</span>' : ''}</h3>
-                    <p style="margin: 0; font-size: 12px; color: #728481;">${arr.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${dep.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                    <p style="margin: 0; font-size: 12px; color: #728481;">${dateSubtitle}</p>
                     <div id="stop-weather-${index}" class="stop-weather-chip" style="display:none;"></div>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
@@ -67,7 +100,7 @@ export function renderPlanner() {
                     <button onclick="deleteStop(${index})" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; color:var(--accent);" title="Delete Stop">🗑</button>
                 </div>
             </div>`;
-        totalNights += Number(stop.nights) || 0;
+        totalNights += nights;
     });
 
     // Asynchronously load weather for stops
@@ -387,6 +420,11 @@ export function exportTripICS() {
     const trip = getActiveTrip();
     if (!trip || !trip.stops || trip.stops.length === 0) {
         showNotification("No stops to export.");
+        return;
+    }
+    if (!trip.startDate || !trip.startDate.trim()) {
+        showNotification("Please set a departure date to export calendar (.ics) events.");
+        if (window.openEditTripModal) window.openEditTripModal(trip.id);
         return;
     }
     let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Trippo App//EN\n";

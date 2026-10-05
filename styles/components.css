@@ -455,6 +455,12 @@ body.dark-mode .flight-hub-tab-btn.active {
     color: #71837f;
 }
 
+.trip-countdown-badge.tbd {
+    background: rgba(100, 116, 139, 0.08);
+    color: var(--text-muted, #64748b);
+    border: 1px dashed rgba(100, 116, 139, 0.3);
+}
+
 body.dark-mode .trip-countdown-badge.upcoming {
     background: rgba(46, 204, 113, 0.15);
     color: #2ecc71;
@@ -464,6 +470,69 @@ body.dark-mode .trip-countdown-badge.upcoming {
 body.dark-mode .trip-countdown-badge.in-progress {
     background: rgba(243, 156, 18, 0.2);
     color: #f39c12;
+}
+
+body.dark-mode .trip-countdown-badge.tbd {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.25);
+}
+
+/* Interactive Planner Date Chip */
+.planner-date-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-light, #eef7f5);
+    color: var(--primary, #124b43);
+    border: 1px solid var(--border-subtle, #dce8e5);
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.planner-date-chip:hover {
+    background: var(--primary, #124b43);
+    color: #ffffff;
+    border-color: var(--primary, #124b43);
+}
+
+.planner-date-chip.tbd {
+    background: rgba(100, 116, 139, 0.08);
+    color: var(--text-muted, #64748b);
+    border: 1px dashed rgba(100, 116, 139, 0.3);
+}
+
+.planner-date-chip.tbd:hover {
+    background: var(--primary-light, #eef7f5);
+    color: var(--primary, #124b43);
+    border-color: var(--primary, #124b43);
+}
+
+body.dark-mode .planner-date-chip {
+    background: rgba(46, 204, 113, 0.12);
+    color: #2ecc71;
+    border-color: rgba(46, 204, 113, 0.25);
+}
+
+body.dark-mode .planner-date-chip:hover {
+    background: #2ecc71;
+    color: #0b1a17;
+}
+
+body.dark-mode .planner-date-chip.tbd {
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.25);
+}
+
+body.dark-mode .planner-date-chip.tbd:hover {
+    background: rgba(46, 204, 113, 0.18);
+    color: #2ecc71;
+    border-color: #2ecc71;
 }
 
 @keyframes pulseBadge {

@@ -744,17 +744,21 @@ export function openDailyNotes(index, startDateStr) {
     if (titleEl) titleEl.innerText = `${stop.name} Planner`;
 
     let html = '';
-    let currentD = parseLocalDate(startDateStr);
+    const hasDate = Boolean(startDateStr && startDateStr.trim());
+    let currentD = hasDate ? parseLocalDate(startDateStr) : null;
     const displayDays = Math.max(1, Number(stop.nights) || 1);
     if (!Array.isArray(stop.notes)) stop.notes = [];
 
     for (let i = 0; i < displayDays; i++) {
+        const dayLabel = (hasDate && currentD)
+            ? `Day ${i + 1} • ${currentD.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+            : `Day ${i + 1}`;
         html += `
         <div class="form-group" style="margin-bottom: 18px;">
-            <label style="color:var(--primary);">Day ${i + 1} • ${currentD.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</label>
-            <textarea id="note-day-${i}" class="form-control" placeholder="What's planned for today in ${escapeHTML(stop.name)}?">${escapeHTML(stop.notes[i] || '')}</textarea>
+            <label style="color:var(--primary);">${dayLabel}</label>
+            <textarea id="note-day-${i}" class="form-control" placeholder="What's planned for Day ${i + 1} in ${escapeHTML(stop.name)}?">${escapeHTML(stop.notes[i] || '')}</textarea>
         </div>`;
-        currentD.setDate(currentD.getDate() + 1);
+        if (currentD) currentD.setDate(currentD.getDate() + 1);
     }
     const container = document.getElementById('daily-notes-container');
     if (container) container.innerHTML = html;
