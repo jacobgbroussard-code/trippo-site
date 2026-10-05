@@ -1121,7 +1121,7 @@ if (typeof window !== 'undefined') {
    EXPLORE EVERYWHERE & ROUTE HUB (SIDEBAR FLIGHT TOOL)
    ========================================================================== */
 export const FLIGHT_HUB_DEFAULT_AIRPORT = 'LFT';
-export const FLIGHT_HUB_AFFILIATE_MARKER = '785709';
+export const FLIGHT_HUB_AFFILIATE_MARKER = '581802';
 
 export function getFlightHubOrigin() {
     let stored = null;
