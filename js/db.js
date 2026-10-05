@@ -43,10 +43,11 @@ export function updateAuthUI(user) {
     const userEmailEl = document.getElementById('sidebar-user-email');
 
     if (user) {
-        if (statusBadge) statusBadge.innerHTML = `☁️ Synced (${user.email.split('@')[0]})`;
+        const displayName = user.user_metadata?.full_name || user.user_metadata?.name || (user.email ? user.email.split('@')[0] : 'User');
+        if (statusBadge) statusBadge.innerHTML = `☁️ Synced (${escapeHTML(displayName)})`;
         if (inView) inView.style.display = 'block';
         if (outView) outView.style.display = 'none';
-        if (userEmailEl) userEmailEl.innerText = user.email;
+        if (userEmailEl) userEmailEl.innerText = user.email || displayName;
     } else {
         if (statusBadge) statusBadge.innerHTML = `☁️ Cloud Sync`;
         if (inView) inView.style.display = 'none';
@@ -142,6 +143,29 @@ export async function handleMagicLinkSignIn() {
     } else {
         showNotification("Check your inbox for your login link!");
         toggleSidebar(false);
+    }
+}
+
+export async function handleGoogleSignIn() {
+    const client = getSupabase();
+    if (!client) {
+        showNotification("Connecting to cloud... check your connection.");
+        return;
+    }
+    try {
+        const redirectUrl = window.location.origin + window.location.pathname;
+        const { error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: redirectUrl
+            }
+        });
+        if (error) {
+            showNotification("Google Sign-In: " + error.message);
+        }
+    } catch (e) {
+        console.error("Google Sign-In failed:", e);
+        showNotification("Could not initiate Google Sign-In.");
     }
 }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.65</title>
+    <title>Trippo Travel Planner v2.3.66</title>
     <!-- Live deployment: https://jacobgbroussard-code.github.io/trippo-site/ -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -12,19 +12,19 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.65">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.65">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.65">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.65">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.65">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.66">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.66">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.66">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.66">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.66">
 
     <!-- Leaflet & Vendor Styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.65">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.65">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.66">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.66">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -195,6 +195,21 @@
         </div>
 
         <div id="sidebar-auth-form">
+            <button class="google-signin-btn" onclick="handleGoogleSignIn()">
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    <path fill="none" d="M0 0h48v48H0z"/>
+                </svg>
+                <span>Continue with Google</span>
+            </button>
+            <div style="display:flex; align-items:center; text-align:center; margin:12px 0 14px 0; color:var(--text-light); font-size:11px; font-weight:600;">
+                <div style="flex:1; border-bottom:1px solid var(--border-subtle);"></div>
+                <span style="padding:0 8px; text-transform:uppercase; letter-spacing:0.5px;">or</span>
+                <div style="flex:1; border-bottom:1px solid var(--border-subtle);"></div>
+            </div>
             <div class="form-group" style="margin-bottom:10px;">
                 <label style="font-size:10px;">Email</label>
                 <input type="email" id="sidebar-email-input" class="form-control" style="padding:10px; font-size:13px;" placeholder="name@example.com">
@@ -216,7 +231,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.65</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.66</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -914,6 +929,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.65"></script>
+    <script type="module" src="js/app.js?v=2.3.66"></script>
 </body>
 </html>

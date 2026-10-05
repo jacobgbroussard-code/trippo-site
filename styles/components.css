@@ -71,6 +71,48 @@
     transform: scale(0.98);
 }
 
+.google-signin-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08);
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+}
+
+.google-signin-btn:hover {
+    background: #f8fafd;
+    border-color: #c2c7d0;
+    box-shadow: 0 2px 6px rgba(60, 64, 67, 0.15);
+    transform: translateY(-1px);
+}
+
+.google-signin-btn:active {
+    transform: scale(0.99);
+}
+
+[data-theme="dark"] .google-signin-btn {
+    background: #1e2927;
+    color: #e2e8f0;
+    border-color: #334743;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .google-signin-btn:hover {
+    background: #253331;
+    border-color: #445e58;
+}
+
 /* --- BOTTOM APP NAVIGATION BAR --- */
 .bottom-nav {
     position: fixed;

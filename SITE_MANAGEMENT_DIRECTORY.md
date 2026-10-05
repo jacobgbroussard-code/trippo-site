@@ -1,6 +1,6 @@
 # 🌐 Trippo Site & Infrastructure Management Directory
 > **Website:** [trippo.top](https://trippo.top/)  
-> **Last Updated:** October 2026 (v2.3.65)  
+> **Last Updated:** October 2026 (v2.3.66)  
 > **Spreadsheet Export:** A companion spreadsheet [`site-credentials-and-services.csv`](file:///c:/Users/Jacob/Desktop/trippo-site/site-credentials-and-services.csv) is available in the root folder to open directly in Microsoft Excel or Google Sheets.
 
 ---
@@ -12,6 +12,7 @@
 | **Domain & DNS** | **Spaceship** | [spaceship.com](https://www.spaceship.com/) | `trippo.top` | NS: `launch1.spaceship.net`<br>NS: `launch2.spaceship.net` | Domain registration, DNS A records (pointing to GitHub), WWW CNAME | ~$1.50 - $3.00/yr |
 | **Web Hosting & CI/CD** | **GitHub Pages** | [GitHub Pages Settings](https://github.com/jacobgbroussard-code/trippo-site/settings/pages) | `jacobgbroussard-code`<br>Repo: `trippo-site` | Automatic builds from `main` branch | Serves the live web app, automated SSL certificate, PWA caching | **Free** |
 | **Database & Cloud Sync** | **Supabase** | [Supabase Project Dashboard](https://supabase.com/dashboard/project/lbmxfczgvtznhfhzogla) | Ref: `lbmxfczgvtznhfhzogla` | `SUPABASE_ANON_KEY`<br>*(stored in `js/db.js`)* | User logins, cross-device sync for saved trips and wishlists | **Free Tier**<br>(500MB DB / 50k MAU) |
+| **Identity & Auth** | **Google Cloud OAuth 2.0** | [GCP Credentials Console](https://console.cloud.google.com/apis/credentials) | OAuth Client ID (Web App) | Callback URI:<br>`https://lbmxfczgvtznhfhzogla.supabase.co/auth/v1/callback` | "Continue with Google" sign-in via Supabase Auth | **100% Free**<br>(Unlimited logins, 0 Maps quota) |
 | **Maps & Search APIs** | **Google Cloud Platform** | [Google Maps Console](https://console.cloud.google.com/google/maps-apis) | GCP Project (Trippo) | API Key: `AIzaSyBMvlLs5sfzr...`<br>*(stored in `js/maps.js`)* | Google Places autocomplete, POI search, Street View images | **Free Tier**<br>($200/mo credit) |
 | **Backup Web Host** | **Netlify** | [app.netlify.com](https://app.netlify.com/) | Account: `6abf5d2111...`<br>Site: `884d84e4-c5e0...` | `NETLIFY_AUTH_TOKEN`<br>*(stored in `.env`)* | Standby secondary host in case GitHub Pages is ever unavailable | **Free Tier** |
 | **Map Tiles & Overlays** | **OpenStreetMap** | [openstreetmap.org](https://www.openstreetmap.org/) | Public Open Source | No account required | Base world street tiles and railway transit layers | **Free** |
@@ -57,13 +58,31 @@
 * **API URL:** `https://lbmxfczgvtznhfhzogla.supabase.co`
 * **Public Anon Key:** Stored in [`js/db.js`](file:///c:/Users/Jacob/Desktop/trippo-site/js/db.js#L17)
 * **What you do here:**
-  - **Authentication:** View registered user accounts (emails, signup timestamps).
+  - **Authentication:** View registered user accounts (emails, signup timestamps, Google logins).
   - **Table Editor:** Inspect saved user trips (`trips` table) and destination wishlists (`wishlist_pins` table).
   - **Backups:** Supabase automatically creates daily database backups on the free tier.
 
 ---
 
-### 4. Maps, Places Autocomplete & Street View (Google Cloud Platform)
+### 4. Google Sign-In / OAuth 2.0 (Google Cloud + Supabase)
+* **Google Cloud Credentials:** [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
+* **Supabase Auth Providers Page:** [https://supabase.com/dashboard/project/lbmxfczgvtznhfhzogla/auth/providers](https://supabase.com/dashboard/project/lbmxfczgvtznhfhzogla/auth/providers)
+* **Supabase Callback URL:** `https://lbmxfczgvtznhfhzogla.supabase.co/auth/v1/callback`
+* **How to Connect:**
+  1. In Google Cloud Console, click **+ CREATE CREDENTIALS** -> **OAuth client ID**.
+  2. Select Application type: **Web application**.
+  3. Under **Authorized redirect URIs**, add:
+     `https://lbmxfczgvtznhfhzogla.supabase.co/auth/v1/callback`
+  4. Under **Authorized JavaScript origins**, add:
+     `https://trippo.top` and `https://jacobgbroussard-code.github.io`
+  5. Click **Create** and copy your **Client ID** and **Client Secret**.
+  6. Go to Supabase Dashboard -> **Authentication** -> **Providers** -> **Google**.
+  7. Toggle **Enable Google provider**, paste your **Client ID** and **Client Secret**, and click **Save**.
+* **Cost & Quotas:** Google Identity / OAuth 2.0 is **100% free with unlimited sign-ins**. It does **NOT** use or touch your Google Maps API quota or $200 monthly credit.
+
+---
+
+### 5. Maps, Places Autocomplete & Street View (Google Cloud Platform)
 * **Google Maps Console:** [https://console.cloud.google.com/google/maps-apis](https://console.cloud.google.com/google/maps-apis)
 * **Credentials Page:** [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
 * **Billing Overview:** [https://console.cloud.google.com/billing](https://console.cloud.google.com/billing)
