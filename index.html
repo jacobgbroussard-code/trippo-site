@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.68</title>
+    <title>Trippo Travel Planner v2.3.69</title>
 
     <!-- Travelpayouts Tracking Script -->
     <script nowprocket data-noptimize="1" data-cfasync="false" data-wpfc-render="false" seraph-accel-crit="1" data-no-defer="1" data-cmp-ab="2">
@@ -24,11 +24,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.68">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.68">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.68">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.68">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.68">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.69">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.69">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.69">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.69">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.69">
 
     <!-- Leaflet & Vendor Styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -215,8 +215,19 @@
                 <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('ATL')">ATL</button>
             </div>
 
+            <!-- Live Cheap Deals Feed -->
+            <div id="flight-hub-deals-container" class="flight-hub-deals-wrapper">
+                <div class="flight-hub-deals-header">
+                    <span class="flight-hub-deals-title">🔥 Cheap Getaways</span>
+                    <span style="font-size:10px; color:var(--text-light); cursor:pointer;" onclick="refreshFlightHubDeals()">↻ Refresh</span>
+                </div>
+                <div id="flight-hub-deals-list" class="flight-hub-deals-list">
+                    <!-- Dynamic cheap flight cards injected by tools.js -->
+                </div>
+            </div>
+
             <!-- Outbound Launcher Links -->
-            <div class="flight-hub-links">
+            <div class="flight-hub-links" style="margin-top: 10px;">
                 <a id="flighthub-skyscanner" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.skyscanner.com/transport/flights-from/lft/">
                     <span class="flight-hub-link-icon">🌐</span>
                     <div class="flight-hub-link-info">
@@ -249,7 +260,7 @@
                     </div>
                     <span class="flight-hub-link-arrow">↗</span>
                 </a>
-                <a id="flighthub-aviasales" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.aviasales.com/search?marker=YOUR_MARKER_ID&origin=LFT&destination=anywhere">
+                <a id="flighthub-aviasales" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.aviasales.com/search?marker=581802&origin=LFT&destination=anywhere">
                     <span class="flight-hub-link-icon">🏷️</span>
                     <div class="flight-hub-link-info">
                         <div class="flight-hub-link-name">WayAway / Aviasales</div>
@@ -1091,6 +1102,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.68"></script>
+    <script type="module" src="js/app.js?v=2.3.69"></script>
 </body>
 </html>

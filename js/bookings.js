@@ -25,6 +25,7 @@ import {
 
 import { openPlacesCityView } from './places.js';
 import { drawPlannerMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
+import { getHotelPricingInsights } from './travel-payouts.js';
 
 export let hotelSearchTimeout = null;
 let hotelSearchAbortController = null;
@@ -113,35 +114,53 @@ export function renderBookingsList() {
             lodgingCardHTML = `<button style="width: 100%; padding: 13px; border-radius: 14px; border: 1.5px dashed #b7c7c3; background: transparent; text-align: center; font-size: 14px; font-weight: 700; margin-bottom: 14px; cursor: pointer; color: var(--primary);" onclick="openLodgingModal(${index})">+ Add Confirmed Stay & Notes</button>`;
         }
 
+        const hotelInfo = getHotelPricingInsights(safeStopName, inStr, outStr);
+
         html += `
         <div style="background: var(--card-bg); border-radius: 18px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-            <h4 style="margin: 0 0 4px 0; font-size: 18px; font-weight:700;">Stay in ${safeStopName}</h4>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 4px;">
+                <h4 style="margin: 0; font-size: 18px; font-weight:700;">Stay in ${safeStopName}</h4>
+                <span class="flight-deal-price-badge" style="font-size:11px;" title="Estimated nightly hotel rate">Est. ${hotelInfo.estimatedNightly}/nt</span>
+            </div>
             <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 16px;">${checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} nights</span>
             
             ${lodgingCardHTML}
 
-            <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Accommodations</div>
-            <button class="partner-btn" style="color: #287dfa;" onclick="window.open('https://us.trip.com/hotels/list?keyword=${cityEnc}&checkIn=${inStr}&checkOut=${outStr}', '_blank')">
+            <div class="hotel-insights-box">
+                <div class="hotel-insights-header">
+                    <span style="font-size:12px; font-weight:700;">🏷️ Rate Insights & Deals</span>
+                    <span class="hotel-insights-rate">${hotelInfo.estimatedNightly} <span style="font-size:10px; font-weight:400; color:var(--text-light);">/ nt</span></span>
+                </div>
+                <div class="hotel-insights-note">Compare live rates across 50+ providers with Travelpayouts:</div>
+                <button class="partner-btn" style="color: #ff6b35; font-weight:700; margin-bottom:0;" onclick="window.open('${hotelInfo.hotellookUrl}', '_blank')">
+                    🏨 Hotellook Deals <span>Check 50+ Sites ›</span>
+                </button>
+            </div>
+
+            <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Additional Booking Partners</div>
+            <button class="partner-btn" style="color: #287dfa;" onclick="window.open('${hotelInfo.tripUrl}', '_blank')">
                 🏨 Trip.com Hotels <span>Check Rates ›</span>
             </button>
-            <button class="partner-btn" style="color: #003580;" onclick="window.open('https://www.booking.com/searchresults.html?ss=${cityEnc}&checkin=${inStr}&checkout=${outStr}', '_blank')">
+            <button class="partner-btn" style="color: #003580;" onclick="window.open('${hotelInfo.bookingUrl}', '_blank')">
                 🏨 Booking.com <span>Check Rates ›</span>
             </button>
-            <button class="partner-btn" style="color: var(--text);" onclick="window.open('https://www.expedia.com/Hotel-Search?destination=${cityEnc}&startDate=${inStr}&endDate=${outStr}', '_blank')">
+            <button class="partner-btn" style="color: var(--text);" onclick="window.open('${hotelInfo.expediaUrl}', '_blank')">
                 🏨 Expedia <span>Compare Deals ›</span>
             </button>
         </div>`;
     });
 
     if (trip.stops.length === 0) {
+        const defaultHotelInfo = getHotelPricingInsights('Hotels');
         html = `
         <div style="text-align: center; color: #8fa09c; padding: 40px 20px;">
             <p style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">No destinations added yet</p>
             <p style="font-size: 13px; margin-bottom: 20px;">Add destinations in the Planner or search hotels directly below:</p>
             <div style="max-width: 360px; margin: 0 auto; text-align: left;">
                 <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Browse Partner Stays</div>
-                <button class="partner-btn" style="color: #287dfa;" onclick="window.open('https://us.trip.com/hotels/', '_blank')">🏨 Trip.com Hotels <span>Search Deals ›</span></button>
-                <button class="partner-btn" style="color: #003580;" onclick="window.open('https://www.booking.com/', '_blank')">🏨 Booking.com <span>Check Rates ›</span></button>
+                <button class="partner-btn" style="color: #ff6b35; font-weight:700;" onclick="window.open('${defaultHotelInfo.hotellookUrl}', '_blank')">🏨 Hotellook <span>Search 50+ Sites ›</span></button>
+                <button class="partner-btn" style="color: #287dfa;" onclick="window.open('${defaultHotelInfo.tripUrl}', '_blank')">🏨 Trip.com Hotels <span>Search Deals ›</span></button>
+                <button class="partner-btn" style="color: #003580;" onclick="window.open('${defaultHotelInfo.bookingUrl}', '_blank')">🏨 Booking.com <span>Check Rates ›</span></button>
             </div>
         </div>`;
     }

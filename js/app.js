@@ -12,8 +12,9 @@ import * as bookings from './bookings.js';
 import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 import * as placesAutocomplete from './places-autocomplete.js';
+import * as travelPayouts from './travel-payouts.js';
 
-const CURRENT_VERSION = '2.3.68';
+const CURRENT_VERSION = '2.3.69';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -41,7 +42,8 @@ Object.assign(window, {
     ...bookings,
     ...wishlist,
     ...tools,
-    ...placesAutocomplete
+    ...placesAutocomplete,
+    ...travelPayouts
 });
 
 // Replay any early calls queued before module finished loading

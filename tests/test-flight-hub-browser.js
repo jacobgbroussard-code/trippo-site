@@ -59,13 +59,6 @@ async function testFlightHubBrowser() {
             mobile: true
         });
 
-        // Wait for app load
-        for (let i = 0; i < 30; i++) {
-            const res = await send('Runtime.evaluate', { expression: `typeof window.initFlightHub === 'function'` });
-            if (res.result?.value) break;
-            await new Promise(r => setTimeout(r, 200));
-        }
-
         async function evalExpr(expression) {
             const res = await send('Runtime.evaluate', {
                 expression,
@@ -78,9 +71,27 @@ async function testFlightHubBrowser() {
             return res.result?.value;
         }
 
-        // Open sidebar drawer
-        await evalExpr(`window.toggleSidebar(true)`);
-        await new Promise(r => setTimeout(r, 500));
+        await send('Network.enable');
+        await send('Network.clearBrowserCache');
+        await send('Page.reload', { ignoreCache: true });
+        await new Promise(r => setTimeout(r, 1500));
+
+        // Wait for app load
+        for (let i = 0; i < 30; i++) {
+            const res = await send('Runtime.evaluate', { expression: `typeof window.initFlightHub === 'function'` });
+            if (res.result?.value) break;
+            await new Promise(r => setTimeout(r, 200));
+        }
+
+        // Open sidebar drawer and expand tools
+        await evalExpr(`(() => {
+            if (window.toggleSidebar) window.toggleSidebar(true);
+            const group = document.getElementById('sidebar-tools-group');
+            if (group && group.style.display === 'none' && window.toggleSidebarTools) {
+                window.toggleSidebarTools();
+            }
+        })()`);
+        await new Promise(r => setTimeout(r, 600));
 
         // 1. Initial Default State Check
         const initial = await evalExpr(`(() => {
@@ -90,6 +101,7 @@ async function testFlightHubBrowser() {
             const flightconn = document.getElementById('flighthub-flightconnections');
             const kayak = document.getElementById('flighthub-kayak');
             const aviasales = document.getElementById('flighthub-aviasales');
+            const deals = document.querySelectorAll('.flight-deal-item');
 
             return {
                 val: input ? input.value : null,
@@ -97,7 +109,8 @@ async function testFlightHubBrowser() {
                 googleHref: google ? google.href : null,
                 flightconnHref: flightconn ? flightconn.href : null,
                 kayakHref: kayak ? kayak.href : null,
-                aviasalesHref: aviasales ? aviasales.href : null
+                aviasalesHref: aviasales ? aviasales.href : null,
+                dealCount: deals.length
             };
         })()`);
 

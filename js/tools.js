@@ -33,6 +33,7 @@ import { renderPlanner } from './planner.js';
 import { renderPlacesMasterList, openPlacesCityView } from './places.js';
 import { renderBookingsView, renderBookingsList, renderTransitView, renderTransitList } from './bookings.js';
 import { showWishlistDirectory, cancelDroppedPin } from './wishlist.js';
+import { getCheapFlightDeals } from './travel-payouts.js';
 
 /* --- HOME VIEW & TRIP CREATION --- */
 export function renderHome() {
@@ -1115,6 +1116,8 @@ if (typeof window !== 'undefined') {
     window.saveDefaultFlightHubOrigin = saveDefaultFlightHubOrigin;
     window.updateFlightHubLinks = updateFlightHubLinks;
     window.initFlightHub = initFlightHub;
+    window.renderFlightHubDeals = renderFlightHubDeals;
+    window.refreshFlightHubDeals = refreshFlightHubDeals;
 }
 
 /* ==========================================================================
@@ -1186,6 +1189,46 @@ export function updateFlightHubLinks(origin) {
             chip.classList.remove('active');
         }
     });
+
+    // Render cheap getaways for selected airport & date
+    renderFlightHubDeals(code, dateStr);
+}
+
+export async function renderFlightHubDeals(origin, dateStr = '') {
+    const listEl = document.getElementById('flight-hub-deals-list');
+    if (!listEl) return;
+
+    try {
+        const deals = await getCheapFlightDeals(origin, dateStr);
+        if (!deals || deals.length === 0) {
+            listEl.innerHTML = `<div style="font-size:11px; color:#8fa09c; padding:4px 0;">No cheap deals found for ${origin}.</div>`;
+            return;
+        }
+
+        listEl.innerHTML = deals.map(deal => `
+            <a href="${deal.link}" target="_blank" rel="noopener noreferrer" class="flight-deal-item" title="View flights to ${deal.city} on Aviasales">
+                <div class="flight-deal-dest">
+                    <span class="flight-deal-city">${deal.city} (${deal.code})</span>
+                    <span class="flight-deal-airline">${deal.airline}</span>
+                </div>
+                <div class="flight-deal-price-badge">
+                    <span>From $${deal.price}</span>
+                    <span style="font-size:9px;">↗</span>
+                </div>
+            </a>
+        `).join('');
+    } catch (e) {
+        console.warn('Error rendering flight deals:', e);
+    }
+}
+
+export function refreshFlightHubDeals() {
+    const origin = getFlightHubOrigin();
+    const dateInput = document.getElementById('flight-hub-date');
+    const dateStr = (dateInput && dateInput.value) || '';
+    renderFlightHubDeals(origin, dateStr);
+    triggerHaptic('light');
+    showNotification(`↻ Refreshed cheap flights from ${origin}`);
 }
 
 export function handleFlightHubOriginInput(event) {
@@ -1239,5 +1282,6 @@ export function initFlightHub() {
     if (input) input.value = origin;
     updateFlightHubLinks(origin);
 }
+
 
 
