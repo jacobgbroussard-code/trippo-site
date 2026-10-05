@@ -359,10 +359,10 @@
     <div id="home-view" class="view active">
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
-                <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.72</span></span>
+                <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.73</span></span>
             </div>
-            <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
+            <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
         <div style="padding: 0 20px; display: flex; flex-direction: column; align-items: center;">
             <img src="fad.jpg" alt="Travel Globe Graphic" style="width: 100%; max-width: 280px; height: auto; margin-bottom: 24px; mix-blend-mode: multiply; border-radius: 16px;" onerror="this.style.display='none'" />
@@ -401,8 +401,8 @@
                         <button id="planner-date-chip" onclick="openEditTripModal()" class="planner-date-chip" title="Click to set or change trip departure date">
                             <span id="planner-date-chip-text">📅 Set Start Date</span>
                         </button>
-                        <button onclick="exportTripICS()" style="background:var(--primary-light); border:none; border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);" title="Export to Apple/Google Calendar">📅 .ics</button>
-                        <button onclick="document.getElementById('import-file-input').click()" style="background:var(--primary-light); border:none; border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);" title="Import route or stops">📥 Import</button>
+                        <button onclick="exportTripICS()" class="micro-action-btn" title="Export to Apple/Google Calendar">📅 .ics</button>
+                        <button onclick="document.getElementById('import-file-input').click()" class="micro-action-btn" title="Import route or stops">📥 Import</button>
                         <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
                     </div>
                 </div>
@@ -471,7 +471,7 @@
                 <button class="optimize-btn" onclick="optimizeCityRoute()">✨ Auto-Optimize from Base</button>
                 <div id="saved-places-container"></div>
                 
-                <button onclick="openPlaceSearchModal()" style="width: 100%; padding: 14px; border-radius: 16px; border: 2px dashed #b7c7c3; background: transparent; text-align: center; font-size: 15px; font-weight: 700; margin-top: 10px; cursor: pointer; color: var(--primary);">+ Add Place</button>
+                <button onclick="openPlaceSearchModal()" class="dashed-add-btn" style="margin-top: 10px;">+ Add Place</button>
                 
                 <a href="https://www.getyourguide.com/" id="places-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
                     <span class="action-icon">🎟️</span>
@@ -559,8 +559,8 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <div>
                         <h2 id="active-wishlist-heading" style="margin: 0; font-size: 20px; display:inline-block;">Master Wishlist</h2>
-                        <button onclick="document.getElementById('wishlist-kml-input').click()" style="background:var(--primary-light); border:none; border-radius:8px; padding:5px 10px; margin-left:10px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📥 Import KML</button>
-                        <button onclick="exportWishlistKML()" style="background:var(--primary-light); border:none; border-radius:8px; padding:5px 10px; margin-left:6px; font-size:11px; font-weight:700; cursor:pointer; color:var(--primary);">📤 Export KML</button>
+                        <button onclick="document.getElementById('wishlist-kml-input').click()" class="micro-action-btn" style="margin-left:10px;">📥 Import KML</button>
+                        <button onclick="exportWishlistKML()" class="micro-action-btn" style="margin-left:6px;">📤 Export KML</button>
 
                         <input type="file" id="wishlist-kml-input" accept=".kml,.json" style="display:none" onchange="handleWishlistFileImport(event)">
                     </div>
@@ -987,7 +987,7 @@
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="save-btn" onclick="saveEditedTrip()" style="flex:1;">Save Changes</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal('edit-trip-modal')" style="background:var(--border-subtle, #e2e8f0); color:var(--text, #1e293b); border:none; border-radius:10px; padding:10px 16px; font-weight:600; cursor:pointer;">Cancel</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('edit-trip-modal')">Cancel</button>
             </div>
         </div>
     </div>

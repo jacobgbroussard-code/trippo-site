@@ -112,7 +112,7 @@ export function renderBookingsList() {
                 <button type="button" onclick="event.stopPropagation(); jumpToDailyFromStay(${index})" style="background:var(--card-bg); border:1.5px solid var(--primary); color:var(--primary); font-size:12px; font-weight:700; padding:6px 12px; border-radius:10px; cursor:pointer; margin-top:10px;">🗺️ View on Daily Map</button>
             </div>`;
         } else {
-            lodgingCardHTML = `<button style="width: 100%; padding: 13px; border-radius: 14px; border: 1.5px dashed #b7c7c3; background: transparent; text-align: center; font-size: 14px; font-weight: 700; margin-bottom: 14px; cursor: pointer; color: var(--primary);" onclick="openLodgingModal(${index})">+ Add Confirmed Stay & Notes</button>`;
+            lodgingCardHTML = `<button class="dashed-add-btn" style="margin-bottom: 14px;" onclick="openLodgingModal(${index})">+ Add Confirmed Stay & Notes</button>`;
         }
 
         const hotelInfo = getHotelPricingInsights(safeStopName, inStr, outStr);
@@ -490,7 +490,7 @@ export function renderTransitList() {
                     <div class="ticket-time">🕒 ${safeDepTime} - ${safeArrTime} • ${safeDate}${safeRetDate}</div>
                 </div>`;
         } else {
-            bookingHTML = `<button style="width: 100%; padding: 13px; border-radius: 14px; border: 1.5px dashed #b7c7c3; background: transparent; text-align: center; font-size: 14px; font-weight: 700; margin-bottom: 14px; cursor: pointer; color: var(--primary);" onclick="openTransitBookingModal(${i})">+ Add Booking & Tickets</button>`;
+            bookingHTML = `<button class="dashed-add-btn" style="margin-bottom: 14px;" onclick="openTransitBookingModal(${i})">+ Add Booking & Tickets</button>`;
         }
 
         html += `

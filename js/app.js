@@ -15,7 +15,7 @@ import * as placesAutocomplete from './places-autocomplete.js';
 import * as travelPayouts from './travel-payouts.js';
 import * as weather from './weather.js';
 
-const CURRENT_VERSION = '2.3.72';
+const CURRENT_VERSION = '2.3.73';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
