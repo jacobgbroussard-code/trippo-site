@@ -13,7 +13,7 @@ import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 import * as placesAutocomplete from './places-autocomplete.js';
 
-const CURRENT_VERSION = '2.3.64';
+const CURRENT_VERSION = '2.3.65';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -70,6 +70,8 @@ Object.defineProperties(window, {
     plannerMap: { get: () => maps.plannerMap, set: (v) => maps.setPlannerMap(v), configurable: true },
     placesMap: { get: () => maps.placesMap, set: (v) => maps.setPlacesMap(v), configurable: true },
     wishlistMap: { get: () => maps.wishlistMap, set: (v) => maps.setWishlistMap(v), configurable: true },
+    pLines: { get: () => maps.pLines, configurable: true },
+    pMarkers: { get: () => maps.pMarkers, configurable: true },
     currentUser: { get: () => db.currentUser, set: (v) => db.setCurrentUser(v), configurable: true },
     citySearchTimeout: { get: () => planner.citySearchTimeout, configurable: true },
     poiSearchTimeout: { get: () => places.poiSearchTimeout, configurable: true },

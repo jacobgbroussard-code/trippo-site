@@ -37,6 +37,8 @@ export function renderPlanner() {
     if (!Array.isArray(trip.stops)) trip.stops = [];
 
     trip.stops.forEach((stop, index) => {
+        if (!stop.id) stop.id = `stop_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`;
+        if (stop.locked === undefined) stop.locked = false;
         if (!stop.notes) stop.notes = Array(Math.max(1, stop.nights)).fill('');
         if (stop.transit === undefined) stop.transit = null;
         if (stop.lodging === undefined) stop.lodging = null;
@@ -46,14 +48,15 @@ export function renderPlanner() {
         const dep = new Date(currentD);
 
         list.innerHTML += `
-            <div class="stop-card">
-                <div class="drag-handle">≡</div>
+            <div class="stop-card ${stop.locked ? 'is-locked' : ''}">
+                <div class="drag-handle" title="${stop.locked ? 'Stop locked in place' : 'Drag to reorder'}">≡</div>
                 <div style="flex-grow:1; cursor:pointer;" onclick="openDailyNotes(${index}, '${formatLocalDate(arr)}')">
-                    <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${escapeHTML(stop.name)}</h3>
+                    <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${escapeHTML(stop.name)} ${stop.locked ? '<span style="font-size:12px; vertical-align:middle;" title="Locked in place">🔒</span>' : ''}</h3>
                     <p style="margin: 0; font-size: 12px; color: #728481;">${arr.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${dep.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
                     <button onclick="focusStopOnMap(event, ${index})" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 8px; font-size:13px; cursor:pointer;" title="View on map">🗺️</button>
+                    <button onclick="toggleStopLock(event, ${index})" class="stop-lock-btn ${stop.locked ? 'locked' : ''}" title="${stop.locked ? 'Stop locked in place (Click to unlock)' : 'Lock stop in place to prevent auto-reordering'}">${stop.locked ? '🔒' : '🔓'}</button>
                     <div class="nights-control">
                         <button class="nights-btn" onclick="updateNights(${index}, -1)">−</button>
                         <strong style="font-size: 14px; min-width: 18px; text-align: center;">${stop.nights}</strong>
@@ -70,6 +73,13 @@ export function renderPlanner() {
 
     const colTripInfo = document.getElementById('planner-collapsed-trip-info');
     if (colTripInfo) colTripInfo.innerText = `${trip.name} • ${totalNights} Nights`;
+
+    const allLocked = trip.stops.length > 0 && trip.stops.every(s => s.locked);
+    const lockAllBtn = document.getElementById('toggle-lock-all-btn');
+    if (lockAllBtn) {
+        lockAllBtn.innerHTML = allLocked ? '🔓 Unlock All' : '🔒 Lock All';
+        lockAllBtn.title = allLocked ? 'Unlock all stops to allow re-ordering' : 'Lock all stops to prevent auto-reordering';
+    }
 
     if (window.plannerSortable) window.plannerSortable.destroy();
     if (typeof Sortable !== 'undefined') {
@@ -98,6 +108,33 @@ export function renderPlanner() {
         });
     }
     drawPlannerMapRoute();
+}
+
+export function toggleStopLock(event, index) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    const trip = getActiveTrip();
+    if (!trip || !trip.stops || !trip.stops[index]) return;
+    const stop = trip.stops[index];
+    stop.locked = !stop.locked;
+    triggerHaptic('light');
+    saveTrips();
+    renderPlanner();
+    showNotification(stop.locked ? `🔒 Locked ${stop.name} in place` : `🔓 Unlocked ${stop.name}`);
+}
+
+export function toggleLockAllStops() {
+    const trip = getActiveTrip();
+    if (!trip || !trip.stops || trip.stops.length === 0) return;
+    const allLocked = trip.stops.every(s => s.locked);
+    const newStatus = !allLocked;
+    trip.stops.forEach(s => { s.locked = newStatus; });
+    triggerHaptic('medium');
+    saveTrips();
+    renderPlanner();
+    showNotification(newStatus ? "🔒 All stops locked in place" : "🔓 All stops unlocked");
 }
 
 export function updateNights(index, delta) {
@@ -157,25 +194,96 @@ export function optimizeTripRoute() {
         return;
     }
 
-    let startStop = trip.stops[0];
-    let unvisited = trip.stops.slice(1);
-    let optimized = [startStop];
+    trip.stops.forEach((stop, index) => {
+        if (!stop.id) stop.id = `stop_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`;
+        if (stop.locked === undefined) stop.locked = false;
+    });
 
-    while (unvisited.length > 0) {
-        let last = optimized[optimized.length - 1];
-        let nearestIdx = 0;
-        let minDst = Infinity;
-        unvisited.forEach((s, idx) => {
-            let dst = getDistance(last.lat, last.lon, s.lat, s.lon);
-            if (dst < minDst) { minDst = dst; nearestIdx = idx; }
+    const originalStops = [...trip.stops];
+    const lockedCount = trip.stops.filter(s => s.locked).length;
+    const unlockedCount = trip.stops.length - lockedCount;
+
+    if (unlockedCount === 0) {
+        showNotification("All stops are locked 🔒. Unlock stops to optimize.");
+        return;
+    }
+    if (unlockedCount < 2) {
+        showNotification("Only 1 stop is unlocked. Unlock at least 2 stops to optimize.");
+        return;
+    }
+
+    let optimized;
+
+    if (lockedCount === 0) {
+        // Standard unconstrained nearest-neighbor TSP starting from trip.stops[0]
+        let startStop = trip.stops[0];
+        let unvisited = trip.stops.slice(1);
+        optimized = [startStop];
+
+        while (unvisited.length > 0) {
+            let last = optimized[optimized.length - 1];
+            let nearestIdx = 0;
+            let minDst = Infinity;
+            unvisited.forEach((s, idx) => {
+                let dst = getDistance(last.lat, last.lon, s.lat, s.lon);
+                if (dst < minDst) { minDst = dst; nearestIdx = idx; }
+            });
+            optimized.push(unvisited.splice(nearestIdx, 1)[0]);
+        }
+    } else {
+        // Constrained TSP: locked stops stay in their exact index slots
+        optimized = new Array(trip.stops.length);
+        trip.stops.forEach((s, i) => {
+            if (s.locked) optimized[i] = s;
         });
-        optimized.push(unvisited.splice(nearestIdx, 1)[0]);
+
+        let available = trip.stops.filter(s => !s.locked);
+
+        for (let i = 0; i < optimized.length; i++) {
+            if (optimized[i]) continue; // slot already filled by locked stop
+
+            // Find closest preceding anchor
+            let refStop = null;
+            for (let prev = i - 1; prev >= 0; prev--) {
+                if (optimized[prev]) { refStop = optimized[prev]; break; }
+            }
+            // If no previous anchor, look forward for next anchor
+            if (!refStop) {
+                for (let next = i + 1; next < optimized.length; next++) {
+                    if (optimized[next]) { refStop = optimized[next]; break; }
+                }
+            }
+
+            let bestIdx = 0;
+            if (refStop) {
+                let minDst = Infinity;
+                available.forEach((cand, cIdx) => {
+                    let d = getDistance(refStop.lat, refStop.lon, cand.lat, cand.lon);
+                    if (d < minDst) {
+                        minDst = d;
+                        bestIdx = cIdx;
+                    }
+                });
+            }
+            optimized[i] = available.splice(bestIdx, 1)[0];
+        }
     }
 
     trip.stops = optimized;
+
+    // Preserve place-to-city association by matching stop.id
+    if (Array.isArray(trip.places)) {
+        trip.places.forEach(p => {
+            const targetStop = originalStops[p.cityIndex];
+            if (targetStop) {
+                p.cityIndex = trip.stops.findIndex(s => s.id === targetStop.id);
+            }
+        });
+    }
+
     saveTrips();
     renderPlanner();
-    showNotification("✨ Trip route optimized!");
+    showNotification(lockedCount > 0 ? "✨ Unlocked stops optimized around locked stops!" : "✨ Trip route optimized!");
 }
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -252,14 +360,15 @@ export function addCityStop(name, lat, lon) {
     if (!Array.isArray(trip.stops)) trip.stops = [];
     if (!Array.isArray(trip.places)) trip.places = [];
     trip.stops.push({
-        id: `stop_${Date.now()}`,
+        id: `stop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         name,
         lat: parseFloat(lat) || 0,
         lon: parseFloat(lon) || 0,
         nights: 2,
         notes: ['', ''],
         transit: null,
-        lodging: null
+        lodging: null,
+        locked: false
     });
     closeModal('city-search-modal');
     saveTrips();

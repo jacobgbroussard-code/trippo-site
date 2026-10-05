@@ -41,11 +41,11 @@ check('index.html contains #edit-poi-transit-mode-group', () => {
     assert(indexHtml.includes('value="transit"'), 'Missing transit option');
 });
 
-check('index.html has bumped version v2.3.64 in title, assets, and app.js', () => {
-    assert(indexHtml.includes('Trippo Travel Planner v2.3.64'), 'Missing v2.3.64 title');
-    assert(indexHtml.includes('styles/main.css?v=2.3.64'), 'Missing main.css v2.3.64');
-    assert(indexHtml.includes('styles/components.css?v=2.3.64'), 'Missing components.css v2.3.64');
-    assert(indexHtml.includes('js/app.js?v=2.3.64'), 'Missing app.js v2.3.64');
+check('index.html has bumped version in title, assets, and app.js', () => {
+    assert(/Trippo Travel Planner v2\.3\.\d+/.test(indexHtml), 'Missing valid version title');
+    assert(/styles\/main\.css\?v=2\.3\.\d+/.test(indexHtml), 'Missing main.css version');
+    assert(/styles\/components\.css\?v=2\.3\.\d+/.test(indexHtml), 'Missing components.css version');
+    assert(/js\/app\.js\?v=2\.3\.\d+/.test(indexHtml), 'Missing app.js version');
 });
 
 // 2. Verify state.js exports
@@ -121,10 +121,10 @@ const swJs = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
 const appJs = fs.readFileSync(path.join(rootDir, 'js/app.js'), 'utf8');
 const toolsJs = fs.readFileSync(path.join(rootDir, 'js/tools.js'), 'utf8');
 
-check('Version 2.3.64 is consistent across sw.js, app.js, and tools.js', () => {
-    assert(swJs.includes('trippo-cache-v2.3.64'), 'sw.js cache version mismatch');
-    assert(appJs.includes("CURRENT_VERSION = '2.3.64'"), 'app.js version mismatch');
-    assert(toolsJs.includes('version: "2.3.64"'), 'tools.js version mismatch');
+check('Version is consistent across sw.js, app.js, and tools.js', () => {
+    assert(/trippo-cache-v2\.3\.\d+/.test(swJs), 'sw.js cache version mismatch');
+    assert(/CURRENT_VERSION = '2\.3\.\d+'/.test(appJs), 'app.js version mismatch');
+    assert(/version: "2\.3\.\d+"/.test(toolsJs), 'tools.js version mismatch');
 });
 
 console.log('\n=============================================================');

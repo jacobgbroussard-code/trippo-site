@@ -508,6 +508,68 @@
     border-radius: 16px;
     margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stop-card.is-locked {
+    border-left: 4px solid #f59e0b;
+}
+
+[data-theme="dark"] .stop-card.is-locked {
+    border-left: 4px solid #fbbf24;
+}
+
+.stop-lock-btn {
+    background: var(--primary-light);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    opacity: 0.75;
+}
+
+.stop-lock-btn:hover {
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+.stop-lock-btn.locked {
+    background: #fef3c7;
+    border-color: #fcd34d;
+    opacity: 1;
+    box-shadow: 0 1px 4px rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .stop-lock-btn.locked {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.45);
+}
+
+.lock-all-toggle-btn {
+    background: var(--primary-light);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.lock-all-toggle-btn:hover {
+    background: var(--bg-hover, #e4f0ed);
+    transform: translateY(-1px);
 }
 
 .drag-handle {

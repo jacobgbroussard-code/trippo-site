@@ -88,8 +88,15 @@ async function runComprehensiveVerification() {
             return res.result.value;
         }
 
-        // Wait 3.5 seconds for scripts, styles, and initial renders
-        await new Promise(r => setTimeout(r, 3500));
+        await send('Page.navigate', { url: 'http://127.0.0.1:8080/' });
+        for (let i = 0; i < 30; i++) {
+            await new Promise(r => setTimeout(r, 200));
+            try {
+                const ready = await evalInBrowser(`Boolean(document && document.body && document.getElementById('itinerary-list'))`);
+                if (ready) break;
+            } catch (e) {}
+        }
+        await new Promise(r => setTimeout(r, 1500));
 
         const testResults = [];
 

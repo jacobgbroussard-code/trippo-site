@@ -293,6 +293,84 @@ export function openAllTrailsNearCenter() {
     window.open(url, '_blank');
 }
 
+// --- SHORTEST ROUTE PATH & ANTIMERIDIAN INTERPOLATION ---
+export function getShortestRoutePath(lat1, lon1, lat2, lon2) {
+    let l1 = Number(lon1);
+    let l2 = Number(lon2);
+    let lt1 = Number(lat1);
+    let lt2 = Number(lat2);
+
+    while (l1 > 180) l1 -= 360;
+    while (l1 < -180) l1 += 360;
+    while (l2 > 180) l2 -= 360;
+    while (l2 < -180) l2 += 360;
+
+    const diff = l2 - l1;
+
+    // Standard case: shortest path does NOT cross the antimeridian
+    if (Math.abs(diff) <= 180) {
+        return {
+            crossesAntimeridian: false,
+            latlngs: [[lt1, l1], [lt2, l2]],
+            midLat: (lt1 + lt2) / 2,
+            midLon: (l1 + l2) / 2
+        };
+    }
+
+    // Antimeridian crossing:
+    if (diff > 180) {
+        // Traveler is heading WEST from l1 (e.g. -118) across -180 into eastern hemisphere to l2 (e.g. +140)
+        const totalSpan = 360 - diff;
+        const dToDateLine = Math.abs(-180 - l1);
+        const t = dToDateLine / totalSpan;
+        const latEdge = lt1 + t * (lt2 - lt1);
+
+        const halfSpan = totalSpan / 2;
+        const midLon = (halfSpan <= dToDateLine) ? (l1 - halfSpan) : (180 - (halfSpan - dToDateLine));
+        const midLat = (lt1 + lt2) / 2;
+
+        const latlngs = [
+            [[lt1, l1], [latEdge, -180]],
+            [[latEdge, 180], [lt2, l2]],
+            // Mirrored/wrapped segments so the line stays connected during world panning
+            [[latEdge, -180], [lt2, l2 - 360]],
+            [[lt1, l1 + 360], [latEdge, 180]]
+        ];
+
+        return {
+            crossesAntimeridian: true,
+            latlngs,
+            midLat,
+            midLon
+        };
+    } else {
+        // diff < -180: Traveler is heading EAST from l1 (e.g. +140) across +180 into western hemisphere to l2 (e.g. -118)
+        const totalSpan = 360 + diff;
+        const dToDateLine = 180 - l1;
+        const t = dToDateLine / totalSpan;
+        const latEdge = lt1 + t * (lat2 - lt1);
+
+        const halfSpan = totalSpan / 2;
+        const midLon = (halfSpan <= dToDateLine) ? (l1 + halfSpan) : (-180 + (halfSpan - dToDateLine));
+        const midLat = (lt1 + lt2) / 2;
+
+        const latlngs = [
+            [[lt1, l1], [latEdge, 180]],
+            [[latEdge, -180], [lt2, l2]],
+            // Mirrored/wrapped segments so the line stays connected during world panning
+            [[lt1, l1 - 360], [latEdge, -180]],
+            [[latEdge, 180], [lt2, l2 + 360]]
+        ];
+
+        return {
+            crossesAntimeridian: true,
+            latlngs,
+            midLat,
+            midLon
+        };
+    }
+}
+
 export function drawPlannerMapRoute() {
     if (!plannerMap) return;
     pMarkers.forEach(m => plannerMap.removeLayer(m));
@@ -322,7 +400,9 @@ export function drawPlannerMapRoute() {
     for (let i = 0; i < stops.length - 1; i++) {
         if ((stops[i].lat === 0 && stops[i].lon === 0) || (stops[i + 1].lat === 0 && stops[i + 1].lon === 0)) continue;
 
-        const pLine = L.polyline([[stops[i].lat, stops[i].lon], [stops[i + 1].lat, stops[i + 1].lon]], {
+        const routeInfo = getShortestRoutePath(stops[i].lat, stops[i].lon, stops[i + 1].lat, stops[i + 1].lon);
+
+        const pLine = L.polyline(routeInfo.latlngs, {
             color: '#124b43',
             weight: 5,
             dashArray: '8, 8',
@@ -337,21 +417,27 @@ export function drawPlannerMapRoute() {
         if (stops[i].transit && stops[i].transit.method) {
             const emojis = { plane: '✈️', train: '🚆', bus: '🚌', car: '🚗' };
             const emoji = emojis[stops[i].transit.method] || '🎟';
-            let midLat = (stops[i].lat + stops[i + 1].lat) / 2;
-            let midLon = (stops[i].lon + stops[i + 1].lon) / 2;
 
-            const icon = L.divIcon({
-                className: 'transit-div-icon',
-                html: `<div style="background:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.3); cursor:pointer;">${emoji}</div>`,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
-            });
+            const addTransitMarker = (lat, lon) => {
+                const icon = L.divIcon({
+                    className: 'transit-div-icon',
+                    html: `<div style="background:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.3); cursor:pointer;">${emoji}</div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
 
-            const marker = L.marker([midLat, midLon], { icon: icon, zIndexOffset: 1000 }).addTo(plannerMap);
-            marker.on('click', function () {
-                if (window.openTransitBookingModal) window.openTransitBookingModal(i);
-            });
-            pMarkers.push(marker);
+                const marker = L.marker([lat, lon], { icon: icon, zIndexOffset: 1000 }).addTo(plannerMap);
+                marker.on('click', function () {
+                    if (window.openTransitBookingModal) window.openTransitBookingModal(i);
+                });
+                pMarkers.push(marker);
+            };
+
+            addTransitMarker(routeInfo.midLat, routeInfo.midLon);
+            if (routeInfo.crossesAntimeridian) {
+                const mirrorLon = routeInfo.midLon < 0 ? routeInfo.midLon + 360 : routeInfo.midLon - 360;
+                addTransitMarker(routeInfo.midLat, mirrorLon);
+            }
         }
     }
 
@@ -504,8 +590,8 @@ export async function drawPlacesMapRoute(dayPlaces) {
             const popupHTML = getSegmentPopupHTML(fromPlace, toPlace, i, i + 1, currentMode);
 
             // 1. Immediate straight polyline for instant responsiveness
-            const latlngs = [[fromPlace.lat, fromPlace.lon], [toPlace.lat, toPlace.lon]];
-            let segmentLayer = L.polyline(latlngs, {
+            const routeInfo = getShortestRoutePath(fromPlace.lat, fromPlace.lon, toPlace.lat, toPlace.lon);
+            let segmentLayer = L.polyline(routeInfo.latlngs, {
                 color: modeStyle.color,
                 weight: modeStyle.weight,
                 opacity: modeStyle.opacity,
@@ -534,8 +620,8 @@ export async function drawPlacesMapRoute(dayPlaces) {
             cLines.push(segmentLayer);
 
             // 2. Midpoint transit mode badge with 1-tap popup
-            const midLat = (fromPlace.lat + toPlace.lat) / 2;
-            const midLon = (fromPlace.lon + toPlace.lon) / 2;
+            const midLat = routeInfo.midLat;
+            const midLon = routeInfo.midLon;
             const badgeIcon = L.divIcon({
                 className: 'transit-seg-icon',
                 html: `<div style="background:white; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid ${modeStyle.color}; box-shadow:0 2px 6px rgba(0,0,0,0.25); cursor:pointer;" title="Commute: ${currentMode} (Click to switch)">${modeStyle.emoji}</div>`,
