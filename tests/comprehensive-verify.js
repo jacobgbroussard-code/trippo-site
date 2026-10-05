@@ -27,7 +27,7 @@ async function runComprehensiveVerification() {
     await new Promise(r => setTimeout(r, 1500));
 
     try {
-        const newTabRes = await fetch('http://127.0.0.1:9270/json/new?http://localhost:8080/', { method: 'PUT' });
+        const newTabRes = await fetch('http://127.0.0.1:9270/json/new?http://127.0.0.1:8080/', { method: 'PUT' });
         const targetTab = await newTabRes.json();
         const ws = new WebSocket(targetTab.webSocketDebuggerUrl);
 

@@ -24,7 +24,9 @@ import {
     getActiveTrip,
     triggerHaptic,
     escapeHTML,
-    escapeJS
+    escapeJS,
+    wishlistPins,
+    getCategoryVisuals
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
@@ -371,7 +373,97 @@ export function openPlaceSearchModal() {
     if (clearBtn) clearBtn.style.display = 'none';
     const results = document.getElementById('place-search-results');
     if (results) results.innerHTML = '';
+
+    const picker = document.getElementById('place-wishlist-picker');
+    if (picker) picker.style.display = 'none';
+    const toggleBtn = document.getElementById('toggle-wishlist-picker-btn');
+    if (toggleBtn) {
+        const pinCount = Array.isArray(wishlistPins) ? wishlistPins.length : 0;
+        toggleBtn.innerHTML = `<span>🌟</span> Import from Saved Wishlist (<span>${pinCount}</span>) ▾`;
+        toggleBtn.style.display = pinCount > 0 ? 'inline-flex' : 'none';
+    }
+
     setTimeout(() => { if (input) input.focus(); }, 150);
+}
+
+export function togglePlaceWishlistPicker() {
+    const picker = document.getElementById('place-wishlist-picker');
+    const btn = document.getElementById('toggle-wishlist-picker-btn');
+    if (!picker) return;
+
+    const isHidden = picker.style.display === 'none' || !picker.style.display;
+    if (isHidden) {
+        populatePlaceWishlistPicker();
+        picker.style.display = 'block';
+        if (btn) btn.innerHTML = `<span>🌟</span> Hide Wishlist (<span>${Array.isArray(wishlistPins) ? wishlistPins.length : 0}</span>) ▴`;
+    } else {
+        picker.style.display = 'none';
+        if (btn) btn.innerHTML = `<span>🌟</span> Import from Saved Wishlist (<span>${Array.isArray(wishlistPins) ? wishlistPins.length : 0}</span>) ▾`;
+    }
+}
+
+export function populatePlaceWishlistPicker() {
+    const picker = document.getElementById('place-wishlist-picker');
+    if (!picker) return;
+
+    if (!wishlistPins || wishlistPins.length === 0) {
+        picker.innerHTML = `<div style="padding:10px; font-size:12px; color:#8fa09c; text-align:center;">No saved wishlist places found. Save pins in the Wishlist tab!</div>`;
+        return;
+    }
+
+    const trip = trips.find(t => t.id === activePlacesTripId);
+    const stop = trip && trip.stops && trip.stops[activePlacesStopIndex];
+    let sortedPins = [...wishlistPins];
+    if (stop && stop.lat && stop.lon) {
+        sortedPins.sort((a, b) => {
+            const dA = (a.lat && a.lon) ? getDistance(stop.lat, stop.lon, a.lat, a.lon) : 99999;
+            const dB = (b.lat && b.lon) ? getDistance(stop.lat, stop.lon, b.lat, b.lon) : 99999;
+            return dA - dB;
+        });
+    }
+
+    picker.innerHTML = sortedPins.map(p => {
+        const visuals = getCategoryVisuals(p.category);
+        const displayName = escapeHTML(p.name);
+        const safeId = escapeJS(p.id);
+        const safeNotes = escapeHTML(p.notes || '');
+
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-bottom:1px solid var(--border-subtle); gap:8px;">
+            <div style="flex:1; min-width:0;">
+                <div style="font-weight:700; font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    ${visuals.emoji} ${displayName}
+                </div>
+                ${safeNotes ? `<div style="font-size:11px; color:#8fa09c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeNotes}</div>` : ''}
+            </div>
+            <button type="button" onclick="selectWishlistPinForPlace('${safeId}')" style="background:var(--primary); color:white; border:none; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;">Use ›</button>
+        </div>`;
+    }).join('');
+}
+
+export function selectWishlistPinForPlace(pinId) {
+    const pin = wishlistPins.find(p => String(p.id) === String(pinId));
+    if (!pin) return;
+
+    selectPOI(pin.name, pin.name, pin.lat || 0, pin.lon || 0);
+
+    const notesInput = document.getElementById('add-poi-notes');
+    if (notesInput && pin.notes) {
+        notesInput.value = pin.notes;
+    }
+
+    const catSelect = document.getElementById('add-poi-category');
+    if (catSelect) {
+        if (pin.category === 'Food') catSelect.value = '🍽 Food & Drink';
+        else catSelect.value = '● See & Do';
+    }
+
+    const picker = document.getElementById('place-wishlist-picker');
+    if (picker) picker.style.display = 'none';
+    const btn = document.getElementById('toggle-wishlist-picker-btn');
+    if (btn) btn.innerHTML = `<span>🌟</span> Import from Saved Wishlist (<span>${wishlistPins.length}</span>) ▾`;
+
+    showNotification(`Selected "${pin.name}" from wishlist!`);
 }
 
 export function searchPOI(query) {

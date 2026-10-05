@@ -21,7 +21,14 @@ import {
     closeModal,
     escapeHTML,
     escapeJS,
-    triggerHaptic
+    triggerHaptic,
+    trips,
+    saveTrips,
+    getDistance,
+    activePlacesTripId,
+    activePlacesStopIndex,
+    activePlacesDayIndex,
+    activeTripId
 } from './state.js';
 
 import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers } from './maps.js';
@@ -422,9 +429,10 @@ export function renderWishlistPins(autoFit = true) {
                     <option value="Food" ${normCat === 'Food' ? 'selected' : ''}>🍽 Food</option>
                 </select>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${safeName}</h4>
-                <div style="display:flex; gap:10px; margin-top:2px;">
-                    <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#1a73e8; text-decoration:none;">📸 Google Photos ›</a>
-                    <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#2b7c62; text-decoration:none;">🥾 AllTrails ›</a>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:3px;">
+                    <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#1a73e8; text-decoration:none;">📸 Photos ›</a>
+                    <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#2b7c62; text-decoration:none;">🥾 Trails ›</a>
+                    <button type="button" onclick="openAddWishlistPinToTripModal('${safeId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; color:var(--primary); cursor:pointer;" title="Add this place to a trip itinerary">✈ Add to Trip ›</button>
                 </div>
             </div>
             <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
@@ -475,9 +483,10 @@ export function renderWishlistPins(autoFit = true) {
 
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <button onclick="saveWishlistBubbleEdits('${safeId}')" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">Save</button>
-                    <div style="display:flex; gap:6px;">
+                    <div style="display:flex; gap:6px; align-items:center;">
                         <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="color:#1a73e8; font-weight:700; font-size:11px; text-decoration:none;">Photos</a>
                         <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="color:#2b7c62; font-weight:700; font-size:11px; text-decoration:none;">Trails</a>
+                        <button type="button" onclick="openAddWishlistPinToTripModal('${safeId}')" style="background:var(--primary-light); color:var(--primary); border:none; padding:3px 7px; border-radius:6px; font-size:10px; font-weight:700; cursor:pointer;">✈ To Trip</button>
                     </div>
                 </div>
             </div>
@@ -589,4 +598,205 @@ export function exportWishlistKML() {
     link.click();
     document.body.removeChild(link);
     showNotification("Wishlist KML exported!");
+}
+
+// --- ADD WISHLIST PIN TO TRIP MODAL LOGIC ---
+export function openAddWishlistPinToTripModal(pinId) {
+    const pin = wishlistPins.find(p => String(p.id) === String(pinId));
+    if (!pin) {
+        showNotification("Could not find this wishlist item.");
+        return;
+    }
+
+    if (!trips || trips.length === 0) {
+        showNotification("No trips found! Create a trip first in the Trips tab.");
+        return;
+    }
+
+    const modal = document.getElementById('add-wishlist-to-trip-modal');
+    if (!modal) return;
+
+    const idEl = document.getElementById('add-pin-to-trip-pin-id');
+    const nameEl = document.getElementById('add-pin-to-trip-name');
+    const notesEl = document.getElementById('add-pin-to-trip-notes');
+    const catEl = document.getElementById('add-pin-to-trip-select-cat');
+
+    if (idEl) idEl.value = pin.id;
+    if (nameEl) nameEl.textContent = pin.name;
+    if (notesEl) notesEl.value = pin.notes || '';
+
+    // Smart-map category:
+    if (catEl) {
+        const norm = normalizeCategory(pin.category);
+        if (norm === 'Food') catEl.value = '🍽 Food & Drink';
+        else catEl.value = '● See & Do';
+    }
+
+    // Populate trips select
+    const tripSelect = document.getElementById('add-pin-to-trip-select-trip');
+    if (tripSelect) {
+        tripSelect.innerHTML = trips.map(t => {
+            const numStops = Array.isArray(t.stops) ? t.stops.length : 0;
+            return `<option value="${escapeHTML(t.id)}">${escapeHTML(t.name)} (${numStops} stops)</option>`;
+        }).join('');
+
+        const preferredTripId = (activePlacesTripId && trips.some(t => t.id === activePlacesTripId))
+            ? activePlacesTripId
+            : (activeTripId && trips.some(t => t.id === activeTripId) ? activeTripId : trips[0].id);
+        tripSelect.value = preferredTripId;
+    }
+
+    updateAddPinModalStops(pin);
+    modal.style.display = 'flex';
+}
+
+export function updateAddPinModalStops(pin) {
+    const tripSelect = document.getElementById('add-pin-to-trip-select-trip');
+    const stopSelect = document.getElementById('add-pin-to-trip-select-stop');
+    const daySelect = document.getElementById('add-pin-to-trip-select-day');
+    const warningEl = document.getElementById('add-pin-to-trip-warning');
+    const submitBtn = document.getElementById('add-pin-to-trip-submit-btn');
+
+    if (!tripSelect || !stopSelect) return;
+
+    const selectedTripId = tripSelect.value;
+    const trip = trips.find(t => t.id === selectedTripId);
+
+    if (!trip || !Array.isArray(trip.stops) || trip.stops.length === 0) {
+        stopSelect.innerHTML = '<option value="-1">No stops in this trip</option>';
+        stopSelect.disabled = true;
+        if (daySelect) {
+            daySelect.innerHTML = '<option value="0">Day 1</option>';
+            daySelect.disabled = true;
+        }
+        if (warningEl) {
+            warningEl.textContent = 'This trip has no stops yet. Add a stop in Route first!';
+            warningEl.style.display = 'block';
+        }
+        if (submitBtn) submitBtn.disabled = true;
+        return;
+    }
+
+    stopSelect.disabled = false;
+    if (warningEl) warningEl.style.display = 'none';
+    if (submitBtn) submitBtn.disabled = false;
+
+    // Smart default: If pin has lat/lon, find the closest stop in this trip
+    let bestStopIdx = 0;
+    if (pin && pin.lat && pin.lon) {
+        let minDist = Infinity;
+        trip.stops.forEach((s, idx) => {
+            if (s.lat && s.lon) {
+                const d = getDistance(pin.lat, pin.lon, s.lat, s.lon);
+                if (d < minDist) {
+                    minDist = d;
+                    bestStopIdx = idx;
+                }
+            }
+        });
+    }
+
+    stopSelect.innerHTML = trip.stops.map((s, idx) => {
+        return `<option value="${idx}" ${idx === bestStopIdx ? 'selected' : ''}>Stop ${idx + 1}: ${escapeHTML(s.name)}</option>`;
+    }).join('');
+
+    updateAddPinModalDays();
+}
+
+export function updateAddPinModalDays() {
+    const tripSelect = document.getElementById('add-pin-to-trip-select-trip');
+    const stopSelect = document.getElementById('add-pin-to-trip-select-stop');
+    const daySelect = document.getElementById('add-pin-to-trip-select-day');
+
+    if (!tripSelect || !stopSelect || !daySelect) return;
+    const trip = trips.find(t => t.id === tripSelect.value);
+    const stopIdx = parseInt(stopSelect.value, 10);
+
+    if (!trip || !trip.stops || isNaN(stopIdx) || stopIdx < 0 || !trip.stops[stopIdx]) {
+        daySelect.innerHTML = '<option value="0">Day 1</option>';
+        daySelect.disabled = true;
+        return;
+    }
+
+    daySelect.disabled = false;
+    const stop = trip.stops[stopIdx];
+    const numDays = Math.max(1, Number(stop.nights) || 1);
+
+    let html = '';
+    for (let i = 0; i < numDays; i++) {
+        html += `<option value="${i}">Day ${i + 1}</option>`;
+    }
+    daySelect.innerHTML = html;
+}
+
+export function handleAddPinTripChange() {
+    const pinId = document.getElementById('add-pin-to-trip-pin-id')?.value;
+    const pin = wishlistPins.find(p => String(p.id) === String(pinId));
+    updateAddPinModalStops(pin);
+}
+
+export function handleAddPinStopChange() {
+    updateAddPinModalDays();
+}
+
+export function confirmAddWishlistPinToTrip() {
+    const pinId = document.getElementById('add-pin-to-trip-pin-id')?.value;
+    const pin = wishlistPins.find(p => String(p.id) === String(pinId));
+    if (!pin) {
+        showNotification("Could not find wishlist item.");
+        return;
+    }
+
+    const tripSelect = document.getElementById('add-pin-to-trip-select-trip');
+    const stopSelect = document.getElementById('add-pin-to-trip-select-stop');
+    const daySelect = document.getElementById('add-pin-to-trip-select-day');
+    const catSelect = document.getElementById('add-pin-to-trip-select-cat');
+    const notesInput = document.getElementById('add-pin-to-trip-notes');
+
+    const trip = trips.find(t => t.id === tripSelect?.value);
+    const stopIdx = parseInt(stopSelect?.value, 10);
+    const dayIdx = parseInt(daySelect?.value, 10) || 0;
+
+    if (!trip || !trip.stops || isNaN(stopIdx) || stopIdx < 0 || !trip.stops[stopIdx]) {
+        showNotification("Please select a valid trip stop.");
+        return;
+    }
+
+    const stop = trip.stops[stopIdx];
+    const category = catSelect?.value || '● See & Do';
+    const notes = notesInput?.value.trim() || pin.notes || '';
+
+    if (!Array.isArray(trip.places)) trip.places = [];
+
+    // Duplicate safety check
+    const isDuplicate = trip.places.some(p => p.cityIndex === stopIdx && p.dayIndex === dayIdx && (p.name || '').toLowerCase() === (pin.name || '').toLowerCase());
+    if (isDuplicate) {
+        if (!confirm(`"${pin.name}" is already on Day ${dayIdx + 1} of ${stop.name}. Add it anyway?`)) {
+            return;
+        }
+    }
+
+    trip.places.push({
+        id: `poi_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        cityIndex: stopIdx,
+        dayIndex: dayIdx,
+        name: pin.name,
+        category: category,
+        address: pin.name,
+        notes: notes,
+        lat: pin.lat || stop.lat,
+        lon: pin.lon || stop.lon
+    });
+
+    saveTrips();
+    triggerHaptic('success');
+    closeModal('add-wishlist-to-trip-modal');
+
+    if (activePlacesTripId === trip.id && activePlacesStopIndex === stopIdx && activePlacesDayIndex === dayIdx) {
+        if (typeof window.renderCityPlaces === 'function') {
+            window.renderCityPlaces();
+        }
+    }
+
+    showNotification(`✓ Added "${pin.name}" to ${trip.name} - ${stop.name} (Day ${dayIdx + 1})!`);
 }
