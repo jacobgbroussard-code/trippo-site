@@ -26,7 +26,9 @@ import {
     escapeHTML,
     escapeJS,
     wishlistPins,
-    getCategoryVisuals
+    getCategoryVisuals,
+    calculateTransitEstimate,
+    openDirectionsLink
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
@@ -205,32 +207,20 @@ export function switchPlacesDay(dayIndex) {
     renderCityPlaces();
 }
 
-export function calculateTransitEstimate(lat1, lon1, lat2, lon2) {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-    const distKm = getDistance(lat1, lon1, lat2, lon2);
-    if (isNaN(distKm) || distKm < 0.05) return null; // Under 50m, virtually same location
+export { calculateTransitEstimate, openDirectionsLink };
 
-    if (distKm <= 2.5) {
-        // Walk (average 4.8 km/h = 80 m/min)
-        const walkMins = Math.max(1, Math.round((distKm * 1000) / 80));
-        const distStr = distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)} km`;
-        return { icon: '🚶', text: `${walkMins} min walk (${distStr})`, mode: 'walking', distKm };
-    } else if (distKm <= 20) {
-        // Drive / City Transit (approx 30 km/h)
-        const driveMins = Math.max(2, Math.round((distKm / 30) * 60));
-        return { icon: '🚗', text: `~${driveMins} min drive (${distKm.toFixed(1)} km)`, mode: 'driving', distKm };
-    } else {
-        // Long distance transit / drive
-        const hours = Math.floor(distKm / 60);
-        const mins = Math.round(((distKm % 60) / 60) * 60);
-        const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
-        return { icon: '🚆', text: `~${timeStr} (${distKm.toFixed(0)} km)`, mode: 'transit', distKm };
+export function setPlaceTransitMode(placeId, mode) {
+    const trip = trips.find(t => t.id === activePlacesTripId);
+    if (!trip || !Array.isArray(trip.places)) return;
+    const place = trip.places.find(p => (p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex) && (String(p.id) === String(placeId) || p.name === placeId))
+        || trip.places.find(p => String(p.id) === String(placeId) || p.name === placeId);
+    if (place) {
+        place.transitMode = mode;
+        saveTrips();
+        triggerHaptic('light');
+        renderCityPlaces();
+        showNotification(`Commute set to ${mode === 'walking' ? 'Walking 🚶' : (mode === 'driving' ? 'Driving 🚗' : 'Transit 🚆')}`);
     }
-}
-
-export function openDirectionsLink(lat1, lon1, lat2, lon2) {
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}`;
-    window.open(url, '_blank');
 }
 
 export function renderCityPlaces() {
@@ -255,15 +245,25 @@ export function renderCityPlaces() {
         let connectorHTML = '';
         if (index > 0) {
             const prev = dayPlaces[index - 1];
-            const transit = calculateTransitEstimate(prev.lat, prev.lon, p.lat, p.lon);
+            const distKm = getDistance(prev.lat, prev.lon, p.lat, p.lon);
+            const currentMode = p.transitMode || (distKm <= 2.0 ? 'walking' : 'driving');
+            const transit = calculateTransitEstimate(prev.lat, prev.lon, p.lat, p.lon, currentMode);
+            const safePlaceId = escapeJS(p.id || p.name);
+
             if (transit) {
                 connectorHTML = `
                 <div class="transit-connector-row">
                     <div class="timeline-dash-line"></div>
-                    <div class="transit-pill" onclick="event.stopPropagation(); openDirectionsLink(${prev.lat}, ${prev.lon}, ${p.lat}, ${p.lon})" title="Open Google Maps Directions">
-                        <span class="transit-icon">${transit.icon}</span>
-                        <span class="transit-text">${transit.text}</span>
-                        <span style="font-size:10px; opacity:0.7;">↗</span>
+                    <div class="transit-pill">
+                        <div class="transit-mode-switcher">
+                            <button type="button" class="mode-icon-btn ${currentMode === 'walking' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'walking')" title="Walking directions">🚶</button>
+                            <button type="button" class="mode-icon-btn ${currentMode === 'driving' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'driving')" title="Driving directions">🚗</button>
+                            <button type="button" class="mode-icon-btn ${currentMode === 'transit' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'transit')" title="Transit / Subway directions">🚆</button>
+                        </div>
+                        <div class="transit-estimate-link" onclick="event.stopPropagation(); openDirectionsLink(${prev.lat}, ${prev.lon}, ${p.lat}, ${p.lon}, '${currentMode}')" title="Open Google Maps in ${currentMode} mode">
+                            <span>${transit.text}</span>
+                            <span style="font-size:10px; opacity:0.7;">↗</span>
+                        </div>
                     </div>
                     <div class="timeline-dash-line"></div>
                 </div>`;
@@ -646,6 +646,20 @@ export function openEditPlaceModal(placeIdentifier) {
     if (addrInput) addrInput.value = place.address;
     if (notesInput) notesInput.value = place.notes || '';
 
+    // Commute mode from previous stop
+    const modeSelect = document.getElementById('edit-poi-transit-mode');
+    const modeGroup = document.getElementById('edit-poi-transit-mode-group');
+    if (modeSelect && modeGroup) {
+        const dayPlaces = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
+        const isFirst = dayPlaces.length > 0 && (String(dayPlaces[0].id) === String(place.id) || dayPlaces[0].name === place.name);
+        if (isFirst) {
+            modeGroup.style.display = 'none';
+        } else {
+            modeGroup.style.display = 'block';
+            modeSelect.value = place.transitMode || 'auto';
+        }
+    }
+
     // Street View preview in Edit Place Modal
     const svCard = document.getElementById('place-streetview-preview');
     const svImg = document.getElementById('place-streetview-img');
@@ -682,6 +696,15 @@ export function savePlaceEdits() {
     place.dayIndex = targetDay;
     place.address = document.getElementById('edit-poi-address')?.value || '';
     place.notes = document.getElementById('edit-poi-notes')?.value || '';
+
+    const modeSelect = document.getElementById('edit-poi-transit-mode');
+    if (modeSelect && modeSelect.value) {
+        if (modeSelect.value === 'auto') {
+            delete place.transitMode;
+        } else {
+            place.transitMode = modeSelect.value;
+        }
+    }
 
     setActivePlacesDayIndex(targetDay);
     saveTrips();
@@ -746,3 +769,8 @@ export function saveDailyNotes() {
     closeModal('daily-notes-modal');
     showNotification("Daily activities saved!");
 }
+
+if (typeof window !== 'undefined') {
+    window.setPlaceTransitMode = setPlaceTransitMode;
+}
+

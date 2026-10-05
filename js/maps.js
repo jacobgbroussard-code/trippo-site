@@ -3,7 +3,7 @@
    js/maps.js
    ========================================================================== */
 
-import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML } from './state.js';
+import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate } from './state.js';
 
 export let plannerMap = null;
 export let placesMap = null;
@@ -371,6 +371,87 @@ export function drawPlannerMapRoute() {
     });
 }
 
+export function getPlaceModeStyle(mode) {
+    if (mode === 'driving') {
+        return {
+            color: '#2563eb',
+            weight: 5,
+            opacity: 0.9,
+            dashArray: null,
+            borderColor: '#2563eb',
+            emoji: '🚗'
+        };
+    } else if (mode === 'transit') {
+        return {
+            color: '#8b5cf6',
+            weight: 5,
+            opacity: 0.9,
+            dashArray: '8, 6',
+            borderColor: '#8b5cf6',
+            emoji: '🚆'
+        };
+    } else {
+        return {
+            color: '#10b981',
+            weight: 5,
+            opacity: 0.9,
+            dashArray: '6, 6',
+            borderColor: '#10b981',
+            emoji: '🚶'
+        };
+    }
+}
+
+export function getSegmentPopupHTML(fromPlace, toPlace, fromIdx, toIdx, currentMode) {
+    const safePlaceId = escapeJS(toPlace.id || toPlace.name);
+    const distKm = getDistance(fromPlace.lat, fromPlace.lon, toPlace.lat, toPlace.lon);
+    const transit = calculateTransitEstimate(fromPlace.lat, fromPlace.lon, toPlace.lat, toPlace.lon, currentMode) || {
+        icon: currentMode === 'walking' ? '🚶' : (currentMode === 'driving' ? '🚗' : '🚆'),
+        text: `${distKm.toFixed(1)} km`,
+        mode: currentMode
+    };
+
+    return `
+    <div class="map-segment-popup" style="min-width: 205px; padding: 4px 2px; font-family: inherit;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #8fa09c; font-weight: 700; margin-bottom: 3px;">
+            Leg ${fromIdx + 1} ➔ ${toIdx + 1}
+        </div>
+        <div style="font-weight: 700; font-size: 13px; color: #1d2b29; margin-bottom: 8px; line-height: 1.3;">
+            ${escapeHTML(fromPlace.name)} ➔ ${escapeHTML(toPlace.name)}
+        </div>
+        <div style="display: flex; gap: 4px; background: #eef5f3; padding: 3px; border-radius: 12px; margin-bottom: 8px;">
+            <button type="button" class="segment-mode-btn ${currentMode === 'walking' ? 'active' : ''}" 
+                onclick="window.setPlaceTransitMode('${safePlaceId}', 'walking')" 
+                style="flex: 1; border: none; background: ${currentMode === 'walking' ? '#124b43' : 'transparent'}; color: ${currentMode === 'walking' ? '#fff' : '#124b43'}; font-weight: 700; font-size: 11px; padding: 5px 3px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px;"
+                title="Walking">
+                🚶 Walk
+            </button>
+            <button type="button" class="segment-mode-btn ${currentMode === 'driving' ? 'active' : ''}" 
+                onclick="window.setPlaceTransitMode('${safePlaceId}', 'driving')" 
+                style="flex: 1; border: none; background: ${currentMode === 'driving' ? '#2563eb' : 'transparent'}; color: ${currentMode === 'driving' ? '#fff' : '#124b43'}; font-weight: 700; font-size: 11px; padding: 5px 3px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px;"
+                title="Driving">
+                🚗 Drive
+            </button>
+            <button type="button" class="segment-mode-btn ${currentMode === 'transit' ? 'active' : ''}" 
+                onclick="window.setPlaceTransitMode('${safePlaceId}', 'transit')" 
+                style="flex: 1; border: none; background: ${currentMode === 'transit' ? '#8b5cf6' : 'transparent'}; color: ${currentMode === 'transit' ? '#fff' : '#124b43'}; font-weight: 700; font-size: 11px; padding: 5px 3px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px;"
+                title="Transit / Train">
+                🚆 Transit
+            </button>
+        </div>
+        <div style="font-size: 12px; font-weight: 700; color: #124b43; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; background: rgba(18, 75, 67, 0.06); padding: 5px 8px; border-radius: 8px;">
+            <span style="font-size: 14px;">${transit.icon}</span>
+            <span>${transit.text}</span>
+        </div>
+        <button type="button" 
+            onclick="window.openDirectionsLink(${fromPlace.lat}, ${fromPlace.lon}, ${toPlace.lat}, ${toPlace.lon}, '${currentMode}')" 
+            style="width: 100%; padding: 7px 10px; background: #124b43; color: white; border: none; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span>Open in Google Maps (${currentMode})</span>
+            <span style="font-size: 12px;">↗</span>
+        </button>
+    </div>`;
+}
+
 export async function drawPlacesMapRoute(dayPlaces) {
     if (!placesMap) return;
     cMarkers.forEach(m => placesMap.removeLayer(m));
@@ -412,43 +493,90 @@ export async function drawPlacesMapRoute(dayPlaces) {
     });
 
     if (validPlaces.length > 1) {
-        const coords = validPlaces.map(p => `${p.lon.toFixed(5)},${p.lat.toFixed(5)}`).join(';');
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2500);
+        for (let i = 0; i < validPlaces.length - 1; i++) {
+            const fromPlace = validPlaces[i];
+            const toPlace = validPlaces[i + 1];
+            const safePlaceId = escapeJS(toPlace.id || toPlace.name);
+            const distKm = getDistance(fromPlace.lat, fromPlace.lon, toPlace.lat, toPlace.lon);
+            const currentMode = toPlace.transitMode || (distKm <= 2.0 ? 'walking' : (distKm <= 15.0 ? 'driving' : 'transit'));
+            const modeStyle = getPlaceModeStyle(currentMode);
+            const popupHTML = getSegmentPopupHTML(fromPlace, toPlace, i, i + 1, currentMode);
 
-            const res = await fetch(`https://router.project-osrm.org/route/v1/walking/${coords}?overview=full&geometries=geojson`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            const data = await res.json();
-
-            if (activeRouteToken !== currentToken) return;
-
-            if (data.routes && data.routes[0]) {
-                const routeObj = data.routes[0];
-                const routeLine = L.geoJSON(routeObj.geometry, {
-                    style: { color: '#ff4757', weight: 5, opacity: 0.85, dashArray: '8, 8' }
-                }).addTo(placesMap);
-
-                routeLine.on('click', function () {
-                    const p1 = validPlaces[0];
-                    const p2 = validPlaces[1] || p1;
-                    const mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${p1.lat},${p1.lon}&destination=${p2.lat},${p2.lon}&travelmode=walking`;
-                    window.open(mapUrl, '_blank');
-                });
-
-                cLines.push(routeLine);
-            }
-        } catch (e) {
-            if (activeRouteToken !== currentToken) return;
-            const latlngs = validPlaces.map(p => [p.lat, p.lon]);
-            const polyline = L.polyline(latlngs, {
-                color: '#ff4757',
-                weight: 4,
-                dashArray: '6, 6'
+            // 1. Immediate straight polyline for instant responsiveness
+            const latlngs = [[fromPlace.lat, fromPlace.lon], [toPlace.lat, toPlace.lon]];
+            let segmentLayer = L.polyline(latlngs, {
+                color: modeStyle.color,
+                weight: modeStyle.weight,
+                opacity: modeStyle.opacity,
+                dashArray: modeStyle.dashArray
             }).addTo(placesMap);
-            cLines.push(polyline);
+
+            segmentLayer.bindPopup(popupHTML);
+            segmentLayer.on('mouseover', function () {
+                this.setStyle({ weight: modeStyle.weight + 2, opacity: 1 });
+            });
+            segmentLayer.on('mouseout', function () {
+                this.setStyle({ weight: modeStyle.weight, opacity: modeStyle.opacity });
+            });
+            cLines.push(segmentLayer);
+
+            // 2. Midpoint transit mode badge with 1-tap popup
+            const midLat = (fromPlace.lat + toPlace.lat) / 2;
+            const midLon = (fromPlace.lon + toPlace.lon) / 2;
+            const badgeIcon = L.divIcon({
+                className: 'transit-seg-icon',
+                html: `<div style="background:white; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid ${modeStyle.color}; box-shadow:0 2px 6px rgba(0,0,0,0.25); cursor:pointer;" title="Commute: ${currentMode} (Click to switch)">${modeStyle.emoji}</div>`,
+                iconSize: [26, 26],
+                iconAnchor: [13, 13]
+            });
+            const badgeMarker = L.marker([midLat, midLon], { icon: badgeIcon, zIndexOffset: 750 }).addTo(placesMap);
+            badgeMarker.bindPopup(popupHTML);
+            cMarkers.push(badgeMarker);
+
+            // 3. Asynchronously fetch detailed road geometry for walking and driving
+            if (currentMode === 'walking' || currentMode === 'driving') {
+                const osrmProfile = currentMode === 'walking' ? 'walking' : 'driving';
+                const coords = `${fromPlace.lon.toFixed(5)},${fromPlace.lat.toFixed(5)};${toPlace.lon.toFixed(5)},${toPlace.lat.toFixed(5)}`;
+
+                (async (capturedLayer, segToken) => {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 1800);
+                        const res = await fetch(`https://router.project-osrm.org/route/v1/${osrmProfile}/${coords}?overview=full&geometries=geojson`, {
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        const data = await res.json();
+                        if (activeRouteToken !== segToken) return;
+
+                        if (data.routes && data.routes[0] && data.routes[0].geometry) {
+                            if (placesMap && placesMap.hasLayer(capturedLayer)) {
+                                placesMap.removeLayer(capturedLayer);
+                                const idx = cLines.indexOf(capturedLayer);
+                                if (idx > -1) cLines.splice(idx, 1);
+                            }
+                            const osrmLayer = L.geoJSON(data.routes[0].geometry, {
+                                style: {
+                                    color: modeStyle.color,
+                                    weight: modeStyle.weight,
+                                    opacity: modeStyle.opacity,
+                                    dashArray: modeStyle.dashArray
+                                }
+                            }).addTo(placesMap);
+                            osrmLayer.bindPopup(popupHTML);
+                            osrmLayer.on('mouseover', function () {
+                                this.setStyle({ weight: modeStyle.weight + 2, opacity: 1 });
+                            });
+                            osrmLayer.on('mouseout', function () {
+                                this.setStyle({ weight: modeStyle.weight, opacity: modeStyle.opacity });
+                            });
+                            cLines.push(osrmLayer);
+                        }
+                    } catch (e) {
+                        // Gracefully retain straight polyline if network fails or times out
+                    }
+                })(segmentLayer, currentToken);
+            }
         }
     }
 

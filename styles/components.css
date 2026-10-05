@@ -893,39 +893,100 @@ body.dark-mode .timeline-dash-line {
 .transit-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: var(--primary-light);
-    color: var(--primary);
-    padding: 4px 12px;
+    gap: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 3px 8px 3px 4px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 700;
     border: 1px solid var(--border-subtle);
-    cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.transit-pill:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: rgba(18, 75, 67, 0.25);
+}
+
+.transit-mode-switcher {
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary-light);
+    border-radius: 14px;
+    padding: 2px;
+    gap: 1px;
+}
+
+.mode-icon-btn {
+    background: none;
+    border: none;
+    border-radius: 10px;
+    padding: 3px 6px;
+    font-size: 11px;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.15s ease;
+    opacity: 0.55;
     -webkit-tap-highlight-color: transparent;
 }
 
-.transit-pill:hover,
-.transit-pill:active {
+.mode-icon-btn:hover {
+    opacity: 0.9;
+    transform: scale(1.08);
+}
+
+.mode-icon-btn.active {
     background: var(--primary);
     color: #ffffff;
-    transform: scale(1.02);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    opacity: 1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    transform: scale(1.04);
+}
+
+.transit-estimate-link {
+    cursor: pointer;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.transit-estimate-link:hover,
+.transit-estimate-link:active {
+    color: var(--accent);
+    background: rgba(255, 71, 87, 0.08);
 }
 
 body.dark-mode .transit-pill {
-    background: rgba(255, 255, 255, 0.08);
-    color: #a3e6d8;
-    border-color: rgba(255, 255, 255, 0.14);
+    background: var(--card-bg);
+    color: var(--text);
+    border-color: var(--border-subtle);
 }
 
-body.dark-mode .transit-pill:hover,
-body.dark-mode .transit-pill:active {
+body.dark-mode .transit-mode-switcher {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .mode-icon-btn.active {
     background: var(--primary);
     color: #ffffff;
+}
+
+body.dark-mode .transit-estimate-link {
+    color: var(--primary);
+}
+
+body.dark-mode .transit-estimate-link:hover {
+    color: var(--accent);
 }
 
 /* --- SEARCH INPUT WRAPPER & 1-TAP CLEAR BUTTON --- */
@@ -984,3 +1045,43 @@ body.dark-mode .search-clear-btn:active {
     color: #ffffff;
     transform: translateY(-50%) scale(1.08);
 }
+
+/* --- MAP SEGMENT POPUP & MODE CHIPS --- */
+.map-segment-popup {
+    font-family: inherit;
+    color: var(--text);
+}
+
+.segment-mode-btn {
+    transition: all 0.15s ease;
+    border: none;
+    outline: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.segment-mode-btn:hover {
+    transform: scale(1.04);
+}
+
+.segment-mode-btn:active {
+    transform: scale(0.96);
+}
+
+body.dark-mode .leaflet-popup-content-wrapper,
+body.dark-mode .leaflet-popup-tip {
+    background: #1e2c2a !important;
+    color: #e5eceb !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .map-segment-popup div[style*="background: #eef5f3"],
+body.dark-mode .map-segment-popup div[style*="background:#eef5f3"] {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark-mode .map-segment-popup div[style*="color: #1d2b29"],
+body.dark-mode .map-segment-popup div[style*="color:#1d2b29"] {
+    color: #e5eceb !important;
+}
+

@@ -304,9 +304,71 @@ export function getDistance(lat1, lon1, lat2, lon2) {
     return 12742 * Math.asin(Math.sqrt(a));
 }
 
+export function calculateTransitEstimate(lat1, lon1, lat2, lon2, preferredMode = null) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const distKm = getDistance(lat1, lon1, lat2, lon2);
+    if (isNaN(distKm) || distKm < 0.05) return null; // Under 50m, virtually same location
+
+    let mode = preferredMode;
+    if (!mode || (mode !== 'walking' && mode !== 'driving' && mode !== 'transit')) {
+        if (distKm <= 2.0) mode = 'walking';
+        else if (distKm <= 15.0) mode = 'driving';
+        else mode = 'transit';
+    }
+
+    const distStr = distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)} km`;
+
+    if (mode === 'walking') {
+        const walkMins = Math.max(1, Math.round((distKm * 1000) / 80));
+        return {
+            icon: '🚶',
+            text: `~${walkMins} min walk (${distStr})`,
+            mins: walkMins,
+            timeStr: `${walkMins} min`,
+            mode: 'walking',
+            distKm,
+            distStr
+        };
+    } else if (mode === 'driving') {
+        const driveMins = Math.max(2, Math.round((distKm / 30) * 60));
+        return {
+            icon: '🚗',
+            text: `~${driveMins} min drive (${distStr})`,
+            mins: driveMins,
+            timeStr: `${driveMins} min`,
+            mode: 'driving',
+            distKm,
+            distStr
+        };
+    } else {
+        const transitMins = Math.max(5, Math.round(5 + (distKm / 30) * 60));
+        const hours = Math.floor(transitMins / 60);
+        const remMins = transitMins % 60;
+        const timeStr = hours > 0 ? `${hours}h ${remMins}m` : `${remMins} min`;
+        return {
+            icon: '🚆',
+            text: `~${timeStr} transit (${distStr})`,
+            mins: transitMins,
+            timeStr: timeStr,
+            mode: 'transit',
+            distKm,
+            distStr
+        };
+    }
+}
+
+export function openDirectionsLink(lat1, lon1, lat2, lon2, mode = 'walking') {
+    const validModes = ['walking', 'driving', 'transit'];
+    const travelmode = validModes.includes(mode) ? mode : 'walking';
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=${travelmode}`;
+    window.open(url, '_blank');
+}
+
 if (typeof window !== 'undefined') {
     window.triggerHaptic = triggerHaptic;
     window.escapeHTML = escapeHTML;
     window.escapeJS = escapeJS;
     window.getDistance = getDistance;
+    window.calculateTransitEstimate = calculateTransitEstimate;
+    window.openDirectionsLink = openDirectionsLink;
 }
