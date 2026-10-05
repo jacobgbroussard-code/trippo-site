@@ -66,10 +66,46 @@ export function parseLocalDate(dateStr) {
 }
 
 export function formatLocalDate(d) {
+    if (!d) return '';
+    if (typeof d === 'string') {
+        const parts = String(d).split('T')[0].split('-').map(Number);
+        if (parts.length >= 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+            d = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+            const parsed = new Date(d);
+            if (!isNaN(parsed.getTime())) d = parsed;
+            else return '';
+        }
+    }
+    if (!(d instanceof Date) || isNaN(d.getTime())) return '';
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+}
+
+// --- HTML & ATTRIBUTE SANITIZERS (XSS Defense) ---
+export function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+export function escapeJS(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, '\u2019')
+        .replace(/"/g, '\u201D')
+        .replace(/`/g, '\u00B4')
+        .replace(/</g, '\\x3C')
+        .replace(/>/g, '\\x3E')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '');
 }
 
 // --- NOTIFICATION TOAST ---
@@ -262,4 +298,6 @@ export function triggerHaptic(type = 'light') {
 }
 if (typeof window !== 'undefined') {
     window.triggerHaptic = triggerHaptic;
+    window.escapeHTML = escapeHTML;
+    window.escapeJS = escapeJS;
 }

@@ -3,7 +3,7 @@
    js/maps.js
    ========================================================================== */
 
-import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification } from './state.js';
+import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML } from './state.js';
 
 export let plannerMap = null;
 export let placesMap = null;
@@ -314,7 +314,7 @@ export function drawPlannerMapRoute() {
             weight: 2.5,
             fillOpacity: 1
         }).addTo(plannerMap);
-        marker.bindPopup(`<div style="font-weight:700; font-size:14px; color:#124b43; padding:2px 0;">📍 ${stop.name}</div><div style="font-size:12px; color:#555;">${stop.nights} Night${stop.nights !== 1 ? 's' : ''}</div>`);
+        marker.bindPopup(`<div style="font-weight:700; font-size:14px; color:#124b43; padding:2px 0;">📍 ${escapeHTML(stop.name)}</div><div style="font-size:12px; color:#555;">${stop.nights} Night${stop.nights !== 1 ? 's' : ''}</div>`);
         pMarkers.push(marker);
         bounds.extend([stop.lat, stop.lon]);
     });

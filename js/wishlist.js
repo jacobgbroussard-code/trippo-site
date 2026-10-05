@@ -18,7 +18,10 @@ import {
     normalizeCategory,
     getCategoryVisuals,
     showNotification,
-    closeModal
+    closeModal,
+    escapeHTML,
+    escapeJS,
+    triggerHaptic
 } from './state.js';
 
 import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers } from './maps.js';
@@ -48,14 +51,16 @@ export function renderWishlistCollections() {
     if (!container) return;
     container.innerHTML = wishlistCollections.map(col => {
         const count = wishlistPins.filter(p => (p.wishlistId || 'master') === col.id).length;
+        const safeColId = escapeJS(col.id);
+        const safeColName = escapeHTML(col.name);
         const deleteBtn = col.isMaster ? '' : `
-            <button onclick="promptDeleteWishlistCollection('${col.id}', event)" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--accent);" title="Delete List">🗑️</button>
+            <button onclick="promptDeleteWishlistCollection('${safeColId}', event)" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--accent);" title="Delete List">🗑️</button>
         `;
 
         return `
-        <div class="trip-card" onclick="openWishlistDetail('${col.id}')">
+        <div class="trip-card" onclick="openWishlistDetail('${safeColId}')">
             <div class="trip-card-content">
-                <h3>${col.name}</h3>
+                <h3>${safeColName}</h3>
                 <p>${count} saved locations</p>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -98,6 +103,7 @@ export function promptDeleteWishlistCollection(id, e) {
     if (!col || col.isMaster) return;
 
     if (confirm(`Delete the wishlist "${col.name}"? Pins will be moved to the Master Wishlist.`)) {
+        triggerHaptic('warning');
         wishlistPins.forEach(p => {
             if (p.wishlistId === id) p.wishlistId = 'master';
         });
@@ -232,6 +238,8 @@ export function openWishlistSearchModal() {
     if (input) input.value = '';
     const results = document.getElementById('wishlist-search-results');
     if (results) results.innerHTML = '';
+    const clearBtn = document.getElementById('clear-wishlist-search-input');
+    if (clearBtn) clearBtn.style.display = 'none';
     setTimeout(() => { if (input) input.focus(); }, 150);
 }
 
@@ -259,16 +267,19 @@ export function searchWishlistLocation(query) {
             const data = await res.json();
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
-                    const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
+                    const rawName = item.name || item.display_name.split(',')[0];
+                    const safeName = escapeJS(rawName);
+                    const displayName = escapeHTML(rawName);
+                    const safeAddress = escapeHTML(item.display_name.substring(0, 50));
                     return `
                     <div class="search-result" onclick="selectWishlistLocation('${safeName}', ${item.lat}, ${item.lon})">
-                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
-                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 50)}...</small>
+                        <strong>${displayName}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${safeAddress}...</small>
                     </div>`;
                 }).join('');
                 resultsDiv.style.display = 'block';
             } else {
-                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No locations found for "${query}"</div>`;
+                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No locations found for "${escapeHTML(query)}"</div>`;
                 resultsDiv.style.display = 'block';
             }
         } catch (e) {
@@ -356,6 +367,10 @@ export function saveWishlistBubbleEdits(id) {
 }
 
 export function deleteWishlistPin(id) {
+    const pin = wishlistPins.find(p => p.id === id);
+    const pinName = pin ? pin.name : 'this pin';
+    if (!confirm(`Are you sure you want to remove "${pinName}" from your wishlist?`)) return;
+    triggerHaptic('warning');
     setWishlistPins(wishlistPins.filter(p => p.id !== id));
     saveWishlist();
     renderWishlistPins(false);
@@ -392,26 +407,29 @@ export function renderWishlistPins(autoFit = true) {
         const gMapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
         const allTrailsUrl = `https://www.alltrails.com/explore?b_tl_lat=${p.lat + 0.05}&b_tl_lng=${p.lon - 0.05}&b_br_lat=${p.lat - 0.05}&b_br_lng=${p.lon + 0.05}`;
         const normCat = normalizeCategory(p.category);
+        const safeId = escapeJS(p.id);
+        const safeName = escapeHTML(p.name);
+        const safeNotes = escapeHTML(p.notes || '');
 
         return `
         <div class="place-item-card" style="border-left: 4px solid var(--accent); align-items: stretch; gap: 14px;">
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                <select class="form-control" style="width: auto; padding: 4px 8px; font-size: 11px; font-weight: 700; margin-bottom: 6px; background:var(--primary-light); color:var(--primary); border:none;" onchange="updateWishlistCategory('${p.id}', this.value)">
+                <select class="form-control" style="width: auto; padding: 4px 8px; font-size: 11px; font-weight: 700; margin-bottom: 6px; background:var(--primary-light); color:var(--primary); border:none;" onchange="updateWishlistCategory('${safeId}', this.value)">
                     <option value="Cities" ${normCat === 'Cities' ? 'selected' : ''}>🏙 Cities</option>
                     <option value="Nature" ${normCat === 'Nature' ? 'selected' : ''}>🌲 Nature</option>
                     <option value="Attractions" ${normCat === 'Attractions' ? 'selected' : ''}>🏛 Attractions</option>
                     <option value="Fun" ${normCat === 'Fun' ? 'selected' : ''}>🎉 Fun</option>
                     <option value="Food" ${normCat === 'Food' ? 'selected' : ''}>🍽 Food</option>
                 </select>
-                <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${p.name}</h4>
+                <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${safeName}</h4>
                 <div style="display:flex; gap:10px; margin-top:2px;">
-                    <a href="${gMapsSearchUrl}" target="_blank" style="font-size:11px; font-weight:700; color:#1a73e8; text-decoration:none;">📸 Google Photos ›</a>
-                    <a href="${allTrailsUrl}" target="_blank" style="font-size:11px; font-weight:700; color:#2b7c62; text-decoration:none;">🥾 AllTrails ›</a>
+                    <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#1a73e8; text-decoration:none;">📸 Google Photos ›</a>
+                    <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#2b7c62; text-decoration:none;">🥾 AllTrails ›</a>
                 </div>
             </div>
             <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
-                <textarea class="form-control" style="height: 65px; font-size: 13px; background: var(--bg);" placeholder="Add personal notes..." oninput="updateWishlistInlineNote('${p.id}', this.value)">${p.notes || ''}</textarea>
-                <button onclick="deleteWishlistPin('${p.id}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent); height: fit-content;" title="Remove Pin">🗑</button>
+                <textarea class="form-control" style="height: 65px; font-size: 13px; background: var(--bg);" placeholder="Add personal notes..." oninput="updateWishlistInlineNote('${safeId}', this.value)">${safeNotes}</textarea>
+                <button onclick="deleteWishlistPin('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent); height: fit-content;" title="Remove Pin">🗑</button>
             </div>
         </div>`;
     }).join('');
@@ -420,6 +438,9 @@ export function renderWishlistPins(autoFit = true) {
     filteredPins.forEach(p => {
         const visuals = getCategoryVisuals(p.category);
         const normCat = normalizeCategory(p.category);
+        const safeId = escapeJS(p.id);
+        const safeName = escapeHTML(p.name);
+        const safeNotes = escapeHTML(p.notes || '');
 
         const icon = L.divIcon({
             className: 'custom-div-icon',
@@ -434,11 +455,11 @@ export function renderWishlistPins(autoFit = true) {
 
         const popupContent = `
             <div class="wishlist-bubble-card">
-                <strong style="font-size:14px; color:var(--primary); display:block; margin-bottom:6px;">${p.name}</strong>
+                <strong style="font-size:14px; color:var(--primary); display:block; margin-bottom:6px;">${safeName}</strong>
                 
                 <div style="margin-bottom:6px;">
                     <label style="font-size:10px; font-weight:700; color:#71837f; text-transform:uppercase;">Category</label>
-                    <select id="bubble-cat-${p.id}" style="width:100%; padding:4px 6px; font-size:12px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:2px;">
+                    <select id="bubble-cat-${safeId}" style="width:100%; padding:4px 6px; font-size:12px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:2px;">
                         <option value="Cities" ${normCat === 'Cities' ? 'selected' : ''}>🏙 Cities</option>
                         <option value="Nature" ${normCat === 'Nature' ? 'selected' : ''}>🌲 Nature</option>
                         <option value="Attractions" ${normCat === 'Attractions' ? 'selected' : ''}>🏛 Attractions</option>
@@ -449,14 +470,14 @@ export function renderWishlistPins(autoFit = true) {
 
                 <div style="margin-bottom:8px;">
                     <label style="font-size:10px; font-weight:700; color:#71837f; text-transform:uppercase;">Notes</label>
-                    <textarea id="bubble-note-${p.id}" placeholder="Type notes here..." style="width:100%; height:55px; padding:6px; font-size:12px; border-radius:8px; border:1px solid var(--border-subtle); resize:none; margin-top:2px; font-family:inherit;">${p.notes || ''}</textarea>
+                    <textarea id="bubble-note-${safeId}" placeholder="Type notes here..." style="width:100%; height:55px; padding:6px; font-size:12px; border-radius:8px; border:1px solid var(--border-subtle); resize:none; margin-top:2px; font-family:inherit;">${safeNotes}</textarea>
                 </div>
 
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <button onclick="saveWishlistBubbleEdits('${p.id}')" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">Save</button>
+                    <button onclick="saveWishlistBubbleEdits('${safeId}')" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">Save</button>
                     <div style="display:flex; gap:6px;">
-                        <a href="${gMapsSearchUrl}" target="_blank" style="color:#1a73e8; font-weight:700; font-size:11px; text-decoration:none;">Photos</a>
-                        <a href="${allTrailsUrl}" target="_blank" style="color:#2b7c62; font-weight:700; font-size:11px; text-decoration:none;">Trails</a>
+                        <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="color:#1a73e8; font-weight:700; font-size:11px; text-decoration:none;">Photos</a>
+                        <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="color:#2b7c62; font-weight:700; font-size:11px; text-decoration:none;">Trails</a>
                     </div>
                 </div>
             </div>

@@ -22,7 +22,9 @@ import {
     closeModal,
     parseLocalDate,
     getActiveTrip,
-    triggerHaptic
+    triggerHaptic,
+    escapeHTML,
+    escapeJS
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
@@ -271,21 +273,23 @@ export function renderCityPlaces() {
             }
         }
 
+        const safePlaceId = escapeJS(p.id || p.name);
+        const safePlaceName = escapeJS(p.name || '');
         const svButton = (p.lat && p.lon) ? `
-            <button type="button" class="streetview-btn" onclick="event.stopPropagation(); openStreetViewModal(${p.lat}, ${p.lon}, '${(p.name || '').replace(/['"\\]/g, ' ')}')" title="Street View" style="background:none; border:none; padding:4px 8px; font-size:15px; cursor:pointer; color:var(--primary); opacity:0.85;">👁</button>` : '';
+            <button type="button" class="streetview-btn" onclick="event.stopPropagation(); openStreetViewModal(${Number(p.lat)}, ${Number(p.lon)}, '${safePlaceName}')" title="Street View" style="background:none; border:none; padding:4px 8px; font-size:15px; cursor:pointer; color:var(--primary); opacity:0.85;">👁</button>` : '';
 
         return `
         ${connectorHTML}
-        <div class="place-item-card" data-id="${p.id || p.name}" ${isStart ? 'style="border-left: 4px solid var(--accent);"' : ''}>
+        <div class="place-item-card" data-id="${escapeHTML(p.id || p.name)}" ${isStart ? 'style="border-left: 4px solid var(--accent);"' : ''}>
             <div class="timeline-node-pin ${isStart ? 'start-pin' : ''}">${isStart ? '🏨' : (index + 1)}</div>
             <div class="drag-handle" style="color:${isStart ? 'var(--accent)' : '#b7c7c3'};" title="Drag to reorder">≡</div>
-            <div style="flex-grow:1;" onclick="openEditPlaceModal('${p.id || p.name}')">
+            <div style="flex-grow:1;" onclick="openEditPlaceModal('${safePlaceId}')">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     ${badge}
                     ${svButton}
                 </div>
-                <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${p.name}</h4>
-                <p style="margin: 0; font-size: 12px; color: #728481;">📍 ${p.address ? p.address.substring(0, 36) : ''}...</p>
+                <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${escapeHTML(p.name)}</h4>
+                <p style="margin: 0; font-size: 12px; color: #728481;">📍 ${escapeHTML(p.address ? p.address.substring(0, 36) : '')}...</p>
             </div>
         </div>`;
     }).join('');
@@ -363,6 +367,8 @@ export function openPlaceSearchModal() {
     if (form) form.style.display = 'none';
     const input = document.getElementById('place-search-input');
     if (input) input.value = '';
+    const clearBtn = document.getElementById('clear-place-search-input');
+    if (clearBtn) clearBtn.style.display = 'none';
     const results = document.getElementById('place-search-results');
     if (results) results.innerHTML = '';
     setTimeout(() => { if (input) input.focus(); }, 150);
@@ -408,19 +414,20 @@ export function searchPOI(query) {
 
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
-                    const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
-                    const safeAddr = (item.display_name || '').replace(/['"\\]/g, ' ');
+                    const rawName = item.name || item.display_name.split(',')[0];
+                    const safeName = escapeJS(rawName);
+                    const safeAddr = escapeJS(item.display_name || '');
                     return `
-                    <div class="search-result" onclick="selectPOI('${safeName}', '${safeAddr}', ${item.lat}, ${item.lon})">
-                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
-                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 52)}...</small>
+                    <div class="search-result" onclick="selectPOI('${safeName}', '${safeAddr}', ${Number(item.lat)}, ${Number(item.lon)})">
+                        <strong>${escapeHTML(rawName)}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${escapeHTML(item.display_name.substring(0, 52))}...</small>
                     </div>`;
                 }).join('');
                 resultsDiv.style.display = 'block';
             } else {
                 resultsDiv.innerHTML = `
                     <div style="padding: 12px 16px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">
-                        No matches found for "${query}". You can fill in the details manually below.
+                        No matches found for "${escapeHTML(query)}". You can fill in the details manually below.
                     </div>`;
                 resultsDiv.style.display = 'block';
                 const form = document.getElementById('place-add-form');
@@ -594,6 +601,10 @@ export function savePlaceEdits() {
 export function deletePlaceFromEdit() {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip || !Array.isArray(trip.places)) return;
+    const place = trip.places.find(p => (String(p.id) === String(activeEditPlaceId) || p.name === activeEditPlaceId));
+    const placeName = place ? place.name : 'this stop';
+    if (!confirm(`Remove "${placeName}" from this day's itinerary?`)) return;
+    triggerHaptic('warning');
     trip.places = trip.places.filter(p => !(String(p.id) === String(activeEditPlaceId) || p.name === activeEditPlaceId));
     saveTrips();
     closeModal('edit-place-modal');
@@ -619,7 +630,7 @@ export function openDailyNotes(index, startDateStr) {
         html += `
         <div class="form-group" style="margin-bottom: 18px;">
             <label style="color:var(--primary);">Day ${i + 1} • ${currentD.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</label>
-            <textarea id="note-day-${i}" class="form-control" placeholder="What's planned for today in ${stop.name}?">${stop.notes[i] || ''}</textarea>
+            <textarea id="note-day-${i}" class="form-control" placeholder="What's planned for today in ${escapeHTML(stop.name)}?">${escapeHTML(stop.notes[i] || '')}</textarea>
         </div>`;
         currentD.setDate(currentD.getDate() + 1);
     }

@@ -10,7 +10,10 @@ import {
     parseLocalDate,
     formatLocalDate,
     showNotification,
-    closeModal
+    closeModal,
+    escapeHTML,
+    escapeJS,
+    triggerHaptic
 } from './state.js';
 
 import { drawPlannerMapRoute, plannerMap, pMarkers } from './maps.js';
@@ -46,7 +49,7 @@ export function renderPlanner() {
             <div class="stop-card">
                 <div class="drag-handle">≡</div>
                 <div style="flex-grow:1; cursor:pointer;" onclick="openDailyNotes(${index}, '${formatLocalDate(arr)}')">
-                    <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${stop.name}</h3>
+                    <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${escapeHTML(stop.name)}</h3>
                     <p style="margin: 0; font-size: 12px; color: #728481;">${arr.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${dep.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
@@ -131,6 +134,7 @@ export function deleteStop(index) {
     const trip = getActiveTrip();
     if (!trip || !trip.stops || !trip.stops[index]) return;
     if (confirm(`Remove ${trip.stops[index].name} from itinerary?`)) {
+        triggerHaptic('warning');
         trip.stops.splice(index, 1);
         if (Array.isArray(trip.places)) {
             trip.places = trip.places
@@ -186,6 +190,8 @@ export function openCitySearchModal() {
     if (modal) modal.style.display = 'flex';
     const input = document.getElementById('city-search-input');
     if (input) input.value = '';
+    const clearBtn = document.getElementById('clear-city-search-input');
+    if (clearBtn) clearBtn.style.display = 'none';
     const results = document.getElementById('city-search-results');
     if (results) results.innerHTML = '';
     setTimeout(() => { if (input) input.focus(); }, 150);
@@ -215,16 +221,18 @@ export function searchCity(query) {
             const data = await res.json();
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
-                    const safeName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
+                    const rawName = item.name || item.display_name.split(',')[0];
+                    const safeName = escapeJS(rawName);
+                    const safeAddr = escapeHTML(item.display_name.substring(0, 48));
                     return `
-                    <div class="search-result" onclick="addCityStop('${safeName}', ${item.lat}, ${item.lon})">
-                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
-                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 48)}...</small>
+                    <div class="search-result" onclick="addCityStop('${safeName}', ${Number(item.lat)}, ${Number(item.lon)})">
+                        <strong>${escapeHTML(rawName)}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${safeAddr}...</small>
                     </div>`;
                 }).join('');
                 resultsDiv.style.display = 'block';
             } else {
-                resultsDiv.innerHTML = `<div style="padding: 12px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No cities found for "${query}"</div>`;
+                resultsDiv.innerHTML = `<div style="padding: 12px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No cities found for "${escapeHTML(query)}"</div>`;
                 resultsDiv.style.display = 'block';
             }
         } catch (e) {

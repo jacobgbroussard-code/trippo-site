@@ -117,6 +117,8 @@ function setupAutocompleteInstances() {
 
                 addCityStop(name, lat, lon);
                 cityInput.value = '';
+                const clearBtn = document.getElementById('clear-city-search-input');
+                if (clearBtn) clearBtn.style.display = 'none';
                 const results = document.getElementById('city-search-results');
                 if (results) results.style.display = 'none';
                 closeModal('city-search-modal');
@@ -151,6 +153,9 @@ function setupAutocompleteInstances() {
                 if (catSelect && typeof window.detectCategory === 'function') {
                     catSelect.value = window.detectCategory(place.name || '', place.formatted_address || '');
                 }
+
+                const clearBtn = document.getElementById('clear-place-search-input');
+                if (clearBtn) clearBtn.style.display = 'none';
 
                 const results = document.getElementById('place-search-results');
                 if (results) results.style.display = 'none';
@@ -197,6 +202,9 @@ function setupAutocompleteInstances() {
                     nameInput.value = place.name;
                 }
 
+                const clearBtn = document.getElementById('clear-hotel-address-input');
+                if (clearBtn) clearBtn.style.display = hotelInput.value.trim().length > 0 ? 'flex' : 'none';
+
                 const results = document.getElementById('hotel-address-results');
                 if (results) results.style.display = 'none';
             });
@@ -227,6 +235,9 @@ function setupAutocompleteInstances() {
                     if (latInput) latInput.value = place.geometry.location.lat();
                     if (lonInput) lonInput.value = place.geometry.location.lng();
                 }
+
+                const clearBtn = document.getElementById('clear-wishlist-search-input');
+                if (clearBtn) clearBtn.style.display = 'none';
 
                 const results = document.getElementById('wishlist-search-results');
                 if (results) results.style.display = 'none';

@@ -17,7 +17,10 @@ import {
     parseLocalDate,
     formatLocalDate,
     showNotification,
-    closeModal
+    closeModal,
+    escapeHTML,
+    escapeJS,
+    triggerHaptic
 } from './state.js';
 
 import { openPlacesCityView } from './places.js';
@@ -53,7 +56,7 @@ export function jumpToDailyFromStay(stopIndex) {
 export function renderBookingsView() {
     const selectEl = document.getElementById('booking-trip-select');
     if (selectEl) {
-        selectEl.innerHTML = trips.map(t => `<option value="${t.id}" ${t.id === activeTripId ? 'selected' : ''}>${t.name}</option>`).join('');
+        selectEl.innerHTML = trips.map(t => `<option value="${escapeJS(t.id)}" ${t.id === activeTripId ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('');
     }
     renderBookingsList();
 }
@@ -83,20 +86,27 @@ export function renderBookingsList() {
         const inStr = formatLocalDate(checkIn);
         const outStr = formatLocalDate(checkOut);
         const cityEnc = encodeURIComponent(stop.name);
+        const safeStopName = escapeHTML(stop.name);
 
         let lodgingCardHTML = '';
         if (stop.lodging && stop.lodging.name) {
             const l = stop.lodging;
+            const safeLName = escapeHTML(l.name);
+            const safeLConf = l.bookingNumber ? escapeHTML(l.bookingNumber) : '';
+            const safeLAddr = l.address ? escapeHTML(l.address) : '';
+            const safeLCheckIn = escapeHTML(l.checkInTime || '3:00 PM');
+            const safeLNotes = l.notes ? escapeHTML(l.notes) : '';
+
             lodgingCardHTML = `
             <div class="confirmed-card" onclick="openLodgingModal(${index})">
                 <div class="confirmed-header">
                     <span>🏨 CONFIRMED STAY</span>
-                    <span>${l.bookingNumber ? '#' + l.bookingNumber : 'Details ›'}</span>
+                    <span>${safeLConf ? '#' + safeLConf : 'Details ›'}</span>
                 </div>
-                <div class="confirmed-title">${l.name}</div>
-                ${l.address ? `<div class="confirmed-sub">📍 ${l.address}</div>` : ''}
-                <div class="confirmed-sub" style="margin-top:4px;">🕒 Check-in: ${l.checkInTime || '3:00 PM'}</div>
-                ${l.notes ? `<div class="confirmed-notes">"${l.notes}"</div>` : ''}
+                <div class="confirmed-title">${safeLName}</div>
+                ${safeLAddr ? `<div class="confirmed-sub">📍 ${safeLAddr}</div>` : ''}
+                <div class="confirmed-sub" style="margin-top:4px;">🕒 Check-in: ${safeLCheckIn}</div>
+                ${safeLNotes ? `<div class="confirmed-notes">"${safeLNotes}"</div>` : ''}
                 <button type="button" onclick="event.stopPropagation(); jumpToDailyFromStay(${index})" style="background:var(--card-bg); border:1.5px solid var(--primary); color:var(--primary); font-size:12px; font-weight:700; padding:6px 12px; border-radius:10px; cursor:pointer; margin-top:10px;">🗺️ View on Daily Map</button>
             </div>`;
         } else {
@@ -105,7 +115,7 @@ export function renderBookingsList() {
 
         html += `
         <div style="background: var(--card-bg); border-radius: 18px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-            <h4 style="margin: 0 0 4px 0; font-size: 18px; font-weight:700;">Stay in ${stop.name}</h4>
+            <h4 style="margin: 0 0 4px 0; font-size: 18px; font-weight:700;">Stay in ${safeStopName}</h4>
             <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 16px;">${checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} nights</span>
             
             ${lodgingCardHTML}
@@ -186,6 +196,9 @@ export function openLodgingModal(index) {
         svCard.style.display = 'none';
     }
 
+    const clearBtn = document.getElementById('clear-hotel-address-input');
+    if (clearBtn) clearBtn.style.display = (l.address && l.address.length > 0) ? 'flex' : 'none';
+
     const results = document.getElementById('hotel-address-results');
     if (results) results.style.display = 'none';
     const modal = document.getElementById('hotel-booking-modal');
@@ -216,16 +229,19 @@ export function searchHotelAddress(query) {
             const data = await res.json();
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
-                    const safeAddr = (item.display_name || '').replace(/['"\\]/g, ' ');
+                    const rawName = item.name || item.display_name.split(',')[0];
+                    const safeAddr = escapeJS(item.display_name || '');
+                    const displayName = escapeHTML(rawName);
+                    const safeDesc = escapeHTML((item.display_name || '').substring(0, 48));
                     return `
                     <div class="autocomplete-item" onclick="selectHotelAddress('${safeAddr}', ${item.lat}, ${item.lon})">
-                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
-                        <small style="color:var(--text-muted, #777);">${item.display_name.substring(0, 48)}...</small>
+                        <strong>${displayName}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${safeDesc}...</small>
                     </div>`;
                 }).join('');
                 resultsDiv.style.display = 'block';
             } else {
-                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No addresses found</div>`;
+                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No addresses found for "${escapeHTML(query)}"</div>`;
                 resultsDiv.style.display = 'block';
             }
         } catch (e) {
@@ -289,6 +305,10 @@ export function saveLodgingBooking() {
 export function deleteLodgingBooking() {
     const trip = getActiveTrip();
     if (!trip || activeLodgingStopIndex === null || !trip.stops || !trip.stops[activeLodgingStopIndex]) return;
+    const stop = trip.stops[activeLodgingStopIndex];
+    const hotelName = stop.lodging?.name || 'this lodging';
+    if (!confirm(`Are you sure you want to remove ${hotelName} from your trip?`)) return;
+    triggerHaptic('warning');
     trip.stops[activeLodgingStopIndex].lodging = null;
     saveTrips();
     closeModal('hotel-booking-modal');
@@ -300,7 +320,7 @@ export function deleteLodgingBooking() {
 export function renderTransitView() {
     const selectEl = document.getElementById('transit-trip-select');
     if (selectEl) {
-        selectEl.innerHTML = trips.map(t => `<option value="${t.id}" ${t.id === activeTripId ? 'selected' : ''}>${t.name}</option>`).join('');
+        selectEl.innerHTML = trips.map(t => `<option value="${escapeJS(t.id)}" ${t.id === activeTripId ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('');
     }
     renderTransitList();
 }
@@ -380,6 +400,8 @@ export function renderTransitList() {
 
         const origEnc = encodeURIComponent(stopA.name);
         const destEnc = encodeURIComponent(stopB.name);
+        const safeStopAName = escapeHTML(stopA.name);
+        const safeStopBName = escapeHTML(stopB.name);
 
         // Determine if this segment should search as Round-Trip or One-Way
         const isExplicitRound = Array.isArray(trip.roundTripSegments) && trip.roundTripSegments.includes(i);
@@ -411,14 +433,23 @@ export function renderTransitList() {
         if (stopA.transit && stopA.transit.method) {
             const emojis = { plane: '✈️', train: '🚆', bus: '🚌', car: '🚗' };
             const tr = stopA.transit;
+            const safeMethod = escapeHTML((tr.method || 'transit').toUpperCase());
+            const safeBookingNum = tr.bookingNumber ? escapeHTML(tr.bookingNumber) : '';
+            const safeDepStation = escapeHTML(tr.depStation || stopA.name);
+            const safeArrStation = escapeHTML(tr.arrStation || stopB.name);
+            const safeDepTime = escapeHTML(tr.depTime || '');
+            const safeArrTime = escapeHTML(tr.arrTime || '');
+            const safeDate = escapeHTML(tr.date || calcDateStr);
+            const safeRetDate = tr.returnDate ? ' (Ret: ' + escapeHTML(tr.returnDate) + ')' : '';
+
             bookingHTML = `
                 <div class="transit-ticket" onclick="openTransitBookingModal(${i})">
                     <div class="ticket-header">
-                        <span>${emojis[tr.method] || '🎟'} ${tr.method.toUpperCase()} CONFIRMED</span>
-                        <span>${tr.bookingNumber ? '#' + tr.bookingNumber : 'Details ›'}</span>
+                        <span>${emojis[tr.method] || '🎟'} ${safeMethod} CONFIRMED</span>
+                        <span>${safeBookingNum ? '#' + safeBookingNum : 'Details ›'}</span>
                     </div>
-                    <div class="ticket-station">${tr.depStation} ➔ ${tr.arrStation}</div>
-                    <div class="ticket-time">🕒 ${tr.depTime || ''} - ${tr.arrTime || ''} • ${tr.date || calcDateStr}${tr.returnDate ? ' (Ret: ' + tr.returnDate + ')' : ''}</div>
+                    <div class="ticket-station">${safeDepStation} ➔ ${safeArrStation}</div>
+                    <div class="ticket-time">🕒 ${safeDepTime} - ${safeArrTime} • ${safeDate}${safeRetDate}</div>
                 </div>`;
         } else {
             bookingHTML = `<button style="width: 100%; padding: 13px; border-radius: 14px; border: 1.5px dashed #b7c7c3; background: transparent; text-align: center; font-size: 14px; font-weight: 700; margin-bottom: 14px; cursor: pointer; color: var(--primary);" onclick="openTransitBookingModal(${i})">+ Add Booking & Tickets</button>`;
@@ -427,7 +458,7 @@ export function renderTransitList() {
         html += `
         <div style="background: var(--card-bg); border-radius: 18px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
-                <h4 style="margin: 0; font-size: 18px; font-weight:700;">${stopA.name} ${isRound ? '⇄' : '→'} ${stopB.name}</h4>
+                <h4 style="margin: 0; font-size: 18px; font-weight:700;">${safeStopAName} ${isRound ? '⇄' : '→'} ${safeStopBName}</h4>
                 <span style="font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:8px;">${isRound ? '🔁 Round-Trip' : '➡️ One-Way'}</span>
             </div>
             <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 14px;">
@@ -577,6 +608,8 @@ export function saveTransitBooking() {
 export function deleteTransitBooking() {
     const trip = getActiveTrip();
     if (!trip || activeTransitIndex === null || !trip.stops || !trip.stops[activeTransitIndex]) return;
+    if (!confirm('Are you sure you want to remove this transit booking?')) return;
+    triggerHaptic('warning');
     trip.stops[activeTransitIndex].transit = null;
     saveTrips();
     closeModal('transit-booking-modal');
@@ -608,11 +641,15 @@ export function searchTransitStation(query, type) {
             const data = await res.json();
             if (data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
-                    const primaryName = (item.name || item.display_name.split(',')[0]).replace(/['"\\]/g, ' ');
+                    const rawName = item.name || item.display_name.split(',')[0];
+                    const safeName = escapeJS(rawName);
+                    const displayName = escapeHTML(rawName);
+                    const safeDesc = escapeHTML(item.display_name.substring(0, 48));
+                    const safeType = escapeJS(type);
                     return `
-                    <div class="autocomplete-item" onclick="selectTransitStation('${primaryName}', '${type}')">
-                        <strong>${item.name || item.display_name.split(',')[0]}</strong><br>
-                        <small style="color:#777;">${item.display_name.substring(0, 48)}...</small>
+                    <div class="autocomplete-item" onclick="selectTransitStation('${safeName}', '${safeType}')">
+                        <strong>${displayName}</strong><br>
+                        <small style="color:#777;">${safeDesc}...</small>
                     </div>`;
                 }).join('');
                 resultsDiv.style.display = 'block';

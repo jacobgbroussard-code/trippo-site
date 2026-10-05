@@ -23,7 +23,9 @@ import {
     showNotification,
     closeModal,
     toggleSidebar,
-    triggerHaptic
+    triggerHaptic,
+    escapeHTML,
+    escapeJS
 } from './state.js';
 
 import { initPlannerMap, safeInvalidate, plannerMap } from './maps.js';
@@ -49,16 +51,18 @@ export function renderHome() {
         const totalNights = trip.stops ? trip.stops.reduce((sum, stop) => sum + (Number(stop.nights) || 0), 0) : 0;
         const sDate = parseLocalDate(trip.startDate);
         const exampleBadge = trip.isExample ? `<span class="example-badge">Sample Trip</span>` : '';
+        const safeName = escapeHTML(trip.name);
+        const safeTripId = escapeJS(trip.id);
 
         return `
         <div class="trip-card">
-            <div class="trip-card-content" onclick="openTrip('${trip.id}')">
-                <h3>${trip.name} ${exampleBadge}</h3>
+            <div class="trip-card-content" onclick="openTrip('${safeTripId}')">
+                <h3>${safeName} ${exampleBadge}</h3>
                 <p>${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${totalNights} Nights</p>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
-                <button onclick="promptDeleteTripById('${trip.id}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete Trip">🗑️</button>
-                <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${trip.id}')">›</div>
+                <button onclick="promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete Trip">🗑️</button>
+                <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${safeTripId}')">›</div>
             </div>
         </div>`;
     }).join('');
@@ -136,6 +140,7 @@ export function promptDeleteTripById(tripId) {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
     if (confirm(`Are you sure you want to delete "${trip.name}"? This cannot be undone.`)) {
+        triggerHaptic('warning');
         setTrips(trips.filter(t => t.id !== tripId));
         saveTrips();
         if (activeTripId === tripId) {
@@ -280,9 +285,14 @@ export function addTripExpense() {
 export function deleteTripExpense(expId) {
     const trip = getBudgetActiveTrip();
     if (!trip || !trip.expenses) return;
+    const exp = trip.expenses.find(e => e.id === expId);
+    const title = exp ? exp.title : 'this expense';
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+    triggerHaptic('warning');
     trip.expenses = trip.expenses.filter(e => e.id !== expId);
     saveTrips();
     renderBudgetCalculator();
+    showNotification("Expense removed.");
 }
 
 export function renderBudgetCalculator() {
@@ -319,6 +329,8 @@ export function renderBudgetCalculator() {
 
     container.innerHTML = expenses.map(e => {
         const amt = Number(e.amount) || 0;
+        const safeTitle = escapeHTML(e.title);
+        const safeId = escapeJS(e.id);
         const badge = e.splitType === 'split'
             ? `<span style="background:var(--primary-light); color:var(--primary); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;">👥 Split (÷${travelers} = $${(amt / travelers).toFixed(2)}/ea)</span>`
             : `<span style="background:#fff0f2; color:var(--accent); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;">👤 Individual</span>`;
@@ -326,12 +338,12 @@ export function renderBudgetCalculator() {
         return `
         <div style="background:var(--card-bg); border:1px solid var(--border-subtle); border-radius:14px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <strong style="font-size:14px; display:block; margin-bottom:3px;">${e.title}</strong>
+                <strong style="font-size:14px; display:block; margin-bottom:3px;">${safeTitle}</strong>
                 ${badge}
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
                 <strong style="font-size:15px; color:var(--primary);">$${amt.toFixed(2)}</strong>
-                <button onclick="deleteTripExpense('${e.id}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; color:var(--accent);">🗑</button>
+                <button onclick="deleteTripExpense('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; color:var(--accent);">🗑</button>
             </div>
         </div>`;
     }).join('');
@@ -439,7 +451,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.3.55",
+        version: "2.3.59",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -459,19 +471,65 @@ export function exportAppDataJSON() {
 export function importAppDataJSON(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    if (!confirm("Restoring a backup will replace your current trips and saved wishlist locations. Do you want to proceed?")) {
+        event.target.value = '';
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
             const data = JSON.parse(e.target.result);
+            if (!data || typeof data !== 'object') {
+                throw new Error("Invalid payload format");
+            }
+
+            let restoredCount = 0;
             if (data.trips && Array.isArray(data.trips)) {
-                setTrips(data.trips);
+                const validatedTrips = data.trips
+                    .filter(t => t && typeof t === 'object' && t.name)
+                    .map(t => ({
+                        ...t,
+                        id: String(t.id || Date.now() + Math.random()),
+                        stops: Array.isArray(t.stops) ? t.stops : [],
+                        places: Array.isArray(t.places) ? t.places : [],
+                        expenses: Array.isArray(t.expenses) ? t.expenses : []
+                    }));
+                setTrips(validatedTrips);
+                restoredCount++;
             }
+
             if (data.wishlistCollections && Array.isArray(data.wishlistCollections)) {
-                setWishlistCollections(data.wishlistCollections);
+                const validatedCols = data.wishlistCollections
+                    .filter(c => c && typeof c === 'object' && c.name && c.id)
+                    .map(c => ({ ...c, id: String(c.id) }));
+                if (validatedCols.length > 0) {
+                    setWishlistCollections(validatedCols);
+                    restoredCount++;
+                }
             }
+
             if (data.wishlistPins && Array.isArray(data.wishlistPins)) {
-                setWishlistPins(data.wishlistPins);
+                const validatedPins = data.wishlistPins
+                    .filter(p => p && typeof p === 'object' && p.name && !isNaN(p.lat) && !isNaN(p.lon))
+                    .map(p => ({
+                        ...p,
+                        id: String(p.id || Date.now() + Math.random()),
+                        lat: Number(p.lat),
+                        lon: Number(p.lon)
+                    }));
+                setWishlistPins(validatedPins);
+                restoredCount++;
             }
+
+            if (restoredCount === 0) {
+                showNotification("No recognizable Trippo data found in file.");
+                event.target.value = '';
+                return;
+            }
+
+            triggerHaptic('success');
             saveTrips();
             saveWishlist();
             toggleSidebar(false);
