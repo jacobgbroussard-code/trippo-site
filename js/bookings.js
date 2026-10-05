@@ -126,27 +126,23 @@ export function renderBookingsList() {
             
             ${lodgingCardHTML}
 
-            <div class="hotel-insights-box">
-                <div class="hotel-insights-header">
-                    <span style="font-size:12px; font-weight:700;">🏷️ Rate Insights & Deals</span>
-                    <span class="hotel-insights-rate">${hotelInfo.estimatedNightly} <span style="font-size:10px; font-weight:400; color:var(--text-light);">/ nt</span></span>
+            <div class="hotel-partner-row">
+                <span class="hotel-partner-label">Compare Rates</span>
+                <div class="hotel-partner-chips">
+                    <a href="${hotelInfo.hotellookUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip featured" title="Compare 50+ providers including Booking.com & Agoda">
+                        🏨 Hotellook Deals ›
+                    </a>
+                    <a href="${hotelInfo.bookingUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" title="Search Booking.com">
+                        Booking.com
+                    </a>
+                    <a href="${hotelInfo.tripUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" title="Search Trip.com">
+                        Trip.com
+                    </a>
+                    <a href="${hotelInfo.expediaUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" title="Search Expedia">
+                        Expedia
+                    </a>
                 </div>
-                <div class="hotel-insights-note">Compare live rates across 50+ providers with Travelpayouts:</div>
-                <button class="partner-btn" style="color: #ff6b35; font-weight:700; margin-bottom:0;" onclick="window.open('${hotelInfo.hotellookUrl}', '_blank')">
-                    🏨 Hotellook Deals <span>Check 50+ Sites ›</span>
-                </button>
             </div>
-
-            <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Additional Booking Partners</div>
-            <button class="partner-btn" style="color: #287dfa;" onclick="window.open('${hotelInfo.tripUrl}', '_blank')">
-                🏨 Trip.com Hotels <span>Check Rates ›</span>
-            </button>
-            <button class="partner-btn" style="color: #003580;" onclick="window.open('${hotelInfo.bookingUrl}', '_blank')">
-                🏨 Booking.com <span>Check Rates ›</span>
-            </button>
-            <button class="partner-btn" style="color: var(--text);" onclick="window.open('${hotelInfo.expediaUrl}', '_blank')">
-                🏨 Expedia <span>Compare Deals ›</span>
-            </button>
         </div>`;
     });
 
@@ -155,12 +151,11 @@ export function renderBookingsList() {
         html = `
         <div style="text-align: center; color: #8fa09c; padding: 40px 20px;">
             <p style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">No destinations added yet</p>
-            <p style="font-size: 13px; margin-bottom: 20px;">Add destinations in the Planner or search hotels directly below:</p>
-            <div style="max-width: 360px; margin: 0 auto; text-align: left;">
-                <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Browse Partner Stays</div>
-                <button class="partner-btn" style="color: #ff6b35; font-weight:700;" onclick="window.open('${defaultHotelInfo.hotellookUrl}', '_blank')">🏨 Hotellook <span>Search 50+ Sites ›</span></button>
-                <button class="partner-btn" style="color: #287dfa;" onclick="window.open('${defaultHotelInfo.tripUrl}', '_blank')">🏨 Trip.com Hotels <span>Search Deals ›</span></button>
-                <button class="partner-btn" style="color: #003580;" onclick="window.open('${defaultHotelInfo.bookingUrl}', '_blank')">🏨 Booking.com <span>Check Rates ›</span></button>
+            <p style="font-size: 13px; margin-bottom: 16px;">Add destinations in the Planner or search accommodations directly below:</p>
+            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+                <a href="${defaultHotelInfo.hotellookUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip featured" style="padding:8px 14px; font-size:12px;">🏨 Hotellook (50+ Sites) ›</a>
+                <a href="${defaultHotelInfo.bookingUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" style="padding:8px 14px; font-size:12px;">Booking.com</a>
+                <a href="${defaultHotelInfo.tripUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" style="padding:8px 14px; font-size:12px;">Trip.com</a>
             </div>
         </div>`;
     }

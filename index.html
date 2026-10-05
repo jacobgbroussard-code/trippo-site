@@ -215,10 +215,16 @@
                 <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('ATL')">ATL</button>
             </div>
 
+            <!-- Flight Hub Segmented Control -->
+            <div class="flight-hub-tab-row">
+                <button type="button" class="flight-hub-tab-btn active" id="flighthub-tab-deals" onclick="switchFlightHubTab('deals')">🔥 Cheap Deals</button>
+                <button type="button" class="flight-hub-tab-btn" id="flighthub-tab-tools" onclick="switchFlightHubTab('tools')">🌐 Search Engines</button>
+            </div>
+
             <!-- Live Cheap Deals Feed -->
-            <div id="flight-hub-deals-container" class="flight-hub-deals-wrapper">
+            <div id="flight-hub-deals-container" class="flight-hub-deals-wrapper" style="margin-top:0; padding-top:2px; border-top:none;">
                 <div class="flight-hub-deals-header">
-                    <span class="flight-hub-deals-title">🔥 Cheap Getaways</span>
+                    <span class="flight-hub-deals-title">🔥 Top Getaways</span>
                     <span style="font-size:10px; color:var(--text-light); cursor:pointer;" onclick="refreshFlightHubDeals()">↻ Refresh</span>
                 </div>
                 <div id="flight-hub-deals-list" class="flight-hub-deals-list">
@@ -227,7 +233,7 @@
             </div>
 
             <!-- Outbound Launcher Links -->
-            <div class="flight-hub-links" style="margin-top: 10px;">
+            <div id="flight-hub-launchers-container" class="flight-hub-links" style="display:none; margin-top:4px;">
                 <a id="flighthub-skyscanner" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.skyscanner.com/transport/flights-from/lft/">
                     <span class="flight-hub-link-icon">🌐</span>
                     <div class="flight-hub-link-info">

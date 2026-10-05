@@ -1118,6 +1118,7 @@ if (typeof window !== 'undefined') {
     window.initFlightHub = initFlightHub;
     window.renderFlightHubDeals = renderFlightHubDeals;
     window.refreshFlightHubDeals = refreshFlightHubDeals;
+    window.switchFlightHubTab = switchFlightHubTab;
 }
 
 /* ==========================================================================
@@ -1229,6 +1230,26 @@ export function refreshFlightHubDeals() {
     renderFlightHubDeals(origin, dateStr);
     triggerHaptic('light');
     showNotification(`↻ Refreshed cheap flights from ${origin}`);
+}
+
+export function switchFlightHubTab(tab) {
+    const dealsTab = document.getElementById('flighthub-tab-deals');
+    const toolsTab = document.getElementById('flighthub-tab-tools');
+    const dealsCont = document.getElementById('flight-hub-deals-container');
+    const launchersCont = document.getElementById('flight-hub-launchers-container');
+
+    if (tab === 'deals') {
+        if (dealsTab) dealsTab.classList.add('active');
+        if (toolsTab) toolsTab.classList.remove('active');
+        if (dealsCont) dealsCont.style.display = 'block';
+        if (launchersCont) launchersCont.style.display = 'none';
+    } else {
+        if (toolsTab) toolsTab.classList.add('active');
+        if (dealsTab) dealsTab.classList.remove('active');
+        if (dealsCont) dealsCont.style.display = 'none';
+        if (launchersCont) launchersCont.style.display = 'flex';
+    }
+    triggerHaptic('light');
 }
 
 export function handleFlightHubOriginInput(event) {
