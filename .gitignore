@@ -7,3 +7,8 @@ scratch_*
 tests/scratch_*
 *.log
 *.code-workspace
+site-credentials-and-services.csv
+SITE_MANAGEMENT_DIRECTORY.md
+credentials.json
+*.secret
+
