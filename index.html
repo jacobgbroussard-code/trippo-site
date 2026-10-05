@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.57</title>
+    <title>Trippo Travel Planner v2.3.58</title>
     <!-- Live deployment: https://jacobgbroussard-code.github.io/trippo-site/ -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -18,8 +18,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.57">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.57">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.58">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.58">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -211,7 +211,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.57</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.58</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -554,7 +554,10 @@
 
             <div class="form-group">
                 <label>Address (Auto-locates on Map)</label>
-                <input type="text" id="hotel-address-input" class="form-control" placeholder="Search or type hotel street address..." oninput="searchHotelAddress(this.value)" autocomplete="off">
+                <div class="search-input-wrapper">
+                    <input type="text" id="hotel-address-input" class="form-control" placeholder="Search or type hotel street address..." oninput="searchHotelAddress(this.value)" autocomplete="off">
+                    <button type="button" class="search-clear-btn" id="clear-hotel-address-input" onclick="clearSearchField('hotel-address-input', 'hotel-address-results')" aria-label="Clear address">✕</button>
+                </div>
                 <div id="hotel-address-results" class="autocomplete-dropdown" style="display: none;"></div>
                 <div id="hotel-streetview-preview" style="display: none; margin-top: 10px; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--border-subtle); position: relative; background: var(--card-bg);">
                     <img id="hotel-streetview-img" src="" alt="Hotel Street View" style="width: 100%; height: 150px; object-fit: cover; display: block;" onerror="this.parentElement.style.display='none'">
@@ -615,7 +618,10 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('city-search-modal')">✕</button>
             <h2 style="margin: 0 0 12px 0; font-size: 20px;">Add a Stop</h2>
-            <input type="text" id="city-search-input" class="form-control" placeholder="Search cities (e.g. Tokyo, Paris)..." oninput="searchCity(this.value)" autocomplete="off">
+            <div class="search-input-wrapper">
+                <input type="text" id="city-search-input" class="form-control" placeholder="Search cities (e.g. Tokyo, Paris)..." oninput="searchCity(this.value)" autocomplete="off">
+                <button type="button" class="search-clear-btn" id="clear-city-search-input" onclick="clearSearchField('city-search-input', 'city-search-results')" aria-label="Clear city search">✕</button>
+            </div>
             <div id="city-search-results" style="display: none;"></div>
         </div>
     </div>
@@ -625,7 +631,10 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('place-search-modal')">✕</button>
             <h2 style="margin: 0 0 12px 0; font-size: 20px;">Find a Place</h2>
-            <input type="text" id="place-search-input" class="form-control" placeholder="Search place (e.g. Museum, Cafe)..." oninput="searchPOI(this.value)" autocomplete="off">
+            <div class="search-input-wrapper">
+                <input type="text" id="place-search-input" class="form-control" placeholder="Search place (e.g. Museum, Cafe)..." oninput="searchPOI(this.value)" autocomplete="off">
+                <button type="button" class="search-clear-btn" id="clear-place-search-input" onclick="clearSearchField('place-search-input', 'place-search-results')" aria-label="Clear place search">✕</button>
+            </div>
             <div id="place-search-results" style="display: none;"></div>
             
             <div id="place-add-form" style="display: none; margin-top: 18px;">
@@ -668,7 +677,10 @@
 
             <div class="form-group">
                 <label>Search Global Location</label>
-                <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." oninput="searchWishlistLocation(this.value)" autocomplete="off">
+                <div class="search-input-wrapper">
+                    <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." oninput="searchWishlistLocation(this.value)" autocomplete="off">
+                    <button type="button" class="search-clear-btn" id="clear-wishlist-search-input" onclick="clearSearchField('wishlist-search-input', 'wishlist-search-results')" aria-label="Clear wishlist search">✕</button>
+                </div>
             </div>
             
             <div id="wishlist-search-results" style="display: none;"></div>
@@ -835,6 +847,6 @@
     </div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.57"></script>
+    <script type="module" src="js/app.js?v=2.3.58"></script>
 </body>
 </html>

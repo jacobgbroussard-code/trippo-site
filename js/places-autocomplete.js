@@ -40,6 +40,9 @@ export function protectSearchInput(input) {
         if (input.hasAttribute('disabled')) {
             input.removeAttribute('disabled');
         }
+        if (input.style.backgroundImage) {
+            input.style.backgroundImage = 'none';
+        }
     };
 
     const observer = new MutationObserver(() => cleanErrors());
@@ -144,11 +147,21 @@ function setupAutocompleteInstances() {
                 if (latInput) latInput.value = place.geometry.location.lat();
                 if (lonInput) lonInput.value = place.geometry.location.lng();
 
+                const catSelect = document.getElementById('add-poi-category');
+                if (catSelect && typeof window.detectCategory === 'function') {
+                    catSelect.value = window.detectCategory(place.name || '', place.formatted_address || '');
+                }
+
                 const results = document.getElementById('place-search-results');
                 if (results) results.style.display = 'none';
 
                 const form = document.getElementById('place-add-form');
-                if (form) form.style.display = 'block';
+                if (form) {
+                    form.style.display = 'block';
+                    setTimeout(() => {
+                        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 60);
+                }
             });
         } catch (err) {
             console.warn('[Trippo] Daily Place Autocomplete fallback active:', err);

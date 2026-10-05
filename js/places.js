@@ -21,7 +21,8 @@ import {
     showNotification,
     closeModal,
     parseLocalDate,
-    getActiveTrip
+    getActiveTrip,
+    triggerHaptic
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
@@ -194,6 +195,7 @@ export function renderPlacesDayTabs() {
 }
 
 export function switchPlacesDay(dayIndex) {
+    triggerHaptic('light');
     setActivePlacesDayIndex(dayIndex);
     renderPlacesDayTabs();
     renderCityPlaces();
@@ -252,13 +254,19 @@ export function renderCityPlaces() {
             const transit = calculateTransitEstimate(prev.lat, prev.lon, p.lat, p.lon);
             if (transit) {
                 connectorHTML = `
-                <div class="transit-connector-row" style="display:flex; align-items:center; gap:8px; padding: 4px 0 4px 16px; margin: 2px 0;">
-                    <div style="width:2px; height:18px; background:var(--border-subtle); margin-left:14px;"></div>
-                    <div class="transit-pill" style="display:inline-flex; align-items:center; gap:6px; background:var(--primary-light); color:var(--primary); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid var(--border-subtle); cursor:pointer;" onclick="event.stopPropagation(); openDirectionsLink(${prev.lat}, ${prev.lon}, ${p.lat}, ${p.lon})" title="Open Google Maps Directions">
-                        <span>${transit.icon}</span>
-                        <span>${transit.text}</span>
+                <div class="transit-connector-row">
+                    <div class="timeline-dash-line"></div>
+                    <div class="transit-pill" onclick="event.stopPropagation(); openDirectionsLink(${prev.lat}, ${prev.lon}, ${p.lat}, ${p.lon})" title="Open Google Maps Directions">
+                        <span class="transit-icon">${transit.icon}</span>
+                        <span class="transit-text">${transit.text}</span>
                         <span style="font-size:10px; opacity:0.7;">↗</span>
                     </div>
+                    <div class="timeline-dash-line"></div>
+                </div>`;
+            } else {
+                connectorHTML = `
+                <div class="transit-connector-row mini-connector">
+                    <div class="timeline-dash-line short"></div>
                 </div>`;
             }
         }
@@ -269,7 +277,8 @@ export function renderCityPlaces() {
         return `
         ${connectorHTML}
         <div class="place-item-card" data-id="${p.id || p.name}" ${isStart ? 'style="border-left: 4px solid var(--accent);"' : ''}>
-            <div class="drag-handle" style="color:${isStart ? 'var(--accent)' : '#b7c7c3'};">≡</div>
+            <div class="timeline-node-pin ${isStart ? 'start-pin' : ''}">${isStart ? '🏨' : (index + 1)}</div>
+            <div class="drag-handle" style="color:${isStart ? 'var(--accent)' : '#b7c7c3'};" title="Drag to reorder">≡</div>
             <div style="flex-grow:1;" onclick="openEditPlaceModal('${p.id || p.name}')">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     ${badge}
@@ -289,6 +298,7 @@ export function renderCityPlaces() {
             delay: 150,
             delayOnTouchOnly: true,
             onEnd: function (evt) {
+                triggerHaptic('medium');
                 let matchingPlaces = [];
                 let otherPlaces = [];
                 trip.places.forEach(p => {
@@ -428,6 +438,26 @@ export function searchPOI(query) {
     }, 300);
 }
 
+export function detectCategory(name = '', address = '') {
+    const text = `${name} ${address}`.toLowerCase();
+    if (/\b(cafe|café|coffee|espresso|bakery|bakehouse|roast|tea|matcha|boba|pastry|patisserie|gelato|ice cream|dessert)\b/i.test(text)) {
+        return '☕ Cafe & Chill';
+    }
+    if (/\b(hotel|hostel|inn|resort|motel|suites|lodge|bed and breakfast|b&b|airbnb|guesthouse|ryokan|stay)\b/i.test(text)) {
+        return '🏨 Hotel / Base';
+    }
+    if (/\b(restaurant|food|bistro|diner|ramen|sushi|pizza|burger|bar|pub|grill|bbq|taco|taqueria|noodles|steak|steakhouse|cantina|brewery|wine|tavern|izakaya|kitchen|brasserie|eatery)\b/i.test(text)) {
+        return '🍽 Food & Drink';
+    }
+    if (/\b(shop|store|mall|market|bazaar|boutique|outlet|supermarket|dept|department store|souvenir|grocer|plaza)\b/i.test(text)) {
+        return '🛍 Shopping';
+    }
+    return '● See & Do';
+}
+if (typeof window !== 'undefined') {
+    window.detectCategory = detectCategory;
+}
+
 export function selectPOI(name, address, lat, lon) {
     const results = document.getElementById('place-search-results');
     if (results) {
@@ -435,17 +465,24 @@ export function selectPOI(name, address, lat, lon) {
         results.style.display = 'none';
     }
     const form = document.getElementById('place-add-form');
-    if (form) form.style.display = 'block';
+    if (form) {
+        form.style.display = 'block';
+        setTimeout(() => {
+            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 60);
+    }
 
     const nameInput = document.getElementById('add-poi-name');
     const addrInput = document.getElementById('add-poi-address');
     const latInput = document.getElementById('add-poi-lat');
     const lonInput = document.getElementById('add-poi-lon');
+    const catSelect = document.getElementById('add-poi-category');
 
     if (nameInput) nameInput.value = name;
     if (addrInput) addrInput.value = address;
     if (latInput) latInput.value = lat;
     if (lonInput) lonInput.value = lon;
+    if (catSelect) catSelect.value = detectCategory(name, address);
 }
 
 export function saveNewPlaceToTrip() {
@@ -477,6 +514,7 @@ export function saveNewPlaceToTrip() {
         lat: finalLat,
         lon: finalLon
     });
+    triggerHaptic('success');
     saveTrips();
     closeModal('place-search-modal');
     renderCityPlaces();

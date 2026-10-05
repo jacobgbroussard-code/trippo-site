@@ -22,7 +22,8 @@ import {
     formatLocalDate,
     showNotification,
     closeModal,
-    toggleSidebar
+    toggleSidebar,
+    triggerHaptic
 } from './state.js';
 
 import { initPlannerMap, safeInvalidate, plannerMap } from './maps.js';
@@ -149,6 +150,7 @@ export function promptDeleteTripById(tripId) {
 
 /* --- TAB SWITCHING --- */
 export function switchTab(tabId) {
+    triggerHaptic('light');
     document.querySelectorAll('.view').forEach(v => {
         v.classList.remove('active');
     });
@@ -508,4 +510,66 @@ export async function forceAppRefresh() {
     setTimeout(() => {
         window.location.reload();
     }, 300);
+}
+
+/* --- SEARCH CLEAR BUTTON HELPERS --- */
+export function clearSearchField(inputId, resultsId) {
+    triggerHaptic('light');
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = '';
+        input.focus();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const clearBtn = document.getElementById('clear-' + inputId);
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    if (resultsId) {
+        const results = document.getElementById(resultsId);
+        if (results) {
+            results.innerHTML = '';
+            results.style.display = 'none';
+        }
+    }
+    if (inputId === 'place-search-input') {
+        const form = document.getElementById('place-add-form');
+        if (form) form.style.display = 'none';
+    }
+    if (inputId === 'wishlist-search-input') {
+        const form = document.getElementById('wishlist-add-form');
+        if (form) form.style.display = 'none';
+    }
+    if (inputId === 'hotel-address-input') {
+        const svPreview = document.getElementById('hotel-streetview-preview');
+        if (svPreview) svPreview.style.display = 'none';
+    }
+}
+
+export function initSearchClearButtons() {
+    const searchInputs = [
+        { inputId: 'city-search-input', resultsId: 'city-search-results' },
+        { inputId: 'place-search-input', resultsId: 'place-search-results' },
+        { inputId: 'hotel-address-input', resultsId: 'hotel-address-results' },
+        { inputId: 'wishlist-search-input', resultsId: 'wishlist-search-results' }
+    ];
+
+    searchInputs.forEach(({ inputId, resultsId }) => {
+        const input = document.getElementById(inputId);
+        const clearBtn = document.getElementById('clear-' + inputId);
+        if (!input || !clearBtn) return;
+
+        const updateVisibility = () => {
+            clearBtn.style.display = input.value.trim().length > 0 ? 'flex' : 'none';
+        };
+
+        input.addEventListener('input', updateVisibility);
+        input.addEventListener('change', updateVisibility);
+        input.addEventListener('focus', updateVisibility);
+        updateVisibility();
+    });
+}
+
+if (typeof window !== 'undefined') {
+    window.clearSearchField = clearSearchField;
+    window.initSearchClearButtons = initSearchClearButtons;
 }

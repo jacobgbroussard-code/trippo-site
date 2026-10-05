@@ -355,7 +355,7 @@ async function runComprehensiveVerification() {
             console.error('\nFailed tests:', failedTests);
         }
         if (pageErrors.length > 0) {
-            console.error('\nPage error details:', pageErrors);
+            console.error('\nPage error details:', JSON.stringify(pageErrors, null, 2));
         }
 
         const allOk = failedTests.length === 0 && pageErrors.length === 0;

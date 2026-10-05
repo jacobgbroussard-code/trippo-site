@@ -457,7 +457,11 @@ export async function drawPlacesMapRoute(dayPlaces) {
         if (!size || size.x === 0 || size.y === 0) {
             placesMap._pendingBounds = bounds;
         } else {
-            placesMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+            try {
+                placesMap.fitBounds(bounds, { padding: [45, 45], maxZoom: 15, animate: !!placesMap._loaded });
+            } catch (e) {
+                placesMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+            }
             placesMap._pendingBounds = null;
         }
         safeInvalidate(placesMap);

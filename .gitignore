@@ -6,3 +6,4 @@ node_modules/
 scratch_*
 tests/scratch_*
 *.log
+*.code-workspace

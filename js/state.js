@@ -241,3 +241,25 @@ export function saveWishlist() {
     safeSetStorage('myWishlistCollections', JSON.stringify(wishlistCollections));
     pushLocalToCloud();
 }
+
+// --- HAPTIC FEEDBACK (Mobile-Native Feel) ---
+export function triggerHaptic(type = 'light') {
+    try {
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            if (type === 'light') {
+                navigator.vibrate(12);
+            } else if (type === 'medium') {
+                navigator.vibrate(28);
+            } else if (type === 'success') {
+                navigator.vibrate([18, 40, 22]);
+            } else if (type === 'warning') {
+                navigator.vibrate([40, 60, 40]);
+            }
+        }
+    } catch (e) {
+        // Graceful fallback if vibration is unsupported or blocked by browser policy
+    }
+}
+if (typeof window !== 'undefined') {
+    window.triggerHaptic = triggerHaptic;
+}
