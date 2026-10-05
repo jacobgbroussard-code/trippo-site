@@ -156,6 +156,14 @@
             <button class="close-modal" onclick="toggleSidebar(false)">✕</button>
         </div>
         
+        <!-- USER SETTINGS BUTTON -->
+        <div class="sidebar-item" onclick="openSettingsModal()" style="justify-content:space-between; cursor:pointer;" title="App settings & preferences">
+            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
+                <span>⚙️</span> App Settings & Preferences
+            </div>
+            <span style="font-size:13px; color:var(--text-light); font-weight:700;">›</span>
+        </div>
+
         <!-- TRIP TOOLS COLLAPSIBLE ACCORDION -->
         <div class="sidebar-item" onclick="toggleSidebarTripTools()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand trip tools">
             <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
@@ -360,7 +368,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.73</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.74</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -407,7 +415,10 @@
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <strong id="total-nights" style="color: var(--primary);">0 Nights</strong>
+                    <div class="planner-nights-badge" title="Total nights planned">
+                        <span class="nights-number" id="total-nights">0 Nights</span>
+                        <span class="nights-sub">planned</span>
+                    </div>
                 </div>
             </div>
             
@@ -1284,9 +1295,115 @@
         </div>
     </div>
 
+    <!-- USER SETTINGS & PREFERENCES MODAL -->
+    <div id="settings-modal" class="modal" onclick="handleModalBackdropClick(event, 'settings-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('settings-modal')">✕</button>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px; font-weight: 800; display:flex; align-items:center; gap:8px;">
+                <span>⚙️</span> App Settings
+            </h2>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Manage your distance units, travel preferences, and data backups</p>
+
+            <!-- Distance & Route Units -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">📏 Distance & Route Units</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Distance Unit</div>
+                        <div style="font-size:11px; color:var(--text-light);">Used for inter-stop route distance capsules</div>
+                    </div>
+                    <div style="display:inline-flex; background:var(--card-bg); border:1px solid var(--border-subtle); border-radius:12px; padding:3px; gap:2px;">
+                        <button type="button" id="unit-btn-mi" onclick="setDistanceUnit('mi')" class="type-pill active" style="padding:6px 14px; font-size:12px; margin:0;">Miles (mi)</button>
+                        <button type="button" id="unit-btn-km" onclick="setDistanceUnit('km')" class="type-pill" style="padding:6px 14px; font-size:12px; margin:0;">Kilometers (km)</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Show Distance on Route</div>
+                        <div style="font-size:11px; color:var(--text-light);">Display distance badges between route stops</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-toggle-distance" checked onchange="setShowDistances(this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Travel & Currency Preferences -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">🌍 Travel Preferences</div>
+                <div class="form-row" style="margin-bottom:12px;">
+                    <div class="form-group" style="flex:1;">
+                        <label style="font-size:11px; font-weight:700;">Home / Default Airport</label>
+                        <input type="text" id="setting-home-airport" class="form-control" maxlength="3" style="text-transform:uppercase; font-weight:700; font-size:13px; padding:8px 12px;" placeholder="e.g. LFT, MSY, IAH" onchange="saveHomeAirportSetting(this.value)">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label style="font-size:11px; font-weight:700;">Default Currency</label>
+                        <select id="setting-default-currency" class="form-control" style="font-weight:700; font-size:13px; padding:8px 12px;" onchange="saveDefaultCurrencySetting(this.value)">
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="GBP">GBP (£)</option>
+                            <option value="JPY">JPY (¥)</option>
+                            <option value="CAD">CAD ($)</option>
+                            <option value="AUD">AUD ($)</option>
+                            <option value="CHF">CHF (Fr)</option>
+                            <option value="CNY">CNY (¥)</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Appearance Theme</div>
+                        <div style="font-size:11px; color:var(--text-light);">Switch between Dark and Light mode</div>
+                    </div>
+                    <button type="button" class="micro-action-btn" onclick="toggleDarkMode(); updateSettingsModalUI();" id="settings-theme-toggle-btn" style="padding:6px 12px; font-size:12px;">
+                        🌙 Toggle Dark Mode
+                    </button>
+                </div>
+            </div>
+
+            <!-- Data Management, Backup & Export -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">💾 Data & Backups</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="exportAppDataJSON()">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>📤</span>
+                            <div style="font-size:13px; font-weight:700;">Export All Data (.json)</div>
+                        </div>
+                        <span>Download Backup ›</span>
+                    </button>
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="document.getElementById('import-app-json-input').click()">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>📥</span>
+                            <div style="font-size:13px; font-weight:700;">Restore Backup (.json)</div>
+                        </div>
+                        <span>Restore Data ›</span>
+                    </button>
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="exportTripToICS()">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>📅</span>
+                            <div style="font-size:13px; font-weight:700;">Export Active Trip (.ics)</div>
+                        </div>
+                        <span>Calendar File ›</span>
+                    </button>
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="forceAppRefresh()">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>🔄</span>
+                            <div style="font-size:13px; font-weight:700;">Check Updates / Clear Cache</div>
+                        </div>
+                        <span>Refresh App ›</span>
+                    </button>
+                </div>
+            </div>
+
+            <button class="save-btn" onclick="closeModal('settings-modal')" style="margin-top:0;">Done</button>
+        </div>
+    </div>
+
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.71"></script>
+    <script type="module" src="js/app.js?v=2.3.74"></script>
 </body>
 </html>
