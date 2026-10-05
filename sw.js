@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.3.60';
+const CACHE_NAME = 'trippo-cache-v2.3.61';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -20,6 +20,10 @@ const STATIC_ASSETS = [
     './js/tools.js',
     './js/places-autocomplete.js',
     './manifest.webmanifest',
+    './apple-touch-icon.png',
+    './apple-touch-icon-180x180.png',
+    './icon-192.png',
+    './icon-512.png',
     './fad.jpg',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
