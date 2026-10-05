@@ -1139,14 +1139,24 @@ export function updateFlightHubLinks(origin) {
     const code = (origin || getFlightHubOrigin()).toUpperCase();
     const codeLower = code.toLowerCase();
 
+    let dateStr = '';
+    const dateInput = document.getElementById('flight-hub-date');
+    if (dateInput && dateInput.value) {
+        dateStr = dateInput.value; // YYYY-MM-DD
+    }
+
     const skyscanner = document.getElementById('flighthub-skyscanner');
     if (skyscanner) {
-        skyscanner.href = `https://www.skyscanner.com/transport/flights-from/${codeLower}/`;
+        skyscanner.href = dateStr
+            ? `https://www.skyscanner.com/transport/flights-from/${codeLower}/${dateStr.substring(2).replace(/-/g, '')}/`
+            : `https://www.skyscanner.com/transport/flights-from/${codeLower}/`;
     }
 
     const gflights = document.getElementById('flighthub-googleflights');
     if (gflights) {
-        gflights.href = `https://www.google.com/travel/flights?q=flights+from+${code}+to+anywhere`;
+        gflights.href = dateStr
+            ? `https://www.google.com/travel/flights?q=flights+from+${code}+to+anywhere+on+${dateStr}`
+            : `https://www.google.com/travel/flights?q=flights+from+${code}+to+anywhere`;
     }
 
     const flightconn = document.getElementById('flighthub-flightconnections');
@@ -1156,12 +1166,16 @@ export function updateFlightHubLinks(origin) {
 
     const kayak = document.getElementById('flighthub-kayak');
     if (kayak) {
-        kayak.href = `https://www.kayak.com/explore/${code}`;
+        kayak.href = dateStr
+            ? `https://www.kayak.com/explore/${code}/${dateStr.replace(/-/g, '')}`
+            : `https://www.kayak.com/explore/${code}`;
     }
 
     const aviasales = document.getElementById('flighthub-aviasales');
     if (aviasales) {
-        aviasales.href = `https://www.aviasales.com/search?marker=${FLIGHT_HUB_AFFILIATE_MARKER}&origin=${code}&destination=anywhere`;
+        aviasales.href = dateStr
+            ? `https://www.aviasales.com/search?marker=${FLIGHT_HUB_AFFILIATE_MARKER}&origin=${code}&destination=anywhere&depart_date=${dateStr}`
+            : `https://www.aviasales.com/search?marker=${FLIGHT_HUB_AFFILIATE_MARKER}&origin=${code}&destination=anywhere`;
     }
 
     // Update active highlight on quick chips
