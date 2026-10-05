@@ -225,8 +225,11 @@ export function saveEditedTrip() {
     // Re-render UI
     if (window.renderPlanner) window.renderPlanner();
     renderHome();
-    if (window.renderBookings && document.getElementById('bookings-view')?.classList.contains('active')) {
-        window.renderBookings();
+    if (document.getElementById('bookings-view')?.classList.contains('active')) {
+        renderBookingsView();
+    }
+    if (document.getElementById('transit-view')?.classList.contains('active')) {
+        renderTransitView();
     }
     showNotification("Trip details saved!");
 }

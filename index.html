@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.70</title>
+    <title>Trippo Travel Planner v2.3.72</title>
 
     <!-- Travelpayouts Tracking Script -->
     <script nowprocket data-noptimize="1" data-cfasync="false" data-wpfc-render="false" seraph-accel-crit="1" data-no-defer="1" data-cmp-ab="2">
@@ -24,19 +24,19 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.70">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.70">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.70">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.70">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.70">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.72">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.72">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.72">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.72">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.72">
 
     <!-- Leaflet & Vendor Styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.68">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.68">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.72">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.72">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -360,7 +360,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.68</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.72</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -417,6 +417,15 @@
             </div>
             
             <div id="itinerary-list"></div>
+            
+            <a href="https://www.getyourguide.com/" id="planner-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+                <span class="action-icon">🎟️</span>
+                <div class="action-content">
+                    <div class="action-title">Find Tours & Activities</div>
+                    <div class="action-subtitle">Day trips, museum tickets & local excursions</div>
+                </div>
+                <span class="action-arrow">↗</span>
+            </a>
         </div>
         <button class="fab" onclick="openCitySearchModal()">+</button>
     </div>
@@ -463,6 +472,15 @@
                 <div id="saved-places-container"></div>
                 
                 <button onclick="openPlaceSearchModal()" style="width: 100%; padding: 14px; border-radius: 16px; border: 2px dashed #b7c7c3; background: transparent; text-align: center; font-size: 15px; font-weight: 700; margin-top: 10px; cursor: pointer; color: var(--primary);">+ Add Place</button>
+                
+                <a href="https://www.getyourguide.com/" id="places-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+                    <span class="action-icon">🎟️</span>
+                    <div class="action-content">
+                        <div class="action-title">Find Local Tours & Tickets</div>
+                        <div class="action-subtitle">Top sightseeing, skip-the-line passes & hidden gems</div>
+                    </div>
+                    <span class="action-arrow">↗</span>
+                </a>
             </div>
         </div>
     </div>
@@ -473,6 +491,15 @@
         <div style="padding: 0 20px;">
             <select id="booking-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'bookings')"></select>
             <div id="bookings-list-container"></div>
+            
+            <a href="https://www.discovercars.com/?a_aid=581802" id="bookings-car-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+                <span class="action-icon">🚗</span>
+                <div class="action-content">
+                    <div class="action-title">Compare Rental Cars (DiscoverCars)</div>
+                    <div class="action-subtitle">Free cancellation, trusted local suppliers & best rates</div>
+                </div>
+                <span class="action-arrow">↗</span>
+            </a>
         </div>
     </div>
 
@@ -482,6 +509,15 @@
         <div style="padding: 0 20px;">
             <select id="transit-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'transit')"></select>
             <div id="transit-list-container"></div>
+            
+            <a href="https://www.omio.com/?cmp=581802" id="transit-train-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+                <span class="action-icon">🚆</span>
+                <div class="action-content">
+                    <div class="action-title">Book Regional Trains & Buses (Omio)</div>
+                    <div class="action-subtitle">Compare train, bus and ferry tickets across Europe & USA</div>
+                </div>
+                <span class="action-arrow">↗</span>
+            </a>
         </div>
     </div>
 

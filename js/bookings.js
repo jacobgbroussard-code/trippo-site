@@ -164,6 +164,21 @@ export function renderBookingsList() {
         </div>`;
     }
     container.innerHTML = html;
+
+    // Dynamically personalize car rental action card
+    const carLink = document.getElementById('bookings-car-link');
+    if (carLink) {
+        if (trip && trip.stops && trip.stops.length > 0) {
+            const firstCity = trip.stops[0].name;
+            const carTitle = carLink.querySelector('.action-title');
+            if (carTitle) {
+                carTitle.innerText = `Compare Rental Cars in ${firstCity} (DiscoverCars)`;
+            }
+            carLink.style.display = 'flex';
+        } else {
+            carLink.style.display = 'none';
+        }
+    }
 }
 
 export function openLodgingModal(index) {
@@ -496,13 +511,13 @@ export function renderTransitList() {
                     ${isRound ? 'Switch to One-Way search ➔' : '🔁 Switch to Round-Trip search'}
                 </button>
             </div>
-            <button class="partner-btn" style="color: #0f294d;" onclick="window.open('${tripFlightUrl}', '_blank')">
+            <button class="partner-btn partner-trip-flight" onclick="window.open('${tripFlightUrl}', '_blank')">
                 ✈️ Trip.com Flights (${isRound ? 'Round-Trip' : 'One-Way'}) <span>Search Deals ›</span>
             </button>
-            <button class="partner-btn" style="color: #287dfa;" onclick="window.open('https://us.trip.com/trains/', '_blank')">
+            <button class="partner-btn partner-trip-train" onclick="window.open('https://us.trip.com/trains/', '_blank')">
                 🚆 Trip.com Trains <span>View Schedules ›</span>
             </button>
-            <button class="partner-btn" style="color: #1a73e8;" onclick="window.open('${googleFlightUrl}', '_blank')">
+            <button class="partner-btn partner-google-flight" onclick="window.open('${googleFlightUrl}', '_blank')">
                 ✈ Google Flights (${isRound ? 'Round-Trip' : 'One-Way'}) <span>Check Deals ›</span>
             </button>
         </div>`;
@@ -515,13 +530,36 @@ export function renderTransitList() {
             <p style="font-size: 13px; margin-bottom: 20px;">Add at least 2 destinations in the Planner to schedule transit routes.</p>
             <div style="max-width: 360px; margin: 0 auto; text-align: left;">
                 <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Partner Schedules & Flights</div>
-                <button class="partner-btn" style="color: #0f294d;" onclick="window.open('https://us.trip.com/flights/?triptype=ow', '_blank')">✈️ Trip.com Flights (One-Way) <span>Search Deals ›</span></button>
-                <button class="partner-btn" style="color: #287dfa;" onclick="window.open('https://us.trip.com/trains/', '_blank')">🚆 Trip.com Trains <span>View Schedules ›</span></button>
-                <button class="partner-btn" style="color: #1a73e8;" onclick="window.open('https://www.google.com/travel/flights?q=one%20way%20flights', '_blank')">✈ Google Flights (One-Way) <span>Check Deals ›</span></button>
+                <button class="partner-btn partner-trip-flight" onclick="window.open('https://us.trip.com/flights/?triptype=ow', '_blank')">✈️ Trip.com Flights (One-Way) <span>Search Deals ›</span></button>
+                <button class="partner-btn partner-trip-train" onclick="window.open('https://us.trip.com/trains/', '_blank')">🚆 Trip.com Trains <span>View Schedules ›</span></button>
+                <button class="partner-btn partner-google-flight" onclick="window.open('https://www.google.com/travel/flights?q=one%20way%20flights', '_blank')">✈ Google Flights (One-Way) <span>Check Deals ›</span></button>
             </div>
         </div>`;
     }
     container.innerHTML = html;
+
+    // Dynamically personalize train & bus booking card
+    const trainLink = document.getElementById('transit-train-link');
+    if (trainLink) {
+        if (trip && trip.stops && trip.stops.length >= 2) {
+            const orig = trip.stops[0].name;
+            const dest = trip.stops[1].name;
+            const trainTitle = trainLink.querySelector('.action-title');
+            if (trainTitle) {
+                trainTitle.innerText = `Book Trains & Buses (${orig} → ${dest}) (Omio)`;
+            }
+            trainLink.style.display = 'flex';
+        } else if (trip && trip.stops && trip.stops.length === 1) {
+            const orig = trip.stops[0].name;
+            const trainTitle = trainLink.querySelector('.action-title');
+            if (trainTitle) {
+                trainTitle.innerText = `Book Regional Trains & Buses from ${orig} (Omio)`;
+            }
+            trainLink.style.display = 'flex';
+        } else {
+            trainLink.style.display = 'none';
+        }
+    }
 }
 
 export function openTransitBookingModal(index) {

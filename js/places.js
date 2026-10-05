@@ -129,9 +129,14 @@ export async function fetchCityWeather(lat, lon) {
 }
 
 export function openPlacesCityView(stopIndex) {
-    const trip = trips.find(t => t.id === activePlacesTripId);
-    if (!trip || !trip.stops || !trip.stops[stopIndex]) {
-        if (trip && trip.stops && trip.stops.length > 0) {
+    const trip = trips.find(t => t.id === activePlacesTripId) || getActiveTrip();
+    if (!trip) {
+        showPlacesMasterList();
+        return;
+    }
+    setActivePlacesTripId(trip.id);
+    if (!trip.stops || !trip.stops[stopIndex]) {
+        if (trip.stops && trip.stops.length > 0) {
             stopIndex = 0;
         } else {
             showPlacesMasterList();
@@ -178,11 +183,22 @@ export function openPlacesCityView(stopIndex) {
     renderPlacesDayTabs();
     fetchCityWeather(stop.lat, stop.lon);
     renderCityPlaces();
+
+    // Dynamically personalize Local Tours & Tickets action card for this city
+    const actLink = document.getElementById('places-activities-link');
+    if (actLink && stop) {
+        actLink.href = `https://www.getyourguide.com/s/?q=${encodeURIComponent(stop.name)}`;
+        const actTitle = actLink.querySelector('.action-title');
+        if (actTitle) {
+            actTitle.innerText = `Find Tours & Tickets in ${stop.name}`;
+        }
+    }
+
     [50, 150, 300, 500].forEach(d => safeInvalidate(placesMap, d));
 }
 
 export function renderPlacesDayTabs() {
-    const trip = trips.find(t => t.id === activePlacesTripId);
+    const trip = trips.find(t => t.id === activePlacesTripId) || getActiveTrip();
     if (!trip || !trip.stops || !trip.stops[activePlacesStopIndex]) return;
     const stop = trip.stops[activePlacesStopIndex];
     const numDays = Math.max(1, Number(stop.nights) || 1);
@@ -226,7 +242,7 @@ export function setPlaceTransitMode(placeId, mode) {
 }
 
 export function renderCityPlaces() {
-    const trip = trips.find(t => t.id === activePlacesTripId);
+    const trip = trips.find(t => t.id === activePlacesTripId) || getActiveTrip();
     if (!trip) return;
     if (!Array.isArray(trip.places)) trip.places = [];
 
