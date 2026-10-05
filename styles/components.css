@@ -418,6 +418,85 @@ body.dark-mode .flight-hub-tab-btn.active {
     color: #2ecc71;
 }
 
+/* Trip Countdown & Status Badges */
+.trip-countdown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 4px;
+    letter-spacing: 0.2px;
+}
+
+.trip-countdown-badge.upcoming {
+    background: rgba(18, 75, 67, 0.08);
+    color: var(--primary, #124b43);
+    border: 1px solid rgba(18, 75, 67, 0.15);
+}
+
+.trip-countdown-badge.today {
+    background: rgba(46, 204, 113, 0.15);
+    color: #27ae60;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    animation: pulseBadge 2s infinite ease-in-out;
+}
+
+.trip-countdown-badge.in-progress {
+    background: rgba(243, 156, 18, 0.12);
+    color: #d35400;
+    border: 1px solid rgba(243, 156, 18, 0.25);
+}
+
+.trip-countdown-badge.completed {
+    background: rgba(113, 131, 127, 0.1);
+    color: #71837f;
+}
+
+body.dark-mode .trip-countdown-badge.upcoming {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border-color: rgba(46, 204, 113, 0.3);
+}
+
+body.dark-mode .trip-countdown-badge.in-progress {
+    background: rgba(243, 156, 18, 0.2);
+    color: #f39c12;
+}
+
+@keyframes pulseBadge {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+/* Destination Live Weather Chip */
+.stop-weather-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(18, 75, 67, 0.05);
+    color: var(--text);
+    border: 1px solid var(--border-subtle);
+    margin-top: 3px;
+    cursor: default;
+    transition: all 0.15s ease;
+}
+
+.stop-weather-chip:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+body.dark-mode .stop-weather-chip {
+    background: rgba(255, 255, 255, 0.05);
+}
+
 
 .google-signin-btn {
     width: 100%;

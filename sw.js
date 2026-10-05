@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.3.69';
+const CACHE_NAME = 'trippo-cache-v2.3.70';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
     './js/tools.js',
     './js/places-autocomplete.js',
     './js/travel-payouts.js',
+    './js/weather.js',
     './manifest.webmanifest',
     './apple-touch-icon.png',
     './apple-touch-icon-180x180.png',

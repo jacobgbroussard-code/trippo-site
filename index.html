@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.69</title>
+    <title>Trippo Travel Planner v2.3.70</title>
 
     <!-- Travelpayouts Tracking Script -->
     <script nowprocket data-noptimize="1" data-cfasync="false" data-wpfc-render="false" seraph-accel-crit="1" data-no-defer="1" data-cmp-ab="2">
@@ -24,11 +24,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.69">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.69">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.69">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.69">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.69">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.70">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.70">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.70">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.70">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.70">
 
     <!-- Leaflet & Vendor Styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -177,7 +177,10 @@
                 <span>💰</span> Smart Split Budget Tracker
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openCurrencyModal()">
-                <span>💱</span> Currency Converter
+                <span>💱</span> Currency & Tipping Guide
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openEsimModal()">
+                <span>📶</span> Travel eSIM Data Pass
             </div>
         </div>
 
@@ -624,6 +627,111 @@
 
             <h3 style="font-size: 15px; margin: 0 0 10px 0;">Recorded Expenses</h3>
             <div id="expenses-list-container"></div>
+        </div>
+    </div>
+
+    <!-- CURRENCY CONVERTER & TIPPING CHEAT SHEET MODAL -->
+    <div id="currency-modal" class="modal" onclick="handleModalBackdropClick(event, 'currency-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('currency-modal')">✕</button>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;">💱 Currency & Tipping Guide</h2>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Instant rate conversions and local tipping customs</p>
+
+            <div class="form-row" style="margin-bottom: 12px;">
+                <div class="form-group" style="flex: 1.2;">
+                    <label>Amount</label>
+                    <input type="number" id="curr-amount" class="form-control" value="100" min="0" step="any" oninput="convertCurrency()">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>From</label>
+                    <select id="curr-from" class="form-control" onchange="convertCurrency()" style="font-weight:700;">
+                        <option value="USD" selected>USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="MXN">MXN ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>To</label>
+                    <select id="curr-to" class="form-control" onchange="convertCurrency()" style="font-weight:700;">
+                        <option value="JPY" selected>JPY (¥)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="MXN">MXN ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="THB">THB (฿)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Conversion Result Box -->
+            <div style="background:var(--primary-light); padding:14px; border-radius:14px; text-align:center; margin-bottom:18px; border:1px solid var(--border-subtle);">
+                <div style="font-size:11px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Converted Total</div>
+                <div id="curr-result" style="font-size:24px; font-weight:800; color:var(--primary);">¥15,500.00 JPY</div>
+            </div>
+
+            <!-- Tipping Customs Cheat Sheet -->
+            <h3 style="font-size: 13px; text-transform:uppercase; letter-spacing:0.5px; margin: 0 0 8px 0; color:var(--text-light);">💡 World Tipping Customs</h3>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇯🇵 Japan / South Korea:</strong> No tipping. Good service is standard; leaving cash can be considered rude.
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇪🇺 Europe (France, Italy, Spain):</strong> Service charge often included. 5–10% or round up for great service.
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇬🇧 United Kingdom:</strong> 10–12.5% in sit-down restaurants (check bill for optional service charge).
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇲🇽 Mexico:</strong> 10–15% in restaurants (called "propina").
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇺🇸 USA / Canada:</strong> 18–22% expected for dining and bartenders.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRAVEL ESIM MODAL -->
+    <div id="esim-modal" class="modal" onclick="handleModalBackdropClick(event, 'esim-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('esim-modal')">✕</button>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;">📶 Travel eSIM Mobile Data</h2>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Instant digital high-speed mobile data without physical SIM cards or expensive roaming charges.</p>
+
+            <div style="background:var(--primary-light); padding:14px; border-radius:14px; margin-bottom:16px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-size:18px;">✨</span>
+                    <strong style="font-size:13px; color:var(--primary);">How It Works:</strong>
+                </div>
+                <div style="font-size:12px; color:var(--text); line-height:1.4;">
+                    Download an eSIM profile before flying or upon landing. Keep your home WhatsApp/phone number active while using local data abroad from just <strong>$4.50</strong>.
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="https://www.airalo.com/?marker=581802" target="_blank" rel="noopener noreferrer" class="flight-hub-link" style="padding:12px; border-radius:12px;">
+                    <span style="font-size:20px;">🌐</span>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">Airalo Global eSIM</div>
+                        <div style="font-size:11px; color:var(--text-light);">Local, regional & global plans in 200+ countries from $4.50</div>
+                    </div>
+                    <span style="font-size:12px; font-weight:700; color:var(--primary);">Get eSIM ↗</span>
+                </a>
+                <a href="https://yesim.app/?marker=581802" target="_blank" rel="noopener noreferrer" class="flight-hub-link" style="padding:12px; border-radius:12px;">
+                    <span style="font-size:20px;">🚀</span>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">Yesim Unlimited Data</div>
+                        <div style="font-size:11px; color:var(--text-light);">Unlimited daily plans & pay-as-you-go international data</div>
+                    </div>
+                    <span style="font-size:12px; font-weight:700; color:var(--primary);">Browse ↗</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -1108,6 +1216,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.69"></script>
+    <script type="module" src="js/app.js?v=2.3.70"></script>
 </body>
 </html>

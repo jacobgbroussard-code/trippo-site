@@ -55,11 +55,32 @@ export function renderHome() {
         const safeName = escapeHTML(trip.name);
         const safeTripId = escapeJS(trip.id);
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tripDate = new Date(sDate);
+        tripDate.setHours(0, 0, 0, 0);
+        const diffTime = tripDate.getTime() - today.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        let countdownBadge = '';
+        if (diffDays > 1) {
+            countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs in ${diffDays} days</span>`;
+        } else if (diffDays === 1) {
+            countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs Tomorrow!</span>`;
+        } else if (diffDays === 0) {
+            countdownBadge = `<span class="trip-countdown-badge today">🎉 Departs Today!</span>`;
+        } else if (diffDays < 0 && Math.abs(diffDays) < (totalNights || 1)) {
+            countdownBadge = `<span class="trip-countdown-badge in-progress">📍 Day ${Math.abs(diffDays) + 1} of ${totalNights}</span>`;
+        } else if (totalNights > 0 && Math.abs(diffDays) >= totalNights) {
+            countdownBadge = `<span class="trip-countdown-badge completed">✨ Completed</span>`;
+        }
+
         return `
         <div class="trip-card">
             <div class="trip-card-content" onclick="openTrip('${safeTripId}')">
                 <h3>${safeName} ${exampleBadge}</h3>
                 <p>${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${totalNights} Nights</p>
+                ${countdownBadge ? `<div style="margin-top:2px;">${countdownBadge}</div>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete Trip">🗑️</button>
@@ -354,16 +375,25 @@ export function renderBudgetCalculator() {
 const mockExchangeRates = {
     USD: 1.0,
     EUR: 0.92,
-    JPY: 154.5,
-    GBP: 0.78,
-    CNY: 7.23,
-    AUD: 1.52
+    JPY: 155.0,
+    GBP: 0.79,
+    CNY: 7.24,
+    AUD: 1.52,
+    CAD: 1.38,
+    MXN: 19.3,
+    THB: 35.8
 };
 
 export function openCurrencyModal() {
     toggleSidebar(false);
     convertCurrency();
     const modal = document.getElementById('currency-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+export function openEsimModal() {
+    toggleSidebar(false);
+    const modal = document.getElementById('esim-modal');
     if (modal) modal.style.display = 'flex';
 }
 
@@ -379,7 +409,7 @@ export function convertCurrency() {
     const amountInUSD = amount / rateFromUSD;
     const converted = amountInUSD * rateToUSD;
 
-    const symbols = { USD: '$', EUR: '€', JPY: '¥', GBP: '£', CNY: '¥', AUD: '$' };
+    const symbols = { USD: '$', EUR: '€', JPY: '¥', GBP: '£', CNY: '¥', AUD: '$', CAD: '$', MXN: '$', THB: '฿' };
     const sym = symbols[toCurr] || '';
 
     const resEl = document.getElementById('curr-result');
@@ -1119,6 +1149,9 @@ if (typeof window !== 'undefined') {
     window.renderFlightHubDeals = renderFlightHubDeals;
     window.refreshFlightHubDeals = refreshFlightHubDeals;
     window.switchFlightHubTab = switchFlightHubTab;
+    window.openEsimModal = openEsimModal;
+    window.openCurrencyModal = openCurrencyModal;
+    window.convertCurrency = convertCurrency;
 }
 
 /* ==========================================================================

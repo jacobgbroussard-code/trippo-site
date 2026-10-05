@@ -17,6 +17,7 @@ import {
 } from './state.js';
 
 import { drawPlannerMapRoute, plannerMap, pMarkers } from './maps.js';
+import { getDestinationWeather } from './weather.js';
 
 export let citySearchTimeout = null;
 let citySearchAbortController = null;
@@ -53,6 +54,7 @@ export function renderPlanner() {
                 <div style="flex-grow:1; cursor:pointer;" onclick="openDailyNotes(${index}, '${formatLocalDate(arr)}')">
                     <h3 style="margin: 0 0 4px 0; font-size: 16px;"><span style="color:var(--primary)">●</span> ${escapeHTML(stop.name)} ${stop.locked ? '<span style="font-size:12px; vertical-align:middle;" title="Locked in place">🔒</span>' : ''}</h3>
                     <p style="margin: 0; font-size: 12px; color: #728481;">${arr.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${dep.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                    <div id="stop-weather-${index}" class="stop-weather-chip" style="display:none;"></div>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
                     <button onclick="focusStopOnMap(event, ${index})" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 8px; font-size:13px; cursor:pointer;" title="View on map">🗺️</button>
@@ -66,6 +68,11 @@ export function renderPlanner() {
                 </div>
             </div>`;
         totalNights += Number(stop.nights) || 0;
+    });
+
+    // Asynchronously load weather for stops
+    trip.stops.forEach((stop, idx) => {
+        loadStopWeather(idx, stop.lat, stop.lon);
     });
 
     const totalEl = document.getElementById('total-nights');
@@ -474,3 +481,20 @@ export function parseICS(icsString) {
         showNotification(`Imported ${imported} stops!`);
     }
 }
+
+export async function loadStopWeather(index, lat, lon) {
+    if (!lat || !lon || (lat === 0 && lon === 0)) return;
+    const weatherEl = document.getElementById(`stop-weather-${index}`);
+    if (!weatherEl) return;
+    try {
+        const info = await getDestinationWeather(lat, lon);
+        if (info && weatherEl) {
+            weatherEl.innerHTML = `<span>${info.icon}</span> <span>${info.tempF}°F</span> • <span style="color:var(--text-light);">${info.condition}</span>`;
+            weatherEl.title = `Packing Tip: ${info.advice}`;
+            weatherEl.style.display = 'inline-flex';
+        }
+    } catch (e) {
+        console.debug('Weather fetch error:', e);
+    }
+}
+
