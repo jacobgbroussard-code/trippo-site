@@ -89,14 +89,14 @@ async function runComprehensiveVerification() {
         }
 
         await send('Page.navigate', { url: 'http://127.0.0.1:8080/' });
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 40; i++) {
             await new Promise(r => setTimeout(r, 200));
             try {
-                const ready = await evalInBrowser(`Boolean(document && document.body && document.getElementById('itinerary-list'))`);
+                const ready = await evalInBrowser(`Boolean(document && document.body && typeof window.switchTab === 'function')`);
                 if (ready) break;
             } catch (e) {}
         }
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 1000));
 
         const testResults = [];
 

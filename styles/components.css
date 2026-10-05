@@ -71,6 +71,174 @@
     transform: scale(0.98);
 }
 
+/* --- FLIGHT HUB & EXPLORE EVERYWHERE CARD --- */
+.flight-hub-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.flight-hub-header {
+    margin-bottom: 10px;
+}
+
+.flight-hub-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.flight-hub-subtitle {
+    font-size: 10px;
+    color: var(--text-light, #71837f);
+    font-weight: 600;
+}
+
+.flight-hub-origin-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.flight-hub-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--primary-light);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 4px 8px;
+    flex: 1;
+}
+
+.flight-hub-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text-light, #71837f);
+    margin-right: 6px;
+}
+
+.flight-hub-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text);
+    width: 100%;
+    letter-spacing: 1px;
+}
+
+.flight-hub-save-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.flight-hub-save-btn:active {
+    transform: scale(0.96);
+}
+
+.flight-hub-save-btn.saved {
+    background: #2b7c62;
+}
+
+.flight-hub-chips {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+
+.flight-hub-chip {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.flight-hub-chip:active,
+.flight-hub-chip.active {
+    background: var(--primary);
+    color: white;
+}
+
+.flight-hub-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.flight-hub-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border-subtle);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.flight-hub-link:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    transform: translateX(2px);
+}
+
+.flight-hub-link-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.flight-hub-link-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.flight-hub-link-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.flight-hub-link-desc {
+    font-size: 9px;
+    color: var(--text-light, #71837f);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.flight-hub-link-arrow {
+    font-size: 11px;
+    color: var(--primary);
+    font-weight: 800;
+}
+
 .google-signin-btn {
     width: 100%;
     display: flex;
@@ -1293,5 +1461,222 @@ body.dark-mode .map-segment-gmaps-btn {
     background: #124b43;
     color: #ffffff;
 }
+
+/* ==========================================================================
+   LIVE GPS BLUE DOT (MAPS)
+   ========================================================================== */
+.gps-marker-wrapper {
+    background: transparent !important;
+    border: none !important;
+}
+
+.gps-user-pulse {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gps-user-pulse::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(26, 115, 232, 0.4);
+    animation: gps-pulse 2s infinite ease-out;
+}
+
+.gps-user-dot {
+    width: 16px;
+    height: 16px;
+    background: #1a73e8;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes gps-pulse {
+    0% { transform: scale(0.6); opacity: 1; }
+    70% { transform: scale(1.6); opacity: 0; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ==========================================================================
+   SMART PACKING CHECKLIST MODAL
+   ========================================================================== */
+.packing-progress-container {
+    background: var(--primary-light);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.packing-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+[data-theme="dark"] .packing-progress-track {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.packing-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 6px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.packing-pills-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+}
+
+.packing-pill {
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.packing-pill.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.packing-item-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 8px;
+    transition: all 0.15s ease;
+}
+
+.packing-item-card.is-checked {
+    opacity: 0.65;
+    background: var(--primary-light);
+}
+
+.packing-item-card.is-checked .packing-item-text {
+    text-decoration: line-through;
+    color: var(--text-light);
+}
+
+.packing-checkbox {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.packing-item-text {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.packing-category-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: var(--primary-light);
+    border: 1px solid var(--border-subtle);
+    padding: 2px 7px;
+    border-radius: 8px;
+}
+
+.packing-delete-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 13px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.packing-delete-btn:hover {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   PRINTABLE & PDF POCKET ITINERARY
+   ========================================================================== */
+#printable-itinerary-container {
+    display: none;
+}
+
+@media print {
+    /* Hide everything in the app except the printable itinerary */
+    body > *:not(#printable-itinerary-container) {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        font-size: 11pt !important;
+        line-height: 1.4 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #printable-itinerary-container {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    .print-card {
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
+        padding: 12px 14px !important;
+        margin-bottom: 12px !important;
+        page-break-inside: avoid !important;
+        background: #ffffff !important;
+    }
+
+    .print-header {
+        border-bottom: 2px solid #124b43 !important;
+        padding-bottom: 12px !important;
+        margin-bottom: 16px !important;
+    }
+}
+
 
 

@@ -451,7 +451,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.3.66",
+        version: "2.3.68",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -631,3 +631,599 @@ if (typeof window !== 'undefined') {
     window.clearSearchField = clearSearchField;
     window.initSearchClearButtons = initSearchClearButtons;
 }
+
+/* ==========================================================================
+   SMART PACKING CHECKLIST (NON-INTRUSIVE TRIP TOOL)
+   ========================================================================== */
+export const DEFAULT_PACKING_ITEMS = [
+    // Documents & Money
+    { id: 'p1', category: 'Documents', text: 'Passport (valid > 6 months)', checked: false },
+    { id: 'p2', category: 'Documents', text: 'Visa / ETA entry approval', checked: false },
+    { id: 'p3', category: 'Documents', text: 'Driver’s License / ID', checked: false },
+    { id: 'p4', category: 'Documents', text: 'Travel Insurance policy', checked: false },
+    { id: 'p5', category: 'Documents', text: 'Credit / Debit cards (notify bank)', checked: false },
+    { id: 'p6', category: 'Documents', text: 'Emergency cash in local currency', checked: false },
+    
+    // Electronics
+    { id: 'p7', category: 'Electronics', text: 'Universal travel adapter plug', checked: false },
+    { id: 'p8', category: 'Electronics', text: 'Phone & charging cable', checked: false },
+    { id: 'p9', category: 'Electronics', text: 'Portable power bank battery', checked: false },
+    { id: 'p10', category: 'Electronics', text: 'Earbuds / Headphones', checked: false },
+    
+    // Health & Meds
+    { id: 'p11', category: 'Health', text: 'Prescription medications (with labels)', checked: false },
+    { id: 'p12', category: 'Health', text: 'Pain reliever / Ibuprofen', checked: false },
+    { id: 'p13', category: 'Health', text: 'Band-aids & antiseptic wipes', checked: false },
+    { id: 'p14', category: 'Health', text: 'Motion sickness pills', checked: false },
+
+    // Toiletries
+    { id: 'p15', category: 'Toiletries', text: 'Toothbrush & toothpaste', checked: false },
+    { id: 'p16', category: 'Toiletries', text: 'Deodorant', checked: false },
+    { id: 'p17', category: 'Toiletries', text: 'Sunscreen & lip balm', checked: false },
+    { id: 'p18', category: 'Toiletries', text: 'TSA-friendly liquids (< 100ml / 3.4oz)', checked: false },
+
+    // Clothing & Gear
+    { id: 'p19', category: 'Clothing', text: 'Comfortable walking shoes', checked: false },
+    { id: 'p20', category: 'Clothing', text: 'Light rain jacket or travel umbrella', checked: false },
+    { id: 'p21', category: 'Clothing', text: 'Sunglasses', checked: false },
+    { id: 'p22', category: 'Clothing', text: 'Weather-appropriate layers', checked: false }
+];
+
+let activePackingFilter = 'All';
+
+export function openPackingModal() {
+    const trip = getActiveTrip();
+    if (!trip) {
+        showNotification("Please select or create a trip first.");
+        return;
+    }
+
+    if (!Array.isArray(trip.packingList) || trip.packingList.length === 0) {
+        trip.packingList = DEFAULT_PACKING_ITEMS.map(i => ({ ...i }));
+        saveTrips();
+    }
+
+    activePackingFilter = 'All';
+    renderPackingList();
+
+    const titleEl = document.getElementById('packing-modal-trip-name');
+    if (titleEl) titleEl.innerText = trip.name;
+
+    const modal = document.getElementById('packing-modal');
+    if (modal) modal.style.display = 'flex';
+    toggleSidebar(false);
+}
+
+export function setPackingFilter(cat) {
+    activePackingFilter = cat;
+    renderPackingList();
+}
+
+export function renderPackingList() {
+    const trip = getActiveTrip();
+    if (!trip || !Array.isArray(trip.packingList)) return;
+
+    const listEl = document.getElementById('packing-items-list');
+    const pillsEl = document.getElementById('packing-category-pills');
+    const progressEl = document.getElementById('packing-progress-bar');
+    const progressTextEl = document.getElementById('packing-progress-text');
+
+    const total = trip.packingList.length;
+    const packed = trip.packingList.filter(i => i.checked).length;
+    const percent = total > 0 ? Math.round((packed / total) * 100) : 0;
+
+    if (progressEl) progressEl.style.width = `${percent}%`;
+    if (progressTextEl) progressTextEl.innerText = `${packed} of ${total} items packed (${percent}%)`;
+
+    // Render filter pills
+    const categories = ['All', 'Documents', 'Electronics', 'Health', 'Toiletries', 'Clothing', 'Custom'];
+    if (pillsEl) {
+        pillsEl.innerHTML = categories.map(cat => {
+            const isActive = activePackingFilter === cat;
+            return `<button class="packing-pill ${isActive ? 'active' : ''}" onclick="setPackingFilter('${cat}')">${cat}</button>`;
+        }).join('');
+    }
+
+    // Filter items
+    const filtered = activePackingFilter === 'All'
+        ? trip.packingList
+        : trip.packingList.filter(i => i.category.toLowerCase() === activePackingFilter.toLowerCase());
+
+    if (!listEl) return;
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="text-align:center; padding:30px 10px; color:var(--text-light); font-size:13px;">
+                No items in this category. Tap "+ Add" below to add custom items!
+            </div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.map(item => {
+        const safeId = escapeJS(item.id);
+        const safeText = escapeHTML(item.text);
+        const safeCat = escapeHTML(item.category);
+        const isChecked = item.checked ? 'checked' : '';
+        const cardClass = item.checked ? 'packing-item-card is-checked' : 'packing-item-card';
+
+        return `
+            <div class="${cardClass}">
+                <input type="checkbox" class="packing-checkbox" ${isChecked} onchange="togglePackingItem('${safeId}')">
+                <span class="packing-item-text" onclick="togglePackingItem('${safeId}')">${safeText}</span>
+                <span class="packing-category-tag">${safeCat}</span>
+                <button class="packing-delete-btn" onclick="deletePackingItem('${safeId}')" title="Delete item">✕</button>
+            </div>
+        `;
+    }).join('');
+}
+
+export function togglePackingItem(itemId) {
+    const trip = getActiveTrip();
+    if (!trip || !Array.isArray(trip.packingList)) return;
+
+    const item = trip.packingList.find(i => i.id === itemId);
+    if (item) {
+        item.checked = !item.checked;
+        triggerHaptic(item.checked ? 'success' : 'light');
+        saveTrips();
+        renderPackingList();
+    }
+}
+
+export function addCustomPackingItem() {
+    const trip = getActiveTrip();
+    if (!trip) return;
+
+    const input = document.getElementById('packing-new-item-input');
+    const catSelect = document.getElementById('packing-new-item-category');
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) {
+        showNotification("Please enter an item name.");
+        return;
+    }
+
+    const category = (catSelect && catSelect.value) ? catSelect.value : 'Custom';
+    const newItem = {
+        id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        category: category,
+        text: text,
+        checked: false
+    };
+
+    if (!Array.isArray(trip.packingList)) trip.packingList = [];
+    trip.packingList.push(newItem);
+    input.value = '';
+    saveTrips();
+    renderPackingList();
+    triggerHaptic('light');
+    showNotification(`Added "${text}" to packing checklist.`);
+}
+
+export function deletePackingItem(itemId) {
+    const trip = getActiveTrip();
+    if (!trip || !Array.isArray(trip.packingList)) return;
+
+    trip.packingList = trip.packingList.filter(i => i.id !== itemId);
+    saveTrips();
+    renderPackingList();
+    triggerHaptic('light');
+}
+
+export function resetPackingList() {
+    const trip = getActiveTrip();
+    if (!trip) return;
+
+    if (confirm("Reset packing checklist to standard essentials?")) {
+        trip.packingList = DEFAULT_PACKING_ITEMS.map(i => ({ ...i }));
+        saveTrips();
+        renderPackingList();
+        triggerHaptic('medium');
+        showNotification("Checklist reset to default travel essentials.");
+    }
+}
+
+export function toggleAllPacking(checked) {
+    const trip = getActiveTrip();
+    if (!trip || !Array.isArray(trip.packingList)) return;
+
+    trip.packingList.forEach(i => i.checked = checked);
+    saveTrips();
+    renderPackingList();
+    triggerHaptic('medium');
+}
+
+/* ==========================================================================
+   UNIVERSAL .ICS CALENDAR EXPORT
+   ========================================================================== */
+export function exportTripToICS() {
+    const trip = getActiveTrip();
+    if (!trip || !trip.stops || trip.stops.length === 0) {
+        showNotification("Please select or create a trip with stops first.");
+        return;
+    }
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const formatICSDate = (d) => {
+        return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+    };
+    const formatICSAllDay = (d) => {
+        return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    };
+    const escapeICS = (str) => {
+        if (!str) return '';
+        return String(str)
+            .replace(/\\/g, '\\\\')
+            .replace(/;/g, '\\;')
+            .replace(/,/g, '\\,')
+            .replace(/\n/g, '\\n');
+    };
+
+    const nowStr = formatICSDate(new Date());
+    let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Trippo Travel Planner//trippo.top//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        `X-WR-CALNAME:${escapeICS(trip.name)} - Itinerary`,
+        'X-WR-TIMEZONE:UTC'
+    ];
+
+    let currentDate = parseLocalDate(trip.startDate) || new Date();
+
+    trip.stops.forEach((stop, index) => {
+        const nights = Number(stop.nights) || 1;
+        const stopStart = new Date(currentDate);
+        const stopEnd = new Date(currentDate);
+        stopEnd.setDate(stopEnd.getDate() + nights);
+
+        const uidBase = `trippo-${trip.id}-stop-${index}`;
+
+        // 1. Destination Stay All-Day Event
+        icsContent.push('BEGIN:VEVENT');
+        icsContent.push(`UID:${uidBase}-stay@trippo.top`);
+        icsContent.push(`DTSTAMP:${nowStr}`);
+        icsContent.push(`DTSTART;VALUE=DATE:${formatICSAllDay(stopStart)}`);
+        icsContent.push(`DTEND;VALUE=DATE:${formatICSAllDay(stopEnd)}`);
+        icsContent.push(`SUMMARY:${escapeICS(`Trip: ${stop.name} (${nights} night${nights > 1 ? 's' : ''})`)}`);
+        icsContent.push(`DESCRIPTION:${escapeICS(`Trip: ${trip.name}\\nDestination: ${stop.name}\\nDuration: ${nights} nights${stop.notes ? `\\nNotes: ${stop.notes}` : ''}`)}`);
+        icsContent.push(`LOCATION:${escapeICS(stop.name)}`);
+        icsContent.push('STATUS:CONFIRMED');
+        icsContent.push('END:VEVENT');
+
+        // 2. Hotel / Lodging Booking Event (if present)
+        if (stop.lodging && (stop.lodging.name || stop.lodging.address)) {
+            const hStart = new Date(stopStart);
+            hStart.setHours(15, 0, 0); // Check-in 3:00 PM
+            const hEnd = new Date(stopEnd);
+            hEnd.setHours(11, 0, 0); // Check-out 11:00 AM
+
+            icsContent.push('BEGIN:VEVENT');
+            icsContent.push(`UID:${uidBase}-hotel@trippo.top`);
+            icsContent.push(`DTSTAMP:${nowStr}`);
+            icsContent.push(`DTSTART:${formatICSDate(hStart)}`);
+            icsContent.push(`DTEND:${formatICSDate(hEnd)}`);
+            icsContent.push(`SUMMARY:${escapeICS(`🏨 Hotel Check-In: ${stop.lodging.name || 'Lodging in ' + stop.name}`)}`);
+            let desc = `Hotel: ${stop.lodging.name || 'Accommodations'}\\nLocation: ${stop.name}`;
+            if (stop.lodging.address) desc += `\\nAddress: ${stop.lodging.address}`;
+            if (stop.lodging.notes) desc += `\\nNotes / Confirmation: ${stop.lodging.notes}`;
+            icsContent.push(`DESCRIPTION:${escapeICS(desc)}`);
+            if (stop.lodging.address) icsContent.push(`LOCATION:${escapeICS(stop.lodging.address)}`);
+            icsContent.push('STATUS:CONFIRMED');
+            icsContent.push('END:VEVENT');
+        }
+
+        // 3. Transit Event (if present)
+        if (stop.transit && (stop.transit.type || stop.transit.carrier || stop.transit.departureTime)) {
+            const tDate = new Date(stopStart);
+            const depParts = (stop.transit.departureTime || '09:00').split(':');
+            tDate.setHours(Number(depParts[0]) || 9, Number(depParts[1]) || 0, 0);
+            
+            const arrDate = new Date(tDate);
+            if (stop.transit.arrivalTime) {
+                const arrParts = stop.transit.arrivalTime.split(':');
+                arrDate.setHours(Number(arrParts[0]) || 12, Number(arrParts[1]) || 0, 0);
+                if (arrDate < tDate) arrDate.setDate(arrDate.getDate() + 1);
+            } else {
+                arrDate.setHours(arrDate.getHours() + 2);
+            }
+
+            const transitType = (stop.transit.type || 'Transit').toUpperCase();
+            const fromCity = index > 0 ? trip.stops[index - 1].name : 'Home';
+            icsContent.push('BEGIN:VEVENT');
+            icsContent.push(`UID:${uidBase}-transit@trippo.top`);
+            icsContent.push(`DTSTAMP:${nowStr}`);
+            icsContent.push(`DTSTART:${formatICSDate(tDate)}`);
+            icsContent.push(`DTEND:${formatICSDate(arrDate)}`);
+            icsContent.push(`SUMMARY:${escapeICS(`✈️ ${transitType}: ${fromCity} ➔ ${stop.name}`)}`);
+            let tDesc = `Transit: ${transitType}\\nRoute: ${fromCity} to ${stop.name}`;
+            if (stop.transit.carrier) tDesc += `\\nCarrier: ${stop.transit.carrier}`;
+            if (stop.transit.confirmation) tDesc += `\\nConfirmation: ${stop.transit.confirmation}`;
+            if (stop.transit.notes) tDesc += `\\nNotes: ${stop.transit.notes}`;
+            icsContent.push(`DESCRIPTION:${escapeICS(tDesc)}`);
+            icsContent.push(`LOCATION:${escapeICS(`${fromCity} to ${stop.name}`)}`);
+            icsContent.push('STATUS:CONFIRMED');
+            icsContent.push('END:VEVENT');
+        }
+
+        currentDate.setDate(currentDate.getDate() + nights);
+    });
+
+    icsContent.push('END:VCALENDAR');
+    const icsString = icsContent.join('\r\n');
+
+    const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${trip.name.replace(/[^a-zA-Z0-9_-]/g, '_')}-Itinerary.ics`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toggleSidebar(false);
+    showNotification("📅 Calendar file (.ics) downloaded! Open to add to Google/Apple Calendar.");
+}
+
+/* ==========================================================================
+   1-TAP PRINTABLE / PDF POCKET ITINERARY
+   ========================================================================== */
+export function printPocketItinerary() {
+    const trip = getActiveTrip();
+    if (!trip || !trip.stops || trip.stops.length === 0) {
+        showNotification("Please select or create a trip with stops first.");
+        return;
+    }
+
+    let printContainer = document.getElementById('printable-itinerary-container');
+    if (!printContainer) {
+        printContainer = document.createElement('div');
+        printContainer.id = 'printable-itinerary-container';
+        document.body.appendChild(printContainer);
+    }
+
+    const totalNights = trip.stops.reduce((sum, s) => sum + (Number(s.nights) || 0), 0);
+    const sDate = parseLocalDate(trip.startDate);
+    const dateRangeStr = sDate ? `${formatLocalDate(sDate)} (${totalNights} Nights)` : `${totalNights} Nights`;
+
+    let html = `
+        <div class="print-itinerary-sheet">
+            <div class="print-header">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <h1 style="margin:0 0 4px 0; font-size:26px; color:#124b43; font-weight:800;">${escapeHTML(trip.name)}</h1>
+                        <p style="margin:0; font-size:14px; color:#4b5563; font-weight:600;">📅 ${escapeHTML(dateRangeStr)} • ${trip.stops.length} Destination${trip.stops.length > 1 ? 's' : ''}</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="font-size:16px; font-weight:800; color:#124b43;">TRIPPO</span>
+                        <div style="font-size:10px; color:#6b7280;">trippo.top</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROUTE SUMMARY -->
+            <div class="print-card" style="margin-bottom:18px;">
+                <h3 style="margin:0 0 8px 0; font-size:14px; color:#124b43; text-transform:uppercase; letter-spacing:0.5px;">🗺️ Route Overview</h3>
+                <div style="font-size:13px; font-weight:600; color:#374151;">
+                    ${trip.stops.map((s, idx) => `<span>${idx + 1}. <strong>${escapeHTML(s.name)}</strong> (${s.nights || 1}n)</span>`).join(' <span style="color:#9ca3af; margin:0 4px;">➔</span> ')}
+                </div>
+            </div>
+    `;
+
+    // DAY-BY-DAY / STOP BREAKDOWN
+    let runningDate = parseLocalDate(trip.startDate) || new Date();
+    html += `<h3 style="margin:20px 0 10px 0; font-size:15px; color:#124b43; border-bottom:1.5px solid #e5e7eb; padding-bottom:6px;">📍 Stops & Itinerary Details</h3>`;
+
+    trip.stops.forEach((stop, sIdx) => {
+        const nights = Number(stop.nights) || 1;
+        const stopStartDate = new Date(runningDate);
+        const stopEndDate = new Date(runningDate);
+        stopEndDate.setDate(stopEndDate.getDate() + nights);
+
+        html += `
+            <div class="print-card">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                    <h4 style="margin:0; font-size:15px; color:#111827;">Stop ${sIdx + 1}: <strong>${escapeHTML(stop.name)}</strong></h4>
+                    <span style="font-size:12px; font-weight:600; color:#4b5563;">${formatLocalDate(stopStartDate)} – ${formatLocalDate(stopEndDate)} (${nights} Night${nights > 1 ? 's' : ''})</span>
+                </div>
+        `;
+
+        if (stop.notes) {
+            html += `<p style="margin:0 0 8px 0; font-size:12px; color:#4b5563; font-style:italic;">Notes: ${escapeHTML(stop.notes)}</p>`;
+        }
+
+        // Transit details
+        if (stop.transit && (stop.transit.type || stop.transit.carrier || stop.transit.confirmation)) {
+            html += `
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:12px;">
+                    <strong>✈️ Transit / Arrival:</strong> ${escapeHTML((stop.transit.type || 'Travel').toUpperCase())} 
+                    ${stop.transit.carrier ? `• ${escapeHTML(stop.transit.carrier)}` : ''}
+                    ${stop.transit.departureTime ? `• Dep: ${escapeHTML(stop.transit.departureTime)}` : ''}
+                    ${stop.transit.arrivalTime ? `• Arr: ${escapeHTML(stop.transit.arrivalTime)}` : ''}
+                    ${stop.transit.confirmation ? `• <strong>Ref: ${escapeHTML(stop.transit.confirmation)}</strong>` : ''}
+                </div>
+            `;
+        }
+
+        // Lodging details
+        if (stop.lodging && (stop.lodging.name || stop.lodging.address)) {
+            html += `
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:12px;">
+                    <strong>🏨 Accommodations:</strong> <strong>${escapeHTML(stop.lodging.name || 'Reserved Lodging')}</strong>
+                    ${stop.lodging.address ? `<br>📍 Address: ${escapeHTML(stop.lodging.address)}` : ''}
+                    ${stop.lodging.notes ? `<br>ℹ️ Info: ${escapeHTML(stop.lodging.notes)}` : ''}
+                </div>
+            `;
+        }
+
+        // Daily attractions/places in this stop
+        const cityPlaces = trip.places ? trip.places.filter(p => p.cityIndex === sIdx || (p.cityIndex === undefined && sIdx === 0)) : [];
+        if (cityPlaces.length > 0) {
+            html += `<div style="margin-top:8px;">
+                <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:4px;">Planned Sightseeing & Activities:</div>
+                <ul style="margin:0; padding-left:18px; font-size:12px; color:#4b5563;">
+                    ${cityPlaces.map(p => `
+                        <li style="margin-bottom:3px;">
+                            <strong>${escapeHTML(p.name)}</strong>
+                            ${p.time ? ` <span style="color:#6b7280;">(${escapeHTML(p.time)})</span>` : ''}
+                            ${p.notes ? ` — <em>${escapeHTML(p.notes)}</em>` : ''}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>`;
+        }
+
+        html += `</div>`;
+        runningDate.setDate(runningDate.getDate() + nights);
+    });
+
+    // EMERGENCY / OFFLINE NOTES SECTION
+    html += `
+        <div class="print-card" style="margin-top:16px;">
+            <h4 style="margin:0 0 6px 0; font-size:13px; color:#124b43; text-transform:uppercase;">🚨 Emergency & Offline Contacts</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:11px; color:#4b5563;">
+                <div style="border-bottom:1px dashed #d1d5db; padding-bottom:6px;">Local Embassy / Consulate: __________________</div>
+                <div style="border-bottom:1px dashed #d1d5db; padding-bottom:6px;">Travel Insurance Policy #: __________________</div>
+                <div style="border-bottom:1px dashed #d1d5db; padding-bottom:6px;">Emergency Medical Assistance: __________________</div>
+                <div style="border-bottom:1px dashed #d1d5db; padding-bottom:6px;">Bank / Card Freeze Line: __________________</div>
+            </div>
+        </div>
+        <div style="text-align:center; font-size:10px; color:#9ca3af; margin-top:20px;">
+            Generated by Trippo Travel Planner • https://trippo.top
+        </div>
+    </div>`;
+
+    printContainer.innerHTML = html;
+    toggleSidebar(false);
+    window.print();
+}
+
+if (typeof window !== 'undefined') {
+    window.openPackingModal = openPackingModal;
+    window.setPackingFilter = setPackingFilter;
+    window.togglePackingItem = togglePackingItem;
+    window.addCustomPackingItem = addCustomPackingItem;
+    window.deletePackingItem = deletePackingItem;
+    window.resetPackingList = resetPackingList;
+    window.toggleAllPacking = toggleAllPacking;
+    window.exportTripToICS = exportTripToICS;
+    window.printPocketItinerary = printPocketItinerary;
+    window.handleFlightHubOriginInput = handleFlightHubOriginInput;
+    window.selectFlightHubChip = selectFlightHubChip;
+    window.saveDefaultFlightHubOrigin = saveDefaultFlightHubOrigin;
+    window.updateFlightHubLinks = updateFlightHubLinks;
+    window.initFlightHub = initFlightHub;
+}
+
+/* ==========================================================================
+   EXPLORE EVERYWHERE & ROUTE HUB (SIDEBAR FLIGHT TOOL)
+   ========================================================================== */
+export const FLIGHT_HUB_DEFAULT_AIRPORT = 'LFT';
+export const FLIGHT_HUB_AFFILIATE_MARKER = 'YOUR_MARKER_ID';
+
+export function getFlightHubOrigin() {
+    let stored = null;
+    try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            stored = window.localStorage.getItem('trippo_home_airport');
+        }
+    } catch (e) {
+        console.warn(e);
+    }
+    return (stored && stored.length === 3) ? stored.toUpperCase() : FLIGHT_HUB_DEFAULT_AIRPORT;
+}
+
+export function updateFlightHubLinks(origin) {
+    const code = (origin || getFlightHubOrigin()).toUpperCase();
+    const codeLower = code.toLowerCase();
+
+    const skyscanner = document.getElementById('flighthub-skyscanner');
+    if (skyscanner) {
+        skyscanner.href = `https://www.skyscanner.com/transport/flights-from/${codeLower}/`;
+    }
+
+    const gflights = document.getElementById('flighthub-googleflights');
+    if (gflights) {
+        gflights.href = `https://www.google.com/travel/flights?q=flights+from+${code}+to+anywhere`;
+    }
+
+    const flightconn = document.getElementById('flighthub-flightconnections');
+    if (flightconn) {
+        flightconn.href = `https://www.flightconnections.com/flights-from-${codeLower}`;
+    }
+
+    const kayak = document.getElementById('flighthub-kayak');
+    if (kayak) {
+        kayak.href = `https://www.kayak.com/explore/${code}`;
+    }
+
+    const aviasales = document.getElementById('flighthub-aviasales');
+    if (aviasales) {
+        aviasales.href = `https://www.aviasales.com/search?marker=${FLIGHT_HUB_AFFILIATE_MARKER}&origin=${code}&destination=anywhere`;
+    }
+
+    // Update active highlight on quick chips
+    document.querySelectorAll('.flight-hub-chip').forEach(chip => {
+        if (chip.innerText.trim().toUpperCase() === code) {
+            chip.classList.add('active');
+        } else {
+            chip.classList.remove('active');
+        }
+    });
+}
+
+export function handleFlightHubOriginInput(event) {
+    const input = (event && event.target) || document.getElementById('flight-hub-origin');
+    if (!input) return;
+    let clean = input.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 3);
+    input.value = clean;
+    if (clean.length === 3) {
+        updateFlightHubLinks(clean);
+    }
+}
+
+export function selectFlightHubChip(code) {
+    const input = document.getElementById('flight-hub-origin');
+    if (input) input.value = code;
+    updateFlightHubLinks(code);
+    triggerHaptic('light');
+}
+
+export function saveDefaultFlightHubOrigin() {
+    const input = document.getElementById('flight-hub-origin');
+    const code = (input ? input.value : '').trim().toUpperCase();
+    if (!code || code.length !== 3) {
+        showNotification("Please enter a valid 3-letter airport code (e.g. LFT, MSY, IAH).");
+        return;
+    }
+    try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem('trippo_home_airport', code);
+        }
+    } catch (e) {
+        console.warn(e);
+    }
+    const btn = document.getElementById('flight-hub-save-btn');
+    if (btn) {
+        const origText = btn.innerText;
+        btn.innerText = 'Saved! ✓';
+        btn.classList.add('saved');
+        setTimeout(() => {
+            btn.innerText = origText;
+            btn.classList.remove('saved');
+        }, 1600);
+    }
+    triggerHaptic('success');
+    showNotification(`✈️ Default home airport saved: ${code}`);
+}
+
+export function initFlightHub() {
+    const origin = getFlightHubOrigin();
+    const input = document.getElementById('flight-hub-origin');
+    if (input) input.value = origin;
+    updateFlightHubLinks(origin);
+}
+
+

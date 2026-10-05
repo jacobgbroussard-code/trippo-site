@@ -27,14 +27,14 @@ const appJs = fs.readFileSync('js/app.js', 'utf8');
 const toolsJs = fs.readFileSync('js/tools.js', 'utf8');
 const swJs = fs.readFileSync('sw.js', 'utf8');
 
-// 1. Version consistency check for v2.3.66
-check('v2.3.66 version consistency across all files', () => {
-    assert(indexHtml.includes('Trippo Travel Planner v2.3.66'), 'index.html title must be v2.3.66');
-    assert(indexHtml.includes('js/app.js?v=2.3.66'), 'index.html script tag must be v2.3.66');
-    assert(indexHtml.includes('v2.3.66</span></span>'), 'index.html header version badge must be v2.3.66');
-    assert(appJs.includes("CURRENT_VERSION = '2.3.66'"), 'js/app.js CURRENT_VERSION must be 2.3.66');
-    assert(toolsJs.includes('version: "2.3.66"'), 'js/tools.js backup version must be 2.3.66');
-    assert(swJs.includes('trippo-cache-v2.3.66'), 'sw.js CACHE_NAME must be trippo-cache-v2.3.66');
+// 1. Version consistency check for v2.3.68
+check('v2.3.68 version consistency across all files', () => {
+    assert(indexHtml.includes('Trippo Travel Planner v2.3.68'), 'index.html title must be v2.3.68');
+    assert(indexHtml.includes('js/app.js?v=2.3.68'), 'index.html script tag must be v2.3.68');
+    assert(indexHtml.includes('v2.3.68</span></span>'), 'index.html header version badge must be v2.3.68');
+    assert(appJs.includes("CURRENT_VERSION = '2.3.68'"), 'js/app.js CURRENT_VERSION must be 2.3.68');
+    assert(toolsJs.includes('version: "2.3.68"'), 'js/tools.js backup version must be 2.3.68');
+    assert(swJs.includes('trippo-cache-v2.3.68'), 'sw.js CACHE_NAME must be trippo-cache-v2.3.68');
 });
 
 // 2. Google Sign-In button in index.html

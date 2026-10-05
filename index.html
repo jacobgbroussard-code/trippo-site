@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.3.66</title>
+    <title>Trippo Travel Planner v2.3.68</title>
     <!-- Live deployment: https://jacobgbroussard-code.github.io/trippo-site/ -->
     
     <!-- PWA & Mobile Web App Meta -->
@@ -12,19 +12,19 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.66">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.66">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.66">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.66">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.66">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.3.68">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.3.68">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.3.68">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.3.68">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.3.68">
 
     <!-- Leaflet & Vendor Styles -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.3.66">
-    <link rel="stylesheet" href="styles/components.css?v=2.3.66">
+    <link rel="stylesheet" href="styles/main.css?v=2.3.68">
+    <link rel="stylesheet" href="styles/components.css?v=2.3.68">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -145,12 +145,97 @@
         </div>
         
         <h3 class="sidebar-section-title">Trip Tools</h3>
+        <div class="sidebar-item" onclick="openPackingModal()">
+            <span>🧳</span> Smart Packing Checklist
+        </div>
+        <div class="sidebar-item" onclick="printPocketItinerary()">
+            <span>📄</span> Print / PDF Pocket Itinerary
+        </div>
+        <div class="sidebar-item" onclick="exportTripToICS()">
+            <span>📅</span> Export to Calendar (.ics)
+        </div>
         <div class="sidebar-item" onclick="openBudgetModal()">
             <span>💰</span> Smart Split Budget Tracker
         </div>
         <div class="sidebar-item" onclick="openCurrencyModal()">
             <span>💱</span> Currency Converter
         </div>
+
+        <!-- FLIGHT HUB & EXPLORE EVERYWHERE CARD -->
+        <div class="flight-hub-card">
+            <div class="flight-hub-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px;">✈️</span>
+                    <div>
+                        <div class="flight-hub-title">Explore Everywhere</div>
+                        <div class="flight-hub-subtitle">Route Hub & Cheap Flights</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Departure Airport Selector -->
+            <div class="flight-hub-origin-row">
+                <div class="flight-hub-input-wrap">
+                    <span class="flight-hub-label">From</span>
+                    <input type="text" id="flight-hub-origin" class="flight-hub-input" maxlength="3" spellcheck="false" placeholder="LFT" value="LFT" oninput="handleFlightHubOriginInput(event)">
+                </div>
+                <button type="button" id="flight-hub-save-btn" class="flight-hub-save-btn" onclick="saveDefaultFlightHubOrigin()" title="Set as default airport">Set Default</button>
+            </div>
+
+            <!-- Quick Chips -->
+            <div class="flight-hub-chips">
+                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('LFT')">LFT</button>
+                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('MSY')">MSY</button>
+                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('IAH')">IAH</button>
+                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('DFW')">DFW</button>
+                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('ATL')">ATL</button>
+            </div>
+
+            <!-- Outbound Launcher Links -->
+            <div class="flight-hub-links">
+                <a id="flighthub-skyscanner" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.skyscanner.com/transport/flights-from/lft/">
+                    <span class="flight-hub-link-icon">🌐</span>
+                    <div class="flight-hub-link-info">
+                        <div class="flight-hub-link-name">Skyscanner</div>
+                        <div class="flight-hub-link-desc">Explore Everywhere country grid</div>
+                    </div>
+                    <span class="flight-hub-link-arrow">↗</span>
+                </a>
+                <a id="flighthub-googleflights" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.google.com/travel/flights?q=flights+from+LFT+to+anywhere">
+                    <span class="flight-hub-link-icon">🗺️</span>
+                    <div class="flight-hub-link-info">
+                        <div class="flight-hub-link-name">Google Flights</div>
+                        <div class="flight-hub-link-desc">Interactive world price map</div>
+                    </div>
+                    <span class="flight-hub-link-arrow">↗</span>
+                </a>
+                <a id="flighthub-flightconnections" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.flightconnections.com/flights-from-lft">
+                    <span class="flight-hub-link-icon">🧭</span>
+                    <div class="flight-hub-link-info">
+                        <div class="flight-hub-link-name">FlightConnections</div>
+                        <div class="flight-hub-link-desc">Direct routes, airlines & schedules</div>
+                    </div>
+                    <span class="flight-hub-link-arrow">↗</span>
+                </a>
+                <a id="flighthub-kayak" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.kayak.com/explore/LFT">
+                    <span class="flight-hub-link-icon">🔍</span>
+                    <div class="flight-hub-link-info">
+                        <div class="flight-hub-link-name">Kayak Explore</div>
+                        <div class="flight-hub-link-desc">Budget destination grid</div>
+                    </div>
+                    <span class="flight-hub-link-arrow">↗</span>
+                </a>
+                <a id="flighthub-aviasales" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.aviasales.com/search?marker=YOUR_MARKER_ID&origin=LFT&destination=anywhere">
+                    <span class="flight-hub-link-icon">🏷️</span>
+                    <div class="flight-hub-link-info">
+                        <div class="flight-hub-link-name">WayAway / Aviasales</div>
+                        <div class="flight-hub-link-desc">Anywhere fare finder</div>
+                    </div>
+                    <span class="flight-hub-link-arrow">↗</span>
+                </a>
+            </div>
+        </div>
+
         <div class="sidebar-item" onclick="openShareTripModal()">
             <span>📤</span> Share a Trip with Friend
         </div>
@@ -231,7 +316,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 12px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.66</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.68</span></span>
             </div>
             <button onclick="toggleSidebar(true)" style="background:var(--primary-light); color:var(--primary); border:1.5px solid var(--border-subtle); padding:8px 14px; border-radius:14px; font-size:12px; font-weight:700; cursor:pointer;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -250,6 +335,7 @@
     <div id="planner-view" class="view">
         <div id="planner-map" class="map-container">
             <div class="map-controls-row">
+                <button class="map-btn" id="planner-gps-btn" onclick="toggleUserLocation('planner')">🎯 My Location</button>
                 <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner')">⛶ Full Map</button>
                 <button class="map-btn" onclick="toggleTrails('planner')">🥾 Map Trails</button>
                 <button class="map-btn" id="planner-train-btn" onclick="cycleTrainOverlay('planner')">🚆 Trains: Off</button>
@@ -300,6 +386,7 @@
             <div id="places-map" class="map-container">
                 <div class="map-controls-row">
                     <button class="map-btn" onclick="showPlacesMasterList()">‹ All Trips</button>
+                    <button class="map-btn" id="places-gps-btn" onclick="toggleUserLocation('places')">🎯 My Location</button>
                     <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places')">⛶ Full Map</button>
                 </div>
             </div>
@@ -363,6 +450,7 @@
             <div id="wishlist-map" class="map-container" style="cursor: crosshair;">
                 <div class="map-controls-row">
                     <button class="map-btn" onclick="showWishlistDirectory()">‹ Back to Lists</button>
+                    <button class="map-btn" id="wishlist-gps-btn" onclick="toggleUserLocation('wishlist')">🎯 My Location</button>
                     <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist')">⛶ Full Map</button>
                     <button class="map-btn" onclick="toggleTrails('wishlist')">🥾 Map Trails</button>
                     <button class="map-btn" id="wishlist-train-btn" onclick="cycleTrainOverlay('wishlist')">🚆 Trains: Off</button>
@@ -495,6 +583,54 @@
 
             <h3 style="font-size: 15px; margin: 0 0 10px 0;">Recorded Expenses</h3>
             <div id="expenses-list-container"></div>
+        </div>
+    </div>
+
+    <!-- SMART PACKING CHECKLIST MODAL -->
+    <div id="packing-modal" class="modal" onclick="handleModalBackdropClick(event, 'packing-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('packing-modal')">✕</button>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;">🧳 Smart Packing Checklist</h2>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-light);"><span id="packing-modal-trip-name">Trip</span></p>
+
+            <div class="packing-progress-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700;">
+                    <span>Packing Progress</span>
+                    <span id="packing-progress-text" style="color:var(--primary);">0 of 0 items packed (0%)</span>
+                </div>
+                <div class="packing-progress-track">
+                    <div id="packing-progress-bar" class="packing-progress-fill" style="width:0%;"></div>
+                </div>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div id="packing-category-pills" class="packing-pills-row"></div>
+
+            <!-- Items List -->
+            <div id="packing-items-list" style="max-height:360px; overflow-y:auto; margin-bottom:14px; padding-right:2px;"></div>
+
+            <!-- Add Custom Item Input -->
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <input type="text" id="packing-new-item-input" class="form-control" placeholder="Add custom item (e.g. Hiking boots)..." style="flex:1;" onkeydown="if(event.key==='Enter')addCustomPackingItem()">
+                <select id="packing-new-item-category" class="form-control" style="width:auto; max-width:115px; font-size:12px; font-weight:600;">
+                    <option value="Clothing">Clothing</option>
+                    <option value="Documents">Documents</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Health">Health</option>
+                    <option value="Toiletries">Toiletries</option>
+                    <option value="Custom" selected>Custom</option>
+                </select>
+                <button class="save-btn" style="margin:0; width:auto; padding:10px 14px; font-size:13px;" onclick="addCustomPackingItem()">+ Add</button>
+            </div>
+
+            <!-- Action Helpers -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding-top:10px;">
+                <div style="display:flex; gap:8px;">
+                    <button class="optimize-btn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;" onclick="toggleAllPacking(true)">Check All</button>
+                    <button class="optimize-btn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;" onclick="toggleAllPacking(false)">Uncheck All</button>
+                </div>
+                <button onclick="resetPackingList()" style="background:none; border:none; color:var(--text-light); font-size:11px; font-weight:600; cursor:pointer;">Reset Default</button>
+            </div>
         </div>
     </div>
 
@@ -928,7 +1064,9 @@
         </div>
     </div>
 
+    <div id="printable-itinerary-container"></div>
+
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.66"></script>
+    <script type="module" src="js/app.js?v=2.3.68"></script>
 </body>
 </html>

@@ -43,13 +43,13 @@ async function runTests() {
     const plannerJs = fs.readFileSync(path.join(__dirname, '../js/planner.js'), 'utf8');
     const compCss = fs.readFileSync(path.join(__dirname, '../styles/components.css'), 'utf8');
 
-    check('v2.3.66 version bump is consistent across all files', () => {
-        assert(indexHtml.includes('Trippo Travel Planner v2.3.66'), 'index.html title mismatch');
-        assert(indexHtml.includes('js/app.js?v=2.3.66'), 'index.html script tag mismatch');
-        assert(indexHtml.includes('v2.3.66</span></span>'), 'index.html sidebar badge mismatch');
-        assert(appJs.includes("CURRENT_VERSION = '2.3.66'"), 'js/app.js CURRENT_VERSION mismatch');
-        assert(toolsJs.includes('version: "2.3.66"'), 'js/tools.js version mismatch');
-        assert(swJs.includes('trippo-cache-v2.3.66'), 'sw.js CACHE_NAME mismatch');
+    check('v2.3.68 version bump is consistent across all files', () => {
+        assert(indexHtml.includes('Trippo Travel Planner v2.3.68'), 'index.html title mismatch');
+        assert(indexHtml.includes('js/app.js?v=2.3.68'), 'index.html script tag mismatch');
+        assert(indexHtml.includes('v2.3.68</span></span>'), 'index.html sidebar badge mismatch');
+        assert(appJs.includes("CURRENT_VERSION = '2.3.68'"), 'js/app.js CURRENT_VERSION mismatch');
+        assert(toolsJs.includes('version: "2.3.68"'), 'js/tools.js version mismatch');
+        assert(swJs.includes('trippo-cache-v2.3.68'), 'sw.js CACHE_NAME mismatch');
     });
 
     check('maps.js exports getShortestRoutePath', () => {

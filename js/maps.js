@@ -769,6 +769,116 @@ export function toggleMapMode(target) {
     safeInvalidate(mapInstance, 320);
 }
 
+/* ==========================================================================
+   LIVE GPS LOCATION ON MAPS (BLUE DOT)
+   ========================================================================== */
+let userLocationMarker = null;
+let userLocationCircle = null;
+let userLocationWatchId = null;
+let activeGpsContext = null;
+
+export function toggleUserLocation(context = 'places') {
+    const targetMap = context === 'places' ? placesMap : (context === 'wishlist' ? wishlistMap : plannerMap);
+    const btnId = `${context}-gps-btn`;
+    const btn = document.getElementById(btnId);
+
+    // If currently active in this map context, toggle off
+    if (activeGpsContext === context) {
+        if (userLocationWatchId !== null && navigator.geolocation) {
+            navigator.geolocation.clearWatch(userLocationWatchId);
+            userLocationWatchId = null;
+        }
+        if (userLocationMarker && targetMap) targetMap.removeLayer(userLocationMarker);
+        if (userLocationCircle && targetMap) targetMap.removeLayer(userLocationCircle);
+        userLocationMarker = null;
+        userLocationCircle = null;
+        activeGpsContext = null;
+        if (btn) {
+            btn.classList.remove('active-mode');
+            btn.innerHTML = '🎯 My Location';
+        }
+        showNotification("📍 Location tracking turned off.");
+        return;
+    }
+
+    if (!('geolocation' in navigator)) {
+        showNotification("Geolocation is not supported by your browser.");
+        return;
+    }
+
+    if (btn) {
+        btn.innerHTML = '🎯 Locating...';
+    }
+
+    const onLocationFound = (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        if (!targetMap) return;
+
+        const pulseIcon = L.divIcon({
+            className: 'gps-marker-wrapper',
+            html: '<div class="gps-user-pulse"><div class="gps-user-dot"></div></div>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        });
+
+        if (!userLocationMarker) {
+            userLocationMarker = L.marker([latitude, longitude], { icon: pulseIcon, zIndexOffset: 2000 }).addTo(targetMap);
+            userLocationCircle = L.circle([latitude, longitude], {
+                radius: Math.max(accuracy, 30),
+                color: '#1a73e8',
+                fillColor: '#1a73e8',
+                fillOpacity: 0.12,
+                weight: 1
+            }).addTo(targetMap);
+            targetMap.flyTo([latitude, longitude], Math.max(targetMap.getZoom(), 15), { animate: true, duration: 1 });
+            showNotification(`📍 Found your location (±${Math.round(accuracy)}m)`);
+        } else {
+            userLocationMarker.setLatLng([latitude, longitude]);
+            if (!targetMap.hasLayer(userLocationMarker)) userLocationMarker.addTo(targetMap);
+            if (userLocationCircle) {
+                userLocationCircle.setLatLng([latitude, longitude]);
+                userLocationCircle.setRadius(Math.max(accuracy, 30));
+                if (!targetMap.hasLayer(userLocationCircle)) userLocationCircle.addTo(targetMap);
+            }
+        }
+
+        activeGpsContext = context;
+        if (btn) {
+            btn.classList.add('active-mode');
+            btn.innerHTML = '🎯 My Location';
+        }
+    };
+
+    const onLocationError = (err) => {
+        console.warn("GPS Location error:", err);
+        if (btn) {
+            btn.classList.remove('active-mode');
+            btn.innerHTML = '🎯 My Location';
+        }
+        activeGpsContext = null;
+        if (err.code === 1) {
+            showNotification("Location permission denied. Please allow location access in browser settings.");
+        } else {
+            showNotification("Unable to determine location. Check GPS/Wi-Fi connection.");
+        }
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            onLocationFound(pos);
+            if (userLocationWatchId !== null) navigator.geolocation.clearWatch(userLocationWatchId);
+            userLocationWatchId = navigator.geolocation.watchPosition(onLocationFound, onLocationError, {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 15000
+            });
+        },
+        onLocationError,
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
 if (typeof window !== 'undefined') {
     window.toggleMapMode = toggleMapMode;
+    window.toggleUserLocation = toggleUserLocation;
 }
