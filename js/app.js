@@ -13,7 +13,7 @@ import * as wishlist from './wishlist.js';
 import * as tools from './tools.js';
 import * as placesAutocomplete from './places-autocomplete.js';
 
-const CURRENT_VERSION = '2.3.59';
+const CURRENT_VERSION = '2.3.60';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -109,14 +109,20 @@ if ('serviceWorker' in navigator) {
         }
     });
 
-    window.addEventListener('load', () => {
+    const initSW = () => {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => {
                 console.log('[Trippo SW] Registered with scope:', reg.scope);
                 reg.update();
             })
             .catch(err => console.warn('[Trippo SW] Registration failed:', err));
-    });
+    };
+
+    if (document.readyState === 'complete') {
+        initSW();
+    } else {
+        window.addEventListener('load', initSW);
+    }
 }
 
 // Global Keyboard & Touch Listeners
