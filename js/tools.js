@@ -98,9 +98,15 @@ export function renderHome() {
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-                <button onclick="event.stopPropagation(); openShareTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--primary);" title="Share Trip or Co-Plan with Friends">👥</button>
-                <button onclick="event.stopPropagation(); openEditTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--primary);" title="Edit Trip Details & Dates">✏️</button>
-                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete or Leave Trip">🗑️</button>
+                <button class="trip-card-share-btn" onclick="event.stopPropagation(); openShareTripModal('${safeTripId}')" title="Share Trip or Co-Plan with Friends" aria-label="Share Trip">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                </button>
+                <button onclick="event.stopPropagation(); openEditTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:7px 9px; font-size:14px; cursor:pointer; color:var(--primary);" title="Edit Trip Details & Dates">✏️</button>
+                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:7px 9px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete or Leave Trip">🗑️</button>
                 <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${safeTripId}')">›</div>
             </div>
         </div>`;
@@ -534,15 +540,15 @@ export function openExportTripFileModal() {
     if (modal) modal.style.display = 'flex';
 }
 
-export function confirmExportSharedTrip() {
-    const tripSelect = document.getElementById('share-trip-select');
-    const trip = trips.find(t => t.id === tripSelect?.value);
+export function confirmExportSharedTrip(tripId) {
+    const targetId = tripId || (document.getElementById('share-trip-select')?.value) || (getActiveTrip() ? getActiveTrip().id : null);
+    const trip = trips.find(t => t.id === targetId) || getActiveTrip();
     if (!trip) {
-        showNotification("Please select a trip to share.");
+        showNotification("Please select a trip to export.");
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.3.44",
+        trippoVersion: "2.3.76",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -553,8 +559,7 @@ export function confirmExportSharedTrip() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    closeModal('share-trip-modal');
-    showNotification(`Exported share package for "${trip.name}"!`);
+    showNotification(`Exported backup file for "${trip.name}"!`);
 }
 
 export function importSharedTripJSON(event) {

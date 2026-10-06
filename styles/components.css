@@ -2997,3 +2997,182 @@ body.dark-mode .collab-badge {
     color: #10b981;
 }
 
+/* --- IPHONE SHARE BUTTON & UNIFIED SHARING SECTION --- */
+.ios-share-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-light, rgba(18, 75, 67, 0.08));
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+    color: var(--primary);
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ios-share-action-btn:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(18, 75, 67, 0.18);
+}
+
+.ios-share-action-btn:active {
+    transform: scale(0.97);
+}
+
+.ios-share-action-btn svg {
+    stroke-width: 2.3;
+    flex-shrink: 0;
+}
+
+body.dark-mode .ios-share-action-btn {
+    background: rgba(59, 130, 246, 0.14);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+body.dark-mode .ios-share-action-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+/* Trip Card Share Button */
+.trip-card-share-btn {
+    background: var(--primary-light, rgba(18, 75, 67, 0.08));
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+    border-radius: 8px;
+    padding: 7px 9px;
+    cursor: pointer;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.trip-card-share-btn:hover {
+    background: var(--primary);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+body.dark-mode .trip-card-share-btn {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+body.dark-mode .trip-card-share-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+/* Modal Header Badge Icon */
+.ios-share-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--primary-light, rgba(18, 75, 67, 0.08));
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+body.dark-mode .ios-share-badge-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+/* Unified Export & Calendar Section inside Share Modal */
+.share-export-section {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-subtle, rgba(0, 0, 0, 0.1));
+}
+
+.share-export-header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #71837f);
+    margin-bottom: 8px;
+}
+
+.share-export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+@media (max-width: 440px) {
+    .share-export-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.share-export-tile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.share-export-tile:hover {
+    border-color: var(--primary);
+    background: var(--primary-light, rgba(18, 75, 67, 0.04));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.share-export-tile:active {
+    transform: scale(0.98);
+}
+
+body.dark-mode .share-export-tile {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .share-export-tile:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.share-export-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.share-export-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.share-export-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+

@@ -137,8 +137,13 @@ async function testTripSharingAndCollaboration() {
         console.log(`  Collab Link contains #collab=: ${collabLink.includes('#collab=')}`);
         if (!collabLink.includes('#collab=')) throw new Error('Collab link does not have #collab=');
 
-        // Take screenshot of Share Modal in Collab Mode
+        // Take screenshot of Share Modal in Collab Mode (with Unified Export Section)
         await takeScreenshot('share-modal-collab-mode.png');
+
+        // Verify the unified export tiles exist
+        const exportTilesCount = await evalExpr(`document.querySelectorAll('.share-export-tile').length`);
+        console.log(`  Unified Export Tiles count: ${exportTilesCount}`);
+        if (exportTilesCount !== 3) throw new Error('Expected 3 export tiles in unified share modal!');
 
         // Switch back to 'copy' mode and take screenshot
         console.log('👉 Switching back to "Send a Copy" mode for screenshot comparison...');
@@ -149,6 +154,28 @@ async function testTripSharingAndCollaboration() {
         // Close share modal
         await evalExpr(`window.closeModal('share-trip-modal')`);
         await new Promise(r => setTimeout(r, 400));
+
+        // Test opening trip in Planner and verifying iOS share button
+        console.log('👉 Testing iOS Share Button in Planner Header...');
+        await evalExpr(`window.openTrip('${tripId}')`);
+        await new Promise(r => setTimeout(r, 800));
+
+        const hasIosShareBtn = await evalExpr(`!!document.getElementById('planner-ios-share-btn')`);
+        console.log(`  Planner iOS Share Button exists: ${hasIosShareBtn}`);
+        if (!hasIosShareBtn) throw new Error('Planner iOS share button not found!');
+
+        await takeScreenshot('planner-header-ios-share-button.png');
+
+        // Click the iOS Share Button from planner header
+        await evalExpr(`document.getElementById('planner-ios-share-btn').click()`);
+        await new Promise(r => setTimeout(r, 400));
+
+        const openedFromHeader = await evalExpr(`document.getElementById('share-trip-modal').style.display === 'flex'`);
+        console.log(`  Opened share modal from iPhone button in header: ${openedFromHeader}`);
+        if (!openedFromHeader) throw new Error('Clicking planner-ios-share-btn failed to open modal!');
+
+        await evalExpr(`window.closeModal('share-trip-modal')`);
+        await new Promise(r => setTimeout(r, 300));
 
         // Step 4: Test Receiving an Incoming "Send a Copy" Trip
         console.log('👉 Step 4: Testing Incoming "Send a Copy" flow via URL hash...');

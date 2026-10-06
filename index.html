@@ -308,16 +308,14 @@
                 <span>📂</span> Restore All Data (.json)
             </div>
             <input type="file" id="import-app-json-input" accept=".json" style="display:none" onchange="importAppDataJSON(event)">
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openShareTripModal()">
-                <span>👥</span> Share Trip & Co-Plan Live
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openShareTripModal(); toggleSidebar(false);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary); flex-shrink:0;">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+                <span>Share & Export Trip Hub</span>
             </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openExportTripFileModal()">
-                <span>💾</span> Export Offline Trip Backup (.json)
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="document.getElementById('import-shared-trip-input').click()">
-                <span>📥</span> Import Trip File (.json)
-            </div>
-            <input type="file" id="import-shared-trip-input" accept=".json" style="display:none" onchange="importSharedTripJSON(event)">
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="forceAppRefresh()">
                 <span>🔄</span> Check for Updates / Refresh App
             </div>
@@ -408,14 +406,19 @@
                         <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block; cursor:pointer;" onclick="openEditTripModal()" title="Click to edit trip details">Trip Route</h2>
                         <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates">✏️</button>
                         <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Live Co-Planning Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> 👥 Live Co-Plan</span>
+                        <button id="planner-ios-share-btn" class="ios-share-action-btn" onclick="openShareTripModal()" title="Share trip, co-plan live, or export" aria-label="Share Trip">
+                            <svg class="ios-share-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                <polyline points="16 6 12 2 8 6"></polyline>
+                                <line x1="12" y1="2" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Share</span>
+                        </button>
                     </div>
                     <div style="margin-top: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button id="planner-date-chip" onclick="openEditTripModal()" class="planner-date-chip" title="Click to set or change trip departure date">
                             <span id="planner-date-chip-text">📅 Set Start Date</span>
                         </button>
-                        <button onclick="openShareTripModal()" class="micro-action-btn highlight" id="planner-share-btn" title="Share trip or invite friends to co-plan">👥 Share</button>
-                        <button onclick="exportTripICS()" class="micro-action-btn" title="Export to Apple/Google Calendar">📅 .ics</button>
-                        <button onclick="document.getElementById('import-file-input').click()" class="micro-action-btn" title="Import route or stops">📥 Import</button>
                         <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
                     </div>
                 </div>
@@ -1012,9 +1015,17 @@
     <div id="share-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'share-trip-modal')">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 480px;">
             <button class="close-modal" onclick="closeModal('share-trip-modal')">✕</button>
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                <span style="font-size:22px;">👥</span>
-                <h2 style="margin: 0; font-size: 20px;">Share & Collaborate</h2>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <div class="ios-share-badge-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-size: 20px;">Share & Export Itinerary</h2>
+                </div>
             </div>
             <div id="share-modal-trip-name" style="font-weight: 700; font-size: 16px; color: var(--primary); margin-bottom: 2px;">Trip Name</div>
             <div id="share-modal-trip-info" style="font-size: 12px; color: var(--text-muted, #71837f); margin-bottom: 16px;">3 Stops • Nov 1, 2026</div>
@@ -1073,11 +1084,44 @@
                 </div>
             </div>
 
-            <div style="display:flex; gap:10px; margin-top:16px;">
+            <div style="display:flex; gap:10px; margin-top:14px;">
                 <button type="button" id="share-action-copy-btn" class="save-btn" style="flex:1; margin:0;" onclick="copyShareLink()">
                     <span>📋</span> Copy Itinerary Link
                 </button>
-                <button type="button" class="btn-secondary" style="margin:0;" onclick="closeModal('share-trip-modal')">Done</button>
+            </div>
+
+            <!-- Unified Export & Sync Section -->
+            <div class="share-export-section">
+                <div class="share-export-header">
+                    More Sharing & Export Tools
+                </div>
+                <div class="share-export-grid">
+                    <button type="button" class="share-export-tile" onclick="exportTripICS()" title="Add dates & stays to Apple or Google Calendar">
+                        <span class="share-export-icon">📅</span>
+                        <div>
+                            <div class="share-export-title">Add to Calendar</div>
+                            <div class="share-export-sub">Apple & Google (.ics)</div>
+                        </div>
+                    </button>
+                    <button type="button" class="share-export-tile" onclick="confirmExportSharedTrip()" title="Download offline trip backup file">
+                        <span class="share-export-icon">💾</span>
+                        <div>
+                            <div class="share-export-title">Offline Backup</div>
+                            <div class="share-export-sub">Download .json file</div>
+                        </div>
+                    </button>
+                    <button type="button" class="share-export-tile" onclick="document.getElementById('import-file-input').click()" title="Import trip from .ics or .json file">
+                        <span class="share-export-icon">📥</span>
+                        <div>
+                            <div class="share-export-title">Import File</div>
+                            <div class="share-export-sub">Restore .ics or .json</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top:16px;">
+                <button type="button" class="btn-secondary" style="width:100%; margin:0;" onclick="closeModal('share-trip-modal')">Done</button>
             </div>
         </div>
     </div>
