@@ -673,20 +673,6 @@
         </div>
     </div>
 
-    <!-- LEGACY SHARE FILE MODAL -->
-    <div id="legacy-share-file-modal" class="modal" onclick="handleModalBackdropClick(event, 'legacy-share-file-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="closeModal('legacy-share-file-modal')">✕</button>
-            <h2 style="margin: 0 0 16px 0; font-size: 20px;">📤 Export Trip File</h2>
-            <p style="color:#71837f; font-size:13px; margin-bottom:14px;">Select the trip you want to package into an offline backup file (.json).</p>
-            <div class="form-group">
-                <label>Choose Trip</label>
-                <select id="share-trip-select" class="form-control" style="font-weight:700;"></select>
-            </div>
-            <button class="save-btn" onclick="confirmExportSharedTrip()">Download Trip File (.json)</button>
-        </div>
-    </div>
-
     <!-- SMART SPLIT BUDGET TRACKER MODAL -->
     <div id="budget-modal" class="modal" onclick="handleModalBackdropClick(event, 'budget-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -1154,6 +1140,13 @@
                             <div class="share-export-sub">Download .json file</div>
                         </div>
                     </button>
+                    <button type="button" class="share-export-tile" onclick="closeModal('share-trip-modal'); printPocketItinerary();" title="Print or save PDF pocket itinerary">
+                        <span class="share-export-icon">📄</span>
+                        <div>
+                            <div class="share-export-title">Print / PDF Guide</div>
+                            <div class="share-export-sub">Pocket itinerary format</div>
+                        </div>
+                    </button>
                     <button type="button" class="share-export-tile" onclick="document.getElementById('import-file-input').click()" title="Import trip from .ics or .json file">
                         <span class="share-export-icon">📥</span>
                         <div>
@@ -1578,12 +1571,12 @@
                         </div>
                         <span>Restore Data ›</span>
                     </button>
-                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="exportTripToICS()">
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="closeModal('settings-modal'); openShareTripModal();">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span>📅</span>
-                            <div style="font-size:13px; font-weight:700;">Export Active Trip (.ics)</div>
+                            <span>🔗</span>
+                            <div style="font-size:13px; font-weight:700;">Share & Export Active Trip Hub</div>
                         </div>
-                        <span>Calendar File ›</span>
+                        <span>Open Share Hub ›</span>
                     </button>
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="forceAppRefresh()">
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -1615,6 +1608,10 @@
 
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
                 ☁️ Cloudflare Workers AI · Meta Llama 3 Edge Model
+            </div>
+
+            <div style="margin-top: 16px;">
+                <button type="button" class="btn-secondary" onclick="cancelAIGeneration()" style="padding: 7px 20px; font-size: 12px; border-radius: 12px; cursor: pointer; display: inline-block; margin: 0 auto;">✕ Cancel Generation</button>
             </div>
         </div>
     </div>

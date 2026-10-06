@@ -3531,6 +3531,16 @@ body.dark-mode .ai-shimmer-line {
     color: #ea580c;
 }
 
+body.dark-mode .ai-stat-chip {
+    background: rgba(43, 124, 98, 0.25);
+    color: #41b8a6;
+}
+
+body.dark-mode .ai-stat-chip.edge {
+    background: rgba(243, 128, 32, 0.2);
+    color: #fb923c;
+}
+
 .ai-day-card {
     background: var(--input-bg, #f8fcfb);
     border: 1px solid var(--border-subtle);

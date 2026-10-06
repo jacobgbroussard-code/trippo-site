@@ -530,18 +530,15 @@ export function convertCurrency() {
 }
 
 /* --- SHARE & APP BACKUP TOOLS --- */
-export function openExportTripFileModal() {
+export function openExportTripFileModal(tripId) {
     toggleSidebar(false);
-    const selectEl = document.getElementById('share-trip-select');
-    if (selectEl) {
-        selectEl.innerHTML = trips.map(t => `<option value="${t.id}" ${t.id === activeTripId ? 'selected' : ''}>${t.name}</option>`).join('');
+    if (window.openShareTripModal) {
+        window.openShareTripModal(tripId);
     }
-    const modal = document.getElementById('legacy-share-file-modal');
-    if (modal) modal.style.display = 'flex';
 }
 
 export function confirmExportSharedTrip(tripId) {
-    const targetId = tripId || (document.getElementById('share-trip-select')?.value) || (getActiveTrip() ? getActiveTrip().id : null);
+    const targetId = tripId || (getActiveTrip() ? getActiveTrip().id : (trips.length > 0 ? trips[0].id : null));
     const trip = trips.find(t => t.id === targetId) || getActiveTrip();
     if (!trip) {
         showNotification("Please select a trip to export.");

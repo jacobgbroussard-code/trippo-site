@@ -42,6 +42,7 @@ export function setWorkerEndpoint(url) {
 // Current generated itinerary awaiting user review or saving
 let currentAIGeneratedItinerary = null;
 let aiFetchAbortController = null;
+let isUserCancelledAI = false;
 
 // Destination coordinates dictionary for instant mapping
 const POPULAR_DESTINATION_COORDS = {
@@ -135,6 +136,7 @@ export async function submitAITripSearch() {
     }
 
     triggerHaptic('light');
+    isUserCancelledAI = false;
     setAILoadingState(true, query);
 
     try {
@@ -147,6 +149,11 @@ export async function submitAITripSearch() {
         console.error('[AI Assistant] Generation failed:', err);
         setAILoadingState(false);
 
+        // If user intentionally hit Cancel, do not display an error popup
+        if (isUserCancelledAI) {
+            return;
+        }
+
         // Friendly error notification without crashing the client app
         if (err.name === 'AbortError') {
             showNotification("⏱️ Edge AI request timed out. Please check your connection and try again.");
@@ -157,6 +164,20 @@ export async function submitAITripSearch() {
             showNotification(`⚠️ ${err.message || 'Failed to generate itinerary. Please try again.'}`);
         }
     }
+}
+
+// User-triggered cancellation of in-flight AI generation
+export function cancelAIGeneration() {
+    isUserCancelledAI = true;
+    if (aiFetchAbortController) {
+        try {
+            aiFetchAbortController.abort();
+        } catch (e) {}
+        aiFetchAbortController = null;
+    }
+    setAILoadingState(false);
+    showNotification("AI generation cancelled.");
+    triggerHaptic('light');
 }
 
 // Set search bar input text from inspiration chips
@@ -438,6 +459,7 @@ export function saveAIGeneratedTrip() {
 
     if (window.renderHome) window.renderHome();
     if (window.switchTab) window.switchTab('planner');
+    if (window.renderPlanner) window.renderPlanner();
 
     showNotification(`✨ Added "${newTrip.name}" to your planner!`);
     triggerHaptic('success');

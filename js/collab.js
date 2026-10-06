@@ -84,7 +84,7 @@ export function decodeTripPayload(encodedStr) {
 // --- SHARE MODAL CONTROLLERS ---
 export function openShareTripModal(tripId) {
     const targetId = tripId || (getActiveTrip() ? getActiveTrip().id : null);
-    const trip = trips.find(t => t.id === targetId) || getActiveTrip();
+    const trip = trips.find(t => t.id === targetId) || getActiveTrip() || (trips.length > 0 ? trips[0] : null);
     if (!trip) {
         showNotification("Please select or open a trip to share.");
         return;
@@ -94,10 +94,22 @@ export function openShareTripModal(tripId) {
     const modal = document.getElementById('share-trip-modal');
     if (!modal) return;
 
-    // Populate trip preview
+    // Populate trip preview & switcher if multiple trips exist
     const titleEl = document.getElementById('share-modal-trip-name');
     const infoEl = document.getElementById('share-modal-trip-info');
-    if (titleEl) titleEl.innerText = trip.name;
+    if (titleEl) {
+        if (trips.length > 1) {
+            titleEl.innerHTML = `
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                    <select id="share-modal-trip-select" class="form-control" style="font-weight:800; font-size:15px; padding:6px 10px; border-radius:10px; cursor:pointer;" onchange="openShareTripModal(this.value)">
+                        ${trips.map(t => `<option value="${t.id}" ${t.id === trip.id ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+        } else {
+            titleEl.innerText = trip.name;
+        }
+    }
     if (infoEl) {
         const totalNights = trip.stops ? trip.stops.reduce((sum, s) => sum + (Number(s.nights) || 0), 0) : 0;
         const stopsCount = trip.stops ? trip.stops.length : 0;

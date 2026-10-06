@@ -141,6 +141,10 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal').forEach(m => state.closeModal(m.id));
+        const aiOverlay = document.getElementById('ai-loading-overlay');
+        if (aiOverlay && aiOverlay.style.display !== 'none') {
+            if (window.cancelAIGeneration) window.cancelAIGeneration();
+        }
         wishlist.cancelDroppedPin();
         state.toggleSidebar(false);
     }
