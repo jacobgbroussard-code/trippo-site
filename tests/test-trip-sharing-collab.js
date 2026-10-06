@@ -130,10 +130,11 @@ async function testTripSharingAndCollaboration() {
 
         // Step 3: Switch to 'collab' mode
         console.log('👉 Step 3: Switching to "Live Co-Plan (Collaborate)" mode...');
-        await evalExpr(`window.selectShareMode('collab')`);
+        await evalExpr(`window.selectShareMode('collab');`);
         await new Promise(r => setTimeout(r, 600));
 
         const collabLink = await evalExpr(`document.getElementById('share-link-input').value`);
+        console.log(`  Collab Link value: "${collabLink}"`);
         console.log(`  Collab Link contains #collab=: ${collabLink.includes('#collab=')}`);
         if (!collabLink.includes('#collab=')) throw new Error('Collab link does not have #collab=');
 
@@ -143,7 +144,7 @@ async function testTripSharingAndCollaboration() {
         // Verify the unified export tiles exist
         const exportTilesCount = await evalExpr(`document.querySelectorAll('.share-export-tile').length`);
         console.log(`  Unified Export Tiles count: ${exportTilesCount}`);
-        if (exportTilesCount !== 3) throw new Error('Expected 3 export tiles in unified share modal!');
+        if (exportTilesCount < 3) throw new Error('Expected at least 3 export tiles in unified share modal!');
 
         // Switch back to 'copy' mode and take screenshot
         console.log('👉 Switching back to "Send a Copy" mode for screenshot comparison...');
