@@ -1,0 +1,7 @@
+name = "trippo-ai-worker"
+main = "src/index.js"
+compatibility_date = "2024-04-01"
+
+# Cloudflare Workers AI Binding
+[ai]
+binding = "AI"

@@ -1,0 +1,19 @@
+{
+  "name": "trippo-ai-worker",
+  "version": "1.0.0",
+  "description": "Serverless Edge AI Travel Assistant for Trippo powered by Cloudflare Workers AI",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers-ai",
+    "llama-3",
+    "travel-planner",
+    "trippo"
+  ],
+  "author": "Trippo Team",
+  "license": "MIT"
+}

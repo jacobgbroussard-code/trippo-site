@@ -369,16 +369,60 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.74</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.3.76</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
         <div style="padding: 0 20px; display: flex; flex-direction: column; align-items: center;">
-            <img src="fad.jpg" alt="Travel Globe Graphic" style="width: 100%; max-width: 280px; height: auto; margin-bottom: 24px; mix-blend-mode: multiply; border-radius: 16px;" onerror="this.style.display='none'" />
+            <img src="fad.jpg" alt="Travel Globe Graphic" style="width: 100%; max-width: 280px; height: auto; margin-bottom: 20px; mix-blend-mode: multiply; border-radius: 16px;" onerror="this.style.display='none'" />
             
+            <!-- AI Trip Generator Dashboard Search Widget (Serverless Edge AI) -->
+            <div class="ai-generator-widget">
+                <div class="ai-widget-header">
+                    <div class="ai-widget-title-row">
+                        <span class="ai-sparkle-icon">✨</span>
+                        <span class="ai-widget-title">AI Trip Generator</span>
+                        <span class="ai-edge-badge">Edge AI</span>
+                    </div>
+                    <p class="ai-widget-subtitle">Describe your dream vacation in plain English. Powered by Cloudflare Workers & Meta Llama 3.</p>
+                </div>
+
+                <form id="ai-trip-form" onsubmit="event.preventDefault(); submitAITripSearch();" class="ai-search-form">
+                    <div class="ai-search-bar">
+                        <span class="ai-search-icon">✨</span>
+                        <input 
+                            type="text" 
+                            id="ai-trip-input" 
+                            class="ai-search-input" 
+                            placeholder="e.g. 5 days in Tokyo for ramen & anime, or weekend in Rome..."
+                            autocomplete="off"
+                        />
+                        <button type="submit" id="ai-generate-btn" class="ai-generate-btn" title="Generate Itinerary with Cloudflare Edge AI">
+                            <span class="btn-text">Generate</span>
+                            <span class="btn-icon">⚡</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Offline Alert Banner (shown when navigator.onLine is false) -->
+                <div id="ai-offline-banner" class="ai-offline-banner" style="display:none;">
+                    <span>📡</span>
+                    <span>AI generation requires an internet connection, but your saved trips are available offline.</span>
+                </div>
+
+                <!-- Suggested Prompt Chips -->
+                <div class="ai-prompt-chips">
+                    <span class="ai-chips-label">Ideas:</span>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('5 days in Tokyo exploring historic shrines and modern tech')">🎌 5 Days in Tokyo</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('Weekend in Rome focused on pasta, gelato, and ancient ruins')">🍕 Weekend in Rome</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('4-day scenic roadtrip through the Swiss Alps and mountain lakes')">🏔️ 4 Days Swiss Alps</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('7-day tropical adventure in Costa Rica with rainforests and beaches')">🌴 1 Week Costa Rica</button>
+                </div>
+            </div>
+
             <button class="create-btn" onclick="openCreateTripModal()" style="width: 100%;">
                 <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
-                Create new trip
+                Create new trip manually
             </button>
             <div id="trip-list" style="width: 100%;"></div>
         </div>
@@ -1555,9 +1599,57 @@
         </div>
     </div>
 
+    <!-- AI Loading Overlay (Spinner & Shimmer) -->
+    <div id="ai-loading-overlay" class="ai-loading-overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Generating AI Itinerary">
+        <div class="ai-loading-card">
+            <div class="ai-pulse-orb">⚡</div>
+            <div class="ai-loading-title">Generating Itinerary...</div>
+            <div id="ai-loading-query-text" class="ai-loading-query"></div>
+            
+            <div class="ai-shimmer-container">
+                <div class="ai-shimmer-line" style="width: 100%;"></div>
+                <div class="ai-shimmer-line" style="width: 85%;"></div>
+                <div class="ai-shimmer-line" style="width: 92%;"></div>
+                <div class="ai-shimmer-line" style="width: 70%;"></div>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+                ☁️ Cloudflare Workers AI · Meta Llama 3 Edge Model
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Trip Generator Itinerary Preview Modal -->
+    <div id="ai-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'ai-trip-modal')">
+        <div class="modal-content" style="max-width: 580px; max-height: 88vh; display: flex; flex-direction: column;" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('ai-trip-modal')">✕</button>
+            
+            <div style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 20px;">✨</span>
+                    <h2 id="ai-modal-title" style="margin: 0; font-size: 20px; font-weight: 800; color: var(--text);"></h2>
+                </div>
+                <div id="ai-modal-destination" style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px;"></div>
+                <p id="ai-modal-summary" style="font-size: 13px; color: var(--text-muted); margin: 0 0 10px 0; line-height: 1.45;"></p>
+                <div id="ai-modal-stats" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+            </div>
+
+            <div id="ai-modal-timeline" style="overflow-y: auto; flex: 1; padding-right: 4px; margin-bottom: 16px; max-height: 52vh;">
+                <!-- Dynamically rendered day cards & activities -->
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+                <button type="button" class="cancel-btn" onclick="closeModal('ai-trip-modal')" style="flex: 1; margin: 0;">Dismiss</button>
+                <button type="button" class="save-btn" onclick="saveAIGeneratedTrip()" style="flex: 2; margin: 0;">
+                    <span>💾 Save to My Trips</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.74"></script>
+    <script type="module" src="js/app.js?v=2.3.76"></script>
 </body>
 </html>

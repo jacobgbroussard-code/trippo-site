@@ -16,8 +16,9 @@ import * as travelPayouts from './travel-payouts.js';
 import * as weather from './weather.js';
 import * as settings from './settings.js';
 import * as collab from './collab.js';
+import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.3.75';
+const CURRENT_VERSION = '2.3.76';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -49,7 +50,8 @@ Object.assign(window, {
     ...travelPayouts,
     ...weather,
     ...settings,
-    ...collab
+    ...collab,
+    ...ai
 });
 
 // Replay any early calls queued before module finished loading
@@ -187,6 +189,9 @@ function bootstrapApp() {
     collab.initAllCollabRooms();
     collab.checkIncomingShareUrl();
     window.addEventListener('hashchange', collab.checkIncomingShareUrl);
+
+    // Initialize Serverless Edge AI Travel Assistant
+    ai.initAITripGenerator();
 
     setTimeout(() => {
         db.checkAuthSession();
