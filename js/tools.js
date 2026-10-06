@@ -85,16 +85,22 @@ export function renderHome() {
             countdownBadge = `<span class="trip-countdown-badge tbd">🗓️ Dates TBD</span>`;
         }
 
+        const collabChip = trip.isCollaborative ? `<span class="trip-countdown-badge" style="background:rgba(59,130,246,0.12); color:#2563eb; border:1px solid rgba(59,130,246,0.25);">👥 Live Co-Plan</span>` : '';
+
         return `
         <div class="trip-card">
             <div class="trip-card-content" onclick="openTrip('${safeTripId}')">
                 <h3>${safeName} ${exampleBadge}</h3>
                 <p>${dateDisplay}</p>
-                ${countdownBadge ? `<div style="margin-top:2px;">${countdownBadge}</div>` : ''}
+                <div style="margin-top:2px; display:flex; gap:6px; flex-wrap:wrap;">
+                    ${countdownBadge}
+                    ${collabChip}
+                </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
+                <button onclick="event.stopPropagation(); openShareTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--primary);" title="Share Trip or Co-Plan with Friends">👥</button>
                 <button onclick="event.stopPropagation(); openEditTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--primary);" title="Edit Trip Details & Dates">✏️</button>
-                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete Trip">🗑️</button>
+                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete or Leave Trip">🗑️</button>
                 <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${safeTripId}')">›</div>
             </div>
         </div>`;
@@ -253,8 +259,17 @@ export function openTrip(id) {
 export function promptDeleteTripById(tripId) {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
-    if (confirm(`Are you sure you want to delete "${trip.name}"? This cannot be undone.`)) {
+
+    let confirmMsg = `Are you sure you want to delete "${trip.name}"? This cannot be undone.`;
+    if (trip.isCollaborative) {
+        confirmMsg = `Remove Shared Trip: Are you sure you want to remove "${trip.name}" from your planner? Other collaborators will still keep their copy.`;
+    }
+
+    if (confirm(confirmMsg)) {
         triggerHaptic('warning');
+        if (trip.isCollaborative && typeof window.leaveCollabRoom === 'function') {
+            window.leaveCollabRoom(trip.collabRoomId);
+        }
         setTrips(trips.filter(t => t.id !== tripId));
         saveTrips();
         if (activeTripId === tripId) {
@@ -263,7 +278,7 @@ export function promptDeleteTripById(tripId) {
         }
         renderHome();
         switchTab('home');
-        showNotification(`Deleted "${trip.name}".`);
+        showNotification(trip.isCollaborative ? `Removed "${trip.name}" from your planner.` : `Deleted "${trip.name}".`);
     }
 }
 
@@ -509,13 +524,13 @@ export function convertCurrency() {
 }
 
 /* --- SHARE & APP BACKUP TOOLS --- */
-export function openShareTripModal() {
+export function openExportTripFileModal() {
     toggleSidebar(false);
     const selectEl = document.getElementById('share-trip-select');
     if (selectEl) {
         selectEl.innerHTML = trips.map(t => `<option value="${t.id}" ${t.id === activeTripId ? 'selected' : ''}>${t.name}</option>`).join('');
     }
-    const modal = document.getElementById('share-trip-modal');
+    const modal = document.getElementById('legacy-share-file-modal');
     if (modal) modal.style.display = 'flex';
 }
 

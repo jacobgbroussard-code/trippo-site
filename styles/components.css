@@ -2833,3 +2833,167 @@ body.dark-mode .map-segment-gmaps-btn {
     color: var(--primary);
     opacity: 0.8;
 }
+
+/* --- TRIP SHARING & REALTIME COLLABORATION --- */
+.share-modes-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 440px) {
+    .share-modes-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.share-mode-card {
+    border: 2px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: var(--card-bg, #ffffff);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 84px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.share-mode-card:hover {
+    border-color: rgba(18, 75, 67, 0.3);
+    transform: translateY(-1px);
+}
+
+.share-mode-card.selected {
+    border-color: var(--primary);
+    background: rgba(18, 75, 67, 0.05);
+    box-shadow: 0 4px 14px rgba(18, 75, 67, 0.12);
+}
+
+body.dark-mode .share-mode-card.selected {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: #3b82f6;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
+}
+
+.share-mode-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.share-mode-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.share-mode-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.share-mode-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 10px;
+    align-self: flex-start;
+}
+
+.share-mode-badge.copy {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+}
+
+.share-mode-badge.collab {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.share-description-box {
+    background: var(--input-bg, #f8fcfb);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-muted);
+    margin-top: 10px;
+    transition: all 0.2s ease;
+}
+
+.collab-badge {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.collab-badge:hover {
+    background: rgba(37, 99, 235, 0.18);
+    transform: scale(1.02);
+}
+
+body.dark-mode .collab-badge {
+    background: rgba(59, 130, 246, 0.18);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+.collab-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+    animation: pulse-green 1.8s infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.8);
+    }
+}
+
+.import-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.import-badge.copy {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+}
+
+.import-badge.collab {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+

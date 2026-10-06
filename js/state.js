@@ -281,6 +281,10 @@ export function getActiveTrip() {
 export function saveTrips() {
     safeSetStorage('myTrips', JSON.stringify(trips));
     pushLocalToCloud();
+    const activeTrip = getActiveTrip();
+    if (activeTrip && activeTrip.isCollaborative && typeof window.broadcastTripUpdate === 'function') {
+        window.broadcastTripUpdate(activeTrip);
+    }
 }
 
 export function saveWishlist() {

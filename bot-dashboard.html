@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trippo Bot & Antigravity Telemetry</title>
+    <link rel="icon" type="image/x-icon" href="bot-icon.ico">
+    <style>
+        :root {
+            --bg: #090d16;
+            --surface: #111827;
+            --surface-card: rgba(17, 24, 39, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.25);
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 36px 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px var(--accent-glow);
+            overflow: hidden;
+        }
+
+        .header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .header-titles h1 {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header-titles p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .status-pill.online {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-pill.online .status-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.85);
+            }
+        }
+
+        .card {
+            background: var(--surface-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .card-header h2 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 10px;
+            text-align: center;
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 4px;
+        }
+
+        .stat-val {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .banner {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .banner-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
+        }
+
+        .banner-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            color: #fcd34d;
+        }
+
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .telemetry-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .telemetry-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .telemetry-lbl {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .tool-bar-row {
+            margin-bottom: 12px;
+        }
+
+        .tool-bar-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .tool-bar-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .tool-bar-name {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .tool-bar-count {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .tool-track {
+            height: 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .tool-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .tag {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Main Header -->
+        <div class="header">
+            <div class="header-title-box">
+                <div class="header-logo">
+                    <img src="bot-icon.png" alt="Trippo" onerror="this.style.display='none'">
+                </div>
+                <div class="header-titles">
+                    <h1>Trippo Remote Bot Control</h1>
+                    <p>Phone Assistant & Workspace Orchestrator</p>
+                </div>
+            </div>
+            <div id="status-pill" class="status-pill">
+                <div class="status-dot"></div>
+                <span id="status-label">Offline</span>
+            </div>
+        </div>
+
+        <!-- 1. Bot State Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.72V7h2a6 6 0 0 1 6 6v1h1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1H3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h1v-1a6 6 0 0 1 6-6H9V5.72A2 2 0 0 1 8 4a2 2 0 0 1 4-2m-3 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4m6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
+                    </svg>
+                    Bot Bridge Runtime
+                </h2>
+                <span class="tag">Port 8765</span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-lbl">Status</div>
+                    <div class="stat-val" id="stat-status" style="color:#f87171;">Offline</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Allowed User</div>
+                    <div class="stat-val" id="stat-user">1287135724</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Uptime</div>
+                    <div class="stat-val" id="stat-uptime">--</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Memory</div>
+                    <div class="stat-val" id="stat-memory">--</div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <a href="https://t.me/jacob_trippo_bot" target="_blank" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z" />
+                    </svg>
+                    Open in Telegram
+                </a>
+                <button id="btn-stop" class="btn btn-danger" onclick="stopBot()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                    </svg>
+                    Turn Off Bot
+                </button>
+            </div>
+
+            <div class="btn-group" style="margin-bottom:0;">
+                <a href="http://127.0.0.1:8080" target="_blank" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                    </svg>
+                    Open Trippo Site (:8080)
+                </a>
+                <a href="https://aistudio.google.com/app/plan_information" target="_blank" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" />
+                    </svg>
+                    Google AI Quotas
+                </a>
+            </div>
+
+            <div id="offline-banner" class="banner banner-warning" style="display:none; margin-top:14px;">
+                <svg viewBox="0 0 24 24">
+                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+                </svg>
+                <div>
+                    <b>Bot is currently OFF:</b> Double-click <code>Start Bot.cmd</code> or <code>Toggle Bot.cmd</code>
+                    in this folder to launch it in the background.
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Antigravity Analytics Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                    </svg>
+                    Antigravity Session Telemetry
+                </h2>
+                <span id="stat-model" class="tag">Gemini 3.8 Flash</span>
+            </div>
+
+            <div class="telemetry-grid">
+                <div class="telemetry-card">
+                    <div class="telemetry-val" id="stat-prompts">--</div>
+                    <div class="telemetry-lbl">User Prompts</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-val" id="stat-turns">--</div>
+                    <div class="telemetry-lbl">Model Turns</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-val" id="stat-tools">--</div>
+                    <div class="telemetry-lbl">Tool Calls</div>
+                </div>
+            </div>
+
+            <div
+                style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
+                Most Active Tools</div>
+            <div id="tool-bars">
+                <!-- Dynamically populated tool breakdown -->
+            </div>
+
+            <div class="banner banner-info" style="margin-top:16px;">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+                <div>
+                    <b>Gemini Free Tier Quotas</b>: 15 Requests/Min &nbsp;|&nbsp; 1,000,000 Tokens/Min &nbsp;|&nbsp;
+                    1,500 Requests/Day (100% Free)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusPill = document.getElementById('status-pill');
+        const statusLabel = document.getElementById('status-label');
+        const statStatus = document.getElementById('stat-status');
+        const statUptime = document.getElementById('stat-uptime');
+        const statMemory = document.getElementById('stat-memory');
+        const btnStop = document.getElementById('btn-stop');
+        const offlineBanner = document.getElementById('offline-banner');
+
+        const statPrompts = document.getElementById('stat-prompts');
+        const statTurns = document.getElementById('stat-turns');
+        const statTools = document.getElementById('stat-tools');
+        const statModel = document.getElementById('stat-model');
+        const toolBars = document.getElementById('tool-bars');
+
+        const fallbackTelemetry = {
+            userPrompts: 108,
+            modelTurns: 2750,
+            toolCalls: 2615,
+            lastModel: 'Gemini 3.8 Flash (Medium)',
+            topTools: {
+                view_file: 1145,
+                run_command: 610,
+                replace_file_content: 318,
+                grep_search: 270,
+                manage_task: 104,
+                write_to_file: 78
+            }
+        };
+
+        function renderTools(tools) {
+            const friendly = {
+                view_file: 'Code Inspection (view_file)',
+                run_command: 'Terminal Execution (run_command)',
+                replace_file_content: 'File Refactoring (replace_file_content)',
+                grep_search: 'Code Search (grep_search)',
+                manage_task: 'Task Orchestration (manage_task)',
+                write_to_file: 'File Creation (write_to_file)'
+            };
+
+            const entries = Object.entries(tools).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const max = entries[0] ? entries[0][1] : 1;
+
+            toolBars.innerHTML = entries.map(([k, v]) => {
+                const pct = Math.round((v / max) * 100);
+                const title = friendly[k] || k;
+                return `
+                    <div class="tool-bar-row">
+                        <div class="tool-bar-header">
+                            <span class="tool-bar-name">${title}</span>
+                            <span class="tool-bar-count">${v.toLocaleString()}</span>
+                        </div>
+                        <div class="tool-track">
+                            <div class="tool-fill" style="width: ${pct}%;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function poll() {
+            try {
+                const res = await fetch('http://127.0.0.1:8765/status', { method: 'GET', mode: 'cors' });
+                if (res.ok) {
+                    const data = await res.json();
+                    statusPill.className = 'status-pill online';
+                    statusLabel.innerText = 'Online';
+                    statStatus.innerText = 'Online';
+                    statStatus.style.color = '#34d399';
+
+                    const mins = Math.floor(data.uptimeSeconds / 60);
+                    statUptime.innerText = mins > 0 ? `${mins}m ${data.uptimeSeconds % 60}s` : `${data.uptimeSeconds}s`;
+                    statMemory.innerText = `${data.memoryMB} MB`;
+                    btnStop.style.display = 'flex';
+                    offlineBanner.style.display = 'none';
+
+                    // Telemetry
+                    try {
+                        const aRes = await fetch('http://127.0.0.1:8765/analytics', { method: 'GET', mode: 'cors' });
+                        if (aRes.ok) {
+                            const aData = await aRes.json();
+                            statPrompts.innerText = (aData.userPrompts || fallbackTelemetry.userPrompts).toLocaleString();
+                            statTurns.innerText = (aData.modelTurns || fallbackTelemetry.modelTurns).toLocaleString();
+                            statTools.innerText = (aData.toolCalls || fallbackTelemetry.toolCalls).toLocaleString();
+                            statModel.innerText = aData.lastModel || fallbackTelemetry.lastModel;
+                            renderTools(aData.topTools && Object.keys(aData.topTools).length > 0 ? aData.topTools : fallbackTelemetry.topTools);
+                            return;
+                        }
+                    } catch (e) { }
+                    return;
+                }
+            } catch (err) { }
+
+            // Offline
+            statusPill.className = 'status-pill';
+            statusLabel.innerText = 'Offline';
+            statStatus.innerText = 'Offline';
+            statStatus.style.color = '#f87171';
+            statUptime.innerText = 'Offline';
+            statMemory.innerText = '0 MB';
+            btnStop.style.display = 'none';
+            offlineBanner.style.display = 'flex';
+
+            statPrompts.innerText = fallbackTelemetry.userPrompts.toLocaleString();
+            statTurns.innerText = fallbackTelemetry.modelTurns.toLocaleString();
+            statTools.innerText = fallbackTelemetry.toolCalls.toLocaleString();
+            statModel.innerText = fallbackTelemetry.lastModel;
+            renderTools(fallbackTelemetry.topTools);
+        }
+
+        async function stopBot() {
+            if (confirm('Turn OFF the Trippo Telegram bot bridge?')) {
+                try {
+                    await fetch('http://127.0.0.1:8765/stop', { method: 'POST', mode: 'cors' });
+                } catch (e) { }
+                setTimeout(poll, 600);
+            }
+        }
+
+        poll();
+        setInterval(poll, 2500);
+    </script>
+</body>
+
+</html>

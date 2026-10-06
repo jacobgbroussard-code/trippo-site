@@ -1,6 +1,8 @@
+const fs = require('fs');
 const { execSync } = require('child_process');
-
-const GIT_EXE = 'C:\\Users\\Jacob\\.git-bin\\cmd\\git.exe';
+const GIT_EXE = fs.existsSync('C:\\Program Files\\Git\\cmd\\git.exe')
+    ? 'C:\\Program Files\\Git\\cmd\\git.exe'
+    : 'C:\\Users\\Jacob\\.git-bin\\cmd\\git.exe';
 
 function run(cmd) {
     console.log(`> ${cmd}`);

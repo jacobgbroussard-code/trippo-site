@@ -15,8 +15,9 @@ import * as placesAutocomplete from './places-autocomplete.js';
 import * as travelPayouts from './travel-payouts.js';
 import * as weather from './weather.js';
 import * as settings from './settings.js';
+import * as collab from './collab.js';
 
-const CURRENT_VERSION = '2.3.74';
+const CURRENT_VERSION = '2.3.75';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -47,7 +48,8 @@ Object.assign(window, {
     ...placesAutocomplete,
     ...travelPayouts,
     ...weather,
-    ...settings
+    ...settings,
+    ...collab
 });
 
 // Replay any early calls queued before module finished loading
@@ -180,6 +182,11 @@ function bootstrapApp() {
 
     // Default entry view
     tools.switchTab('home');
+
+    // Initialize Realtime Collaboration and URL hash share listener
+    collab.initAllCollabRooms();
+    collab.checkIncomingShareUrl();
+    window.addEventListener('hashchange', collab.checkIncomingShareUrl);
 
     setTimeout(() => {
         db.checkAuthSession();

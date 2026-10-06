@@ -114,6 +114,16 @@ export function renderPlanner() {
         }
     }
 
+    const collabBadge = document.getElementById('planner-collab-badge');
+    if (collabBadge) {
+        if (trip.isCollaborative) {
+            collabBadge.style.display = 'inline-flex';
+            collabBadge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Live Co-Plan`;
+        } else {
+            collabBadge.style.display = 'none';
+        }
+    }
+
     const list = document.getElementById('itinerary-list');
     if (!list) return;
     list.innerHTML = '';

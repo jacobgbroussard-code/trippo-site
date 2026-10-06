@@ -309,10 +309,13 @@
             </div>
             <input type="file" id="import-app-json-input" accept=".json" style="display:none" onchange="importAppDataJSON(event)">
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openShareTripModal()">
-                <span>📤</span> Share a Trip with Friend
+                <span>👥</span> Share Trip & Co-Plan Live
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openExportTripFileModal()">
+                <span>💾</span> Export Offline Trip Backup (.json)
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="document.getElementById('import-shared-trip-input').click()">
-                <span>📥</span> Import Shared Trip File
+                <span>📥</span> Import Trip File (.json)
             </div>
             <input type="file" id="import-shared-trip-input" accept=".json" style="display:none" onchange="importSharedTripJSON(event)">
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="forceAppRefresh()">
@@ -404,11 +407,13 @@
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block; cursor:pointer;" onclick="openEditTripModal()" title="Click to edit trip details">Trip Route</h2>
                         <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates">✏️</button>
+                        <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Live Co-Planning Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> 👥 Live Co-Plan</span>
                     </div>
                     <div style="margin-top: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button id="planner-date-chip" onclick="openEditTripModal()" class="planner-date-chip" title="Click to set or change trip departure date">
                             <span id="planner-date-chip-text">📅 Set Start Date</span>
                         </button>
+                        <button onclick="openShareTripModal()" class="micro-action-btn highlight" id="planner-share-btn" title="Share trip or invite friends to co-plan">👥 Share</button>
                         <button onclick="exportTripICS()" class="micro-action-btn" title="Export to Apple/Google Calendar">📅 .ics</button>
                         <button onclick="document.getElementById('import-file-input').click()" class="micro-action-btn" title="Import route or stops">📥 Import</button>
                         <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
@@ -621,12 +626,12 @@
         </div>
     </div>
 
-    <!-- SHARE TRIP MODAL -->
-    <div id="share-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'share-trip-modal')">
+    <!-- LEGACY SHARE FILE MODAL -->
+    <div id="legacy-share-file-modal" class="modal" onclick="handleModalBackdropClick(event, 'legacy-share-file-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="closeModal('share-trip-modal')">✕</button>
-            <h2 style="margin: 0 0 16px 0; font-size: 20px;">📤 Share Trip with Friends</h2>
-            <p style="color:#71837f; font-size:13px; margin-bottom:14px;">Select the trip you want to package into a shareable file. Friends can import this file directly into their Trippo app!</p>
+            <button class="close-modal" onclick="closeModal('legacy-share-file-modal')">✕</button>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;">📤 Export Trip File</h2>
+            <p style="color:#71837f; font-size:13px; margin-bottom:14px;">Select the trip you want to package into an offline backup file (.json).</p>
             <div class="form-group">
                 <label>Choose Trip</label>
                 <select id="share-trip-select" class="form-control" style="font-weight:700;"></select>
@@ -999,6 +1004,111 @@
             <div style="display:flex; gap:10px;">
                 <button class="save-btn" onclick="saveEditedTrip()" style="flex:1;">Save Changes</button>
                 <button type="button" class="btn-secondary" onclick="closeModal('edit-trip-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share & Collaborate Modal -->
+    <div id="share-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'share-trip-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 480px;">
+            <button class="close-modal" onclick="closeModal('share-trip-modal')">✕</button>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span style="font-size:22px;">👥</span>
+                <h2 style="margin: 0; font-size: 20px;">Share & Collaborate</h2>
+            </div>
+            <div id="share-modal-trip-name" style="font-weight: 700; font-size: 16px; color: var(--primary); margin-bottom: 2px;">Trip Name</div>
+            <div id="share-modal-trip-info" style="font-size: 12px; color: var(--text-muted, #71837f); margin-bottom: 16px;">3 Stops • Nov 1, 2026</div>
+
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted, #71837f); margin-bottom: 8px;">
+                Select Sharing Mode:
+            </div>
+
+            <!-- Two Clear Choices -->
+            <div class="share-modes-container">
+                <!-- Option 1: Send a Copy -->
+                <div id="share-mode-copy-card" class="share-mode-card selected" onclick="selectShareMode('copy')">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="share-mode-icon">📋</span>
+                            <div>
+                                <div class="share-mode-title">Send a Copy</div>
+                                <div class="share-mode-subtitle">Standalone duplicate</div>
+                            </div>
+                        </div>
+                        <input type="radio" name="share-mode-radio" id="share-radio-copy" checked style="accent-color:var(--primary); cursor:pointer;">
+                    </div>
+                    <div class="share-mode-badge copy">Independent</div>
+                </div>
+
+                <!-- Option 2: Live Co-Plan -->
+                <div id="share-mode-collab-card" class="share-mode-card" onclick="selectShareMode('collab')">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="share-mode-icon">⚡</span>
+                            <div>
+                                <div class="share-mode-title">Live Co-Plan</div>
+                                <div class="share-mode-subtitle">Real-time collaboration</div>
+                            </div>
+                        </div>
+                        <input type="radio" name="share-mode-radio" id="share-radio-collab" style="accent-color:var(--primary); cursor:pointer;">
+                    </div>
+                    <div class="share-mode-badge collab">Two-Way Sync</div>
+                </div>
+            </div>
+
+            <!-- Dynamic Explanatory Box -->
+            <div id="share-mode-description" class="share-description-box">
+                <!-- Populated by JS based on selection -->
+            </div>
+
+            <!-- Link & Action Controls -->
+            <div style="margin-top: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted, #71837f); margin:0;">Shareable Link</label>
+                    <span id="share-collab-active-indicator" style="display:none; font-size:11px; font-weight:700; color:#10b981; align-items:center; gap:4px;"></span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="share-link-input" readonly class="form-control" style="font-size:12px; font-family:monospace; background:var(--input-bg, #f8fcfb); cursor:text; flex:1;" onclick="this.select()">
+                    <button type="button" class="btn-secondary" onclick="shareViaNative()" title="Share via device app" style="padding:10px 14px; font-size:14px;">📤</button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:16px;">
+                <button type="button" id="share-action-copy-btn" class="save-btn" style="flex:1; margin:0;" onclick="copyShareLink()">
+                    <span>📋</span> Copy Itinerary Link
+                </button>
+                <button type="button" class="btn-secondary" style="margin:0;" onclick="closeModal('share-trip-modal')">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import / Join Trip Modal -->
+    <div id="import-trip-modal" class="modal" onclick="event.stopPropagation()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 480px;">
+            <button class="close-modal" onclick="cancelImportTrip()">✕</button>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:24px;">🗺️</span>
+                <h2 style="margin: 0; font-size: 20px;">You've Been Invited!</h2>
+            </div>
+
+            <div style="background:var(--card-bg, #ffffff); border:1px solid var(--border-subtle); border-radius:14px; padding:16px; margin: 12px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;">
+                    <h3 id="import-modal-trip-name" style="margin:0; font-size:18px; color:var(--text);">Trip Name</h3>
+                    <div id="import-modal-badge" class="import-badge copy"><span>📋</span> Standalone Copy</div>
+                </div>
+                <div id="import-modal-desc" style="font-size:13px; color:var(--text-muted, #71837f); line-height:1.5;">
+                    Description of copy vs collab
+                </div>
+                <div id="import-modal-stops-list" style="margin-top:12px; max-height:160px; overflow-y:auto;"></div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px;">
+                <button type="button" id="import-modal-confirm-btn" class="save-btn" style="margin:0;" onclick="confirmImportTrip(false)">
+                    <span>✨</span> Add to My Trips
+                </button>
+                <button type="button" class="btn-secondary" style="margin:0; text-align:center;" onclick="cancelImportTrip()">
+                    Decline & Close
+                </button>
             </div>
         </div>
     </div>

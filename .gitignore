@@ -11,4 +11,5 @@ site-credentials-and-services.csv
 SITE_MANAGEMENT_DIRECTORY.md
 credentials.json
 *.secret
-
+*.pid
+.bot.pid
