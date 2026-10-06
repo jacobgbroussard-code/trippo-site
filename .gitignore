@@ -13,3 +13,14 @@ credentials.json
 *.secret
 *.pid
 .bot.pid
+
+# Telegram Bot & Local Control Dashboard (Private)
+telegram-bridge.js
+bot-dashboard.html
+bot-controls/
+scripts/
+*telegram-bot*
+tests/debug-test-tg.js
+tests/launch-bridge.ps1
+tests/test-spawn.ps1
+tests/test-wmi-spawn.ps1
