@@ -525,7 +525,12 @@
                         <h2 id="places-city-title" style="margin: 0; font-size: 20px;">Places</h2>
                         <select id="places-city-select" class="form-control" style="padding: 4px 10px; font-size: 13px; font-weight: 700; width: auto; max-width: 170px; border-radius: 10px; display: none;" onchange="openPlacesCityView(Number(this.value))"></select>
                     </div>
-                    <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Place</button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" class="ai-copilot-btn" onclick="openAICopilot()" title="Open AI Travel Copilot for recommendations & day plans">
+                            <span>✨ AI Copilot</span>
+                        </button>
+                        <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Place</button>
+                    </div>
                 </div>
                 
                 <div id="places-day-tabs" style="display: flex; overflow-x: auto; gap: 8px; margin: 12px 0 16px 0; padding-bottom: 6px; scrollbar-width: none;"></div>
@@ -1644,9 +1649,77 @@
         </div>
     </div>
 
+    <!-- IN-APP AI TRAVEL COPILOT (CHATBOT & DAILY SUGGESTIONS) -->
+    <div id="ai-copilot-modal" class="modal" onclick="handleModalBackdropClick(event, 'ai-copilot-modal')">
+        <div class="modal-content ai-copilot-modal-content" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="ai-copilot-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="ai-copilot-avatar">🤖</div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <h2 style="margin:0; font-size:16px; font-weight:800; color:var(--text);">AI Travel Copilot</h2>
+                            <span class="ai-edge-badge" style="font-size:9px; padding:2px 6px;">Edge AI</span>
+                        </div>
+                        <div id="ai-copilot-subtitle" style="font-size:11px; color:var(--text-muted); font-weight:600;">Tokyo · Day 1</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="micro-action-btn" onclick="clearAIChatHistory()" title="Reset Chat Conversation" style="padding:4px 8px; font-size:11px;">🔄 New</button>
+                    <button class="close-modal" onclick="closeModal('ai-copilot-modal')" style="position:static; margin:0;">✕</button>
+                </div>
+            </div>
+
+            <!-- Context Day Selector Bar -->
+            <div id="ai-copilot-day-bar" class="ai-copilot-day-bar">
+                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">Planning for:</span>
+                <div id="ai-copilot-day-chips" class="ai-copilot-day-chips"></div>
+            </div>
+
+            <!-- Scrollable Chat Messages Container -->
+            <div id="ai-copilot-messages" class="ai-copilot-messages">
+                <!-- Dynamically populated messages & suggestion cards -->
+            </div>
+
+            <!-- Typing Indicator (hidden by default) -->
+            <div id="ai-copilot-typing" class="ai-typing-indicator" style="display:none;">
+                <div class="ai-typing-dot"></div>
+                <div class="ai-typing-dot"></div>
+                <div class="ai-typing-dot"></div>
+                <span style="font-size:11px; color:var(--text-muted); margin-left:6px;">AI Copilot is thinking...</span>
+            </div>
+
+            <!-- Quick Suggestions Chips Bar -->
+            <div id="ai-copilot-chips-bar" class="ai-copilot-chips-bar">
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('🍜 What are the best restaurants and food spots for this day?')">🍜 Top Dining</button>
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('🏛️ Recommend top cultural sights and must-see attractions for this day')">🏛️ Must-See Sights</button>
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('✨ Suggest 3 hidden gems and unique local experiences here')">✨ Hidden Gems</button>
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('📋 Plan a complete morning, afternoon, and evening itinerary for this day')">📋 Full Day Plan</button>
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('☕ Best coffee shops or dessert places nearby')">☕ Cafes & Desserts</button>
+            </div>
+
+            <!-- Chat Message Input Form -->
+            <form id="ai-copilot-form" onsubmit="event.preventDefault(); submitAICopilotInput();" class="ai-chat-input-form">
+                <div class="ai-chat-input-wrapper">
+                    <input 
+                        type="text" 
+                        id="ai-copilot-input" 
+                        class="ai-chat-input" 
+                        placeholder="Ask AI for food, activities, or day itinerary..." 
+                        autocomplete="off"
+                    />
+                    <button type="submit" id="ai-copilot-send-btn" class="ai-chat-send-btn" title="Send message to AI Copilot">
+                        <span>Send</span>
+                        <span>⚡</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.3.76"></script>
+    <script type="module" src="js/app.js?v=2.3.77"></script>
 </body>
 </html>

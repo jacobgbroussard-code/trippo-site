@@ -18,7 +18,7 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.3.76';
+const CURRENT_VERSION = '2.3.77';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -90,7 +90,11 @@ Object.defineProperties(window, {
     cityAutocomplete: { get: () => placesAutocomplete.cityAutocomplete, configurable: true },
     dailyPlaceAutocomplete: { get: () => placesAutocomplete.dailyPlaceAutocomplete, configurable: true },
     hotelAutocomplete: { get: () => placesAutocomplete.hotelAutocomplete, configurable: true },
-    wishlistAutocomplete: { get: () => placesAutocomplete.wishlistAutocomplete, configurable: true }
+    wishlistAutocomplete: { get: () => placesAutocomplete.wishlistAutocomplete, configurable: true },
+    activeCopilotStopIndex: { get: () => ai.activeCopilotStopIndex, configurable: true },
+    activeCopilotDayIndex: { get: () => ai.activeCopilotDayIndex, configurable: true },
+    activeCopilotTripId: { get: () => ai.activeCopilotTripId, configurable: true },
+    copilotChatHistory: { get: () => ai.copilotChatHistory, configurable: true }
 });
 
 // Flatpickr initialization helper

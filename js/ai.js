@@ -9,10 +9,17 @@ import {
     saveTrips,
     setActiveTripId,
     setActivePlacesTripId,
+    activePlacesTripId,
+    activePlacesStopIndex,
+    activePlacesDayIndex,
+    setActivePlacesStopIndex,
+    setActivePlacesDayIndex,
+    getActiveTrip,
     showNotification,
     closeModal,
     triggerHaptic,
     escapeHTML,
+    escapeJS,
     formatLocalDate
 } from './state.js';
 
@@ -579,4 +586,639 @@ export function initAITripGenerator() {
             }
         });
     }
+}
+
+// ==========================================================================
+// IN-APP AI TRAVEL COPILOT (CHATBOT & DAILY ITINERARY SUGGESTIONS)
+// ==========================================================================
+
+export let activeCopilotStopIndex = 0;
+export let activeCopilotDayIndex = 0;
+export let activeCopilotTripId = null;
+export let copilotChatHistory = [];
+let copilotAbortController = null;
+
+// In-memory registry of rendered suggestions to prevent JSON serialization/escaping bugs
+const copilotSuggestionsRegistry = new Map();
+
+/**
+ * Open the AI Travel Copilot modal focused on a destination stop and day
+ */
+export function openAICopilot(stopIndex = null, dayIndex = null) {
+    const trip = (activePlacesTripId && trips.find(t => t.id === activePlacesTripId)) || getActiveTrip();
+    if (!trip) {
+        showNotification("Please select or create a trip first.");
+        return;
+    }
+
+    activeCopilotTripId = trip.id;
+
+    // Resolve stop index
+    if (stopIndex !== null && stopIndex !== undefined) {
+        activeCopilotStopIndex = Number(stopIndex);
+    } else if (activePlacesStopIndex !== null && activePlacesStopIndex !== undefined) {
+        activeCopilotStopIndex = Number(activePlacesStopIndex);
+    } else {
+        activeCopilotStopIndex = 0;
+    }
+    if (Array.isArray(trip.stops) && trip.stops.length > 0) {
+        activeCopilotStopIndex = Math.max(0, Math.min(activeCopilotStopIndex, trip.stops.length - 1));
+    }
+
+    // Resolve day index
+    if (dayIndex !== null && dayIndex !== undefined) {
+        activeCopilotDayIndex = Number(dayIndex);
+    } else if (activePlacesDayIndex !== null && activePlacesDayIndex !== undefined) {
+        activeCopilotDayIndex = Number(activePlacesDayIndex);
+    } else {
+        activeCopilotDayIndex = 0;
+    }
+    activeCopilotDayIndex = Math.max(0, activeCopilotDayIndex);
+
+    const stop = (trip.stops && trip.stops[activeCopilotStopIndex]) || { name: trip.name || 'Destination', nights: 1 };
+
+    // Update header subtitle
+    const subtitleEl = document.getElementById('ai-copilot-subtitle');
+    if (subtitleEl) {
+        subtitleEl.innerText = `${stop.name} · Day ${activeCopilotDayIndex + 1}`;
+    }
+
+    // Render day switcher tabs
+    renderAICopilotDayChips();
+
+    // Check if initial greeting needs to be rendered
+    const messagesContainer = document.getElementById('ai-copilot-messages');
+    if (messagesContainer && copilotChatHistory.length === 0) {
+        renderAICopilotGreeting(stop.name, activeCopilotDayIndex + 1);
+    }
+
+    // Open modal
+    const modal = document.getElementById('ai-copilot-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+
+    // Auto focus input
+    setTimeout(() => {
+        const input = document.getElementById('ai-copilot-input');
+        if (input) input.focus();
+    }, 120);
+
+    triggerHaptic('light');
+}
+
+/**
+ * Switch planning day within Copilot modal
+ */
+export function switchAICopilotDay(dayIdx) {
+    activeCopilotDayIndex = Number(dayIdx);
+    setActivePlacesDayIndex(activeCopilotDayIndex);
+
+    const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
+    const stop = (trip && trip.stops && trip.stops[activeCopilotStopIndex]) || { name: 'Destination' };
+
+    // Update subtitle
+    const subtitleEl = document.getElementById('ai-copilot-subtitle');
+    if (subtitleEl) {
+        subtitleEl.innerText = `${stop.name} · Day ${activeCopilotDayIndex + 1}`;
+    }
+
+    renderAICopilotDayChips();
+
+    // Also update background daily planner if visible
+    if (typeof window.renderPlacesDayTabs === 'function') window.renderPlacesDayTabs();
+    if (typeof window.renderCityPlaces === 'function') window.renderCityPlaces();
+
+    // Append quick system note in chat
+    copilotChatHistory.push({
+        role: 'bot',
+        content: `Switched planning context to **Day ${activeCopilotDayIndex + 1}** (${stop.name}). What would you like to plan for this day?`,
+        suggestions: []
+    });
+    renderAICopilotMessages();
+
+    triggerHaptic('light');
+}
+
+/**
+ * Render day selector chips in Copilot modal
+ */
+export function renderAICopilotDayChips() {
+    const chipsContainer = document.getElementById('ai-copilot-day-chips');
+    if (!chipsContainer) return;
+
+    const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
+    if (!trip || !trip.stops || !trip.stops[activeCopilotStopIndex]) {
+        chipsContainer.innerHTML = '';
+        return;
+    }
+
+    const stop = trip.stops[activeCopilotStopIndex];
+    const numDays = Math.max(1, Number(stop.nights) || 1);
+
+    let html = '';
+    for (let i = 0; i < numDays; i++) {
+        const isActive = i === activeCopilotDayIndex;
+        html += `<button type="button" class="ai-copilot-day-chip ${isActive ? 'active' : ''}" onclick="switchAICopilotDay(${i})">Day ${i + 1}</button>`;
+    }
+    chipsContainer.innerHTML = html;
+}
+
+/**
+ * Render initial conversational welcome message
+ */
+export function renderAICopilotGreeting(cityName, dayNum) {
+    copilotChatHistory = [
+        {
+            role: 'bot',
+            content: `👋 Hi! I'm your **AI Travel Copilot** for **${escapeHTML(cityName)} (Day ${dayNum})**.\n\nI can recommend top restaurants, reveal hidden local gems, or create a full timed schedule. Tap any suggestion below to add it directly into your Day ${dayNum} itinerary!`,
+            suggestions: []
+        }
+    ];
+    renderAICopilotMessages();
+}
+
+/**
+ * Reset Copilot chat conversation
+ */
+export function clearAIChatHistory() {
+    const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
+    const stop = (trip && trip.stops && trip.stops[activeCopilotStopIndex]) || { name: 'Destination' };
+    copilotChatHistory = [];
+    copilotSuggestionsRegistry.clear();
+    renderAICopilotGreeting(stop.name, activeCopilotDayIndex + 1);
+    showNotification("AI Chat conversation reset.");
+    triggerHaptic('light');
+}
+
+/**
+ * Send pre-defined prompt chip
+ */
+export function sendAICopilotChip(promptText) {
+    const input = document.getElementById('ai-copilot-input');
+    if (input) input.value = promptText;
+    submitAICopilotInput();
+}
+
+/**
+ * Submit chat message to Copilot
+ */
+export async function submitAICopilotInput() {
+    const input = document.getElementById('ai-copilot-input');
+    const query = (input?.value || '').trim();
+    if (!query) return;
+
+    // Check offline safety constraint
+    if (!checkIsOnline()) {
+        showNotification("AI features require an internet connection, but your saved trips remain offline-ready.");
+        triggerHaptic('warning');
+        return;
+    }
+
+    const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
+    if (!trip) return;
+    const stop = (trip.stops && trip.stops[activeCopilotStopIndex]) || { name: trip.name || 'Destination' };
+
+    // Collect currently scheduled places for this day
+    const existingPlaces = Array.isArray(trip.places)
+        ? trip.places
+            .filter(p => p.cityIndex === activeCopilotStopIndex && p.dayIndex === activeCopilotDayIndex)
+            .map(p => p.name)
+        : [];
+
+    // Append user message
+    copilotChatHistory.push({
+        role: 'user',
+        content: query
+    });
+    renderAICopilotMessages();
+
+    // Clear input
+    if (input) input.value = '';
+
+    // Show typing indicator
+    setCopilotTyping(true);
+
+    try {
+        const responseData = await fetchChatFromWorker(query, {
+            city: stop.name,
+            day: activeCopilotDayIndex + 1,
+            tripName: trip.name,
+            existingPlaces: existingPlaces
+        });
+
+        setCopilotTyping(false);
+
+        const replyText = responseData.reply || responseData.content || `Here are recommendations for ${stop.name}:`;
+        const suggestions = Array.isArray(responseData.suggestions) ? responseData.suggestions : [];
+
+        copilotChatHistory.push({
+            role: 'bot',
+            content: replyText,
+            suggestions: suggestions
+        });
+
+        renderAICopilotMessages();
+        triggerHaptic('success');
+    } catch (err) {
+        console.warn('[AI Copilot] Live endpoint error, using intelligent fallback:', err);
+        setCopilotTyping(false);
+
+        // Fallback intelligent response
+        const fallback = generateIntelligentChatFallback(query, stop.name, activeCopilotDayIndex + 1);
+        copilotChatHistory.push({
+            role: 'bot',
+            content: fallback.reply,
+            suggestions: fallback.suggestions
+        });
+        renderAICopilotMessages();
+        triggerHaptic('light');
+    }
+}
+
+/**
+ * Render Copilot messages and interactive suggestion cards
+ */
+export function renderAICopilotMessages() {
+    const container = document.getElementById('ai-copilot-messages');
+    if (!container) return;
+
+    let html = '';
+
+    copilotChatHistory.forEach((msg, msgIndex) => {
+        if (msg.role === 'user') {
+            html += `
+                <div class="ai-msg-row user">
+                    <div class="ai-bubble-user">${escapeHTML(msg.content)}</div>
+                </div>
+            `;
+        } else {
+            // Formatted markdown text
+            const formattedContent = escapeHTML(msg.content)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+
+            let suggestionsHtml = '';
+            if (Array.isArray(msg.suggestions) && msg.suggestions.length > 0) {
+                const batchKey = `batch_${msgIndex}`;
+                copilotSuggestionsRegistry.set(batchKey, msg.suggestions);
+
+                const itemsHtml = msg.suggestions.map((sug, sugIndex) => {
+                    const sugId = `sug_${msgIndex}_${sugIndex}`;
+                    copilotSuggestionsRegistry.set(sugId, sug);
+
+                    const timeBadge = sug.time ? `<span style="display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; background:var(--primary-light, #e3f1ed); color:var(--primary); margin-left:6px;">⏱️ ${escapeHTML(sug.time)}</span>` : '';
+                    const catBadge = sug.category ? `<span style="font-size:10px; font-weight:700; opacity:0.8; margin-right:4px;">${escapeHTML(sug.category)}</span>` : '';
+
+                    return `
+                        <div class="ai-chat-card" id="card_${sugId}">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                                <div>
+                                    <div class="ai-chat-card-title">${catBadge}${escapeHTML(sug.name)}${timeBadge}</div>
+                                    ${sug.address ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">📍 ${escapeHTML(sug.address)}</div>` : ''}
+                                </div>
+                                <button type="button" id="btn_${sugId}" class="ai-card-add-btn" onclick="addPlaceFromAISuggestion('${sugId}', ${activeCopilotStopIndex}, ${activeCopilotDayIndex})">
+                                    <span>+ Add to Day ${activeCopilotDayIndex + 1}</span>
+                                </button>
+                            </div>
+                            <div class="ai-chat-card-desc">${escapeHTML(sug.description || '')}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                const addAllBtn = msg.suggestions.length > 1 ? `
+                    <button type="button" id="btn_${batchKey}" class="ai-add-all-btn" onclick="addAllPlacesFromAISuggestions('${batchKey}', ${activeCopilotStopIndex}, ${activeCopilotDayIndex})">
+                        <span>✨ Add All (${msg.suggestions.length}) to Day ${activeCopilotDayIndex + 1}</span>
+                    </button>
+                ` : '';
+
+                suggestionsHtml = `
+                    <div style="margin-top:10px;">
+                        ${itemsHtml}
+                        ${addAllBtn}
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="ai-msg-row bot">
+                    <div class="ai-bubble-bot">
+                        <div>${formattedContent}</div>
+                        ${suggestionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+}
+
+/**
+ * 1-Click addition of a single AI suggestion to trip.places
+ */
+export function addPlaceFromAISuggestion(sugId, stopIdx, dayIdx) {
+    const sug = copilotSuggestionsRegistry.get(sugId);
+    if (!sug) {
+        showNotification("Could not find suggestion data.");
+        return;
+    }
+
+    const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
+    if (!trip) return;
+    if (!Array.isArray(trip.places)) trip.places = [];
+
+    const stop = (trip.stops && trip.stops[stopIdx]) || { name: 'Destination' };
+    const destCoords = (stop && stop.lat && stop.lon) ? { lat: stop.lat, lon: stop.lon } : findDestinationCoords(stop?.name);
+
+    // Approximate coords near city with slight natural offset
+    const latOffset = (Math.random() - 0.5) * 0.015;
+    const lonOffset = (Math.random() - 0.5) * 0.015;
+
+    const newPlace = {
+        id: `poi_ai_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        cityIndex: Number(stopIdx),
+        dayIndex: Number(dayIdx),
+        name: sug.name,
+        category: sug.category || '● See & Do',
+        address: sug.address || `${stop.name}`,
+        notes: sug.description || '',
+        lat: Number((Number(destCoords.lat) + latOffset).toFixed(6)),
+        lon: Number((Number(destCoords.lon) + lonOffset).toFixed(6)),
+        transitMode: 'walking',
+        time: sug.time || ''
+    };
+
+    trip.places.push(newPlace);
+    saveTrips();
+
+    // Re-render daily planner if active
+    if (typeof window.renderCityPlaces === 'function') window.renderCityPlaces();
+
+    // Update button in chat
+    const btn = document.getElementById(`btn_${sugId}`);
+    if (btn) {
+        btn.innerHTML = `<span>✓ Added to Day ${dayIdx + 1}</span>`;
+        btn.classList.add('added');
+        btn.disabled = true;
+    }
+
+    showNotification(`✨ Added "${sug.name}" to Day ${dayIdx + 1}!`);
+    triggerHaptic('success');
+}
+
+/**
+ * 1-Click addition of all AI suggestions in a response
+ */
+export function addAllPlacesFromAISuggestions(batchKey, stopIdx, dayIdx) {
+    const suggestions = copilotSuggestionsRegistry.get(batchKey);
+    if (!Array.isArray(suggestions) || suggestions.length === 0) return;
+
+    const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
+    if (!trip) return;
+    if (!Array.isArray(trip.places)) trip.places = [];
+
+    const stop = (trip.stops && trip.stops[stopIdx]) || { name: 'Destination' };
+    const destCoords = (stop && stop.lat && stop.lon) ? { lat: stop.lat, lon: stop.lon } : findDestinationCoords(stop?.name);
+
+    let count = 0;
+    suggestions.forEach((sug, i) => {
+        const latOffset = (Math.random() - 0.5) * 0.015;
+        const lonOffset = (Math.random() - 0.5) * 0.015;
+
+        const newPlace = {
+            id: `poi_ai_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`,
+            cityIndex: Number(stopIdx),
+            dayIndex: Number(dayIdx),
+            name: sug.name,
+            category: sug.category || '● See & Do',
+            address: sug.address || `${stop.name}`,
+            notes: sug.description || '',
+            lat: Number((Number(destCoords.lat) + latOffset).toFixed(6)),
+            lon: Number((Number(destCoords.lon) + lonOffset).toFixed(6)),
+            transitMode: 'walking',
+            time: sug.time || ''
+        };
+        trip.places.push(newPlace);
+        count++;
+
+        // Disable individual button
+        const sugId = `sug_${batchKey.replace('batch_', '')}_${i}`;
+        const itemBtn = document.getElementById(`btn_${sugId}`);
+        if (itemBtn) {
+            itemBtn.innerHTML = `<span>✓ Added to Day ${dayIdx + 1}</span>`;
+            itemBtn.classList.add('added');
+            itemBtn.disabled = true;
+        }
+    });
+
+    saveTrips();
+    if (typeof window.renderCityPlaces === 'function') window.renderCityPlaces();
+
+    const batchBtn = document.getElementById(`btn_${batchKey}`);
+    if (batchBtn) {
+        batchBtn.innerHTML = `<span>✓ Added All (${count}) to Day ${dayIdx + 1}</span>`;
+        batchBtn.disabled = true;
+        batchBtn.style.opacity = '0.8';
+    }
+
+    showNotification(`✨ Added all ${count} places to Day ${dayIdx + 1}!`);
+    triggerHaptic('success');
+}
+
+/**
+ * Controller for Copilot typing indicator
+ */
+export function setCopilotTyping(isTyping) {
+    const typingIndicator = document.getElementById('ai-copilot-typing');
+    const sendBtn = document.getElementById('ai-copilot-send-btn');
+    const input = document.getElementById('ai-copilot-input');
+    const container = document.getElementById('ai-copilot-messages');
+
+    if (typingIndicator) {
+        typingIndicator.style.display = isTyping ? 'flex' : 'none';
+    }
+    if (sendBtn) {
+        sendBtn.disabled = isTyping;
+    }
+    if (input) {
+        input.disabled = isTyping;
+        if (!isTyping) input.focus();
+    }
+    if (container && isTyping) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+/**
+ * Fetch chat response from Edge Worker
+ */
+async function fetchChatFromWorker(promptText, context) {
+    const endpoint = getWorkerEndpoint();
+    copilotAbortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+        if (copilotAbortController) copilotAbortController.abort();
+    }, 25000);
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                mode: 'chat',
+                prompt: promptText,
+                messages: copilotChatHistory.map(m => ({
+                    role: m.role === 'bot' ? 'assistant' : 'user',
+                    content: m.content
+                })),
+                context: context
+            }),
+            signal: copilotAbortController.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            let errorMsg = `HTTP ${response.status}`;
+            try {
+                const errJson = await response.json();
+                if (errJson && errJson.error) errorMsg = errJson.error;
+            } catch (e) {}
+            throw new Error(errorMsg);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+    }
+}
+
+/**
+ * Resilient local fallback generator for offline or dev environments
+ */
+function generateIntelligentChatFallback(prompt, cityName, dayNum) {
+    const lower = (prompt || '').toLowerCase();
+
+    if (lower.includes('food') || lower.includes('eat') || lower.includes('restaurant') || lower.includes('dinner') || lower.includes('lunch') || lower.includes('cafe') || lower.includes('coffee') || lower.includes('dining')) {
+        return {
+            reply: `Here are 3 exceptional dining and food spots curated for Day ${dayNum} in **${cityName}**:`,
+            suggestions: [
+                {
+                    name: `${cityName} Artisanal Breakfast & Specialty Coffee`,
+                    category: '● Eat & Drink',
+                    time: 'Morning',
+                    address: `Central Quarter, ${cityName}`,
+                    description: `Start the morning with fresh locally roasted coffee, specialty pastries, and seasonal brunch.`
+                },
+                {
+                    name: `Celebrated Traditional Trattoria & Lunch Bistro`,
+                    category: '● Eat & Drink',
+                    time: 'Lunch',
+                    address: `Old Town District, ${cityName}`,
+                    description: `Famous neighborhood spot serving regional specialties made with fresh local market ingredients.`
+                },
+                {
+                    name: `Candlelit Evening Bistro & Wine Lounge`,
+                    category: '● Eat & Drink',
+                    time: 'Evening',
+                    address: `Historic Waterfront, ${cityName}`,
+                    description: `Unwind with authentic tasting menus, handcrafted cocktails, and great nighttime atmosphere.`
+                }
+            ]
+        };
+    }
+
+    if (lower.includes('sight') || lower.includes('attraction') || lower.includes('must-see') || lower.includes('museum') || lower.includes('culture')) {
+        return {
+            reply: `Here are top cultural highlights and must-see sights for Day ${dayNum} in **${cityName}**:`,
+            suggestions: [
+                {
+                    name: `${cityName} Historic Plaza & Heritage Landmark`,
+                    category: '● See & Do',
+                    time: 'Morning',
+                    address: `City Center, ${cityName}`,
+                    description: `Iconic landmark with striking architecture, historic courtyard gardens, and photo opportunities.`
+                },
+                {
+                    name: `Premier City Art & History Museum`,
+                    category: '● See & Do',
+                    time: 'Afternoon',
+                    address: `Museum Quarter, ${cityName}`,
+                    description: `Immerse yourself in world-renowned exhibits, permanent galleries, and tranquil sculpture gardens.`
+                },
+                {
+                    name: `Scenic Panoramic Observation Deck`,
+                    category: '● See & Do',
+                    time: 'Evening',
+                    address: `Highpoint Vista, ${cityName}`,
+                    description: `Catch breathtaking sunset views across ${cityName}'s skyline as the city lights turn on.`
+                }
+            ]
+        };
+    }
+
+    if (lower.includes('hidden') || lower.includes('secret') || lower.includes('gem') || lower.includes('unique')) {
+        return {
+            reply: `Here are 3 delightful hidden gems off the beaten tourist path in **${cityName}**:`,
+            suggestions: [
+                {
+                    name: `Charming Secret Courtyard & Artisan Bookshop`,
+                    category: '● See & Do',
+                    time: 'Morning',
+                    address: `Artists Quarter, ${cityName}`,
+                    description: `A peaceful oasis tucked away behind cobblestone streets with local crafts and literature.`
+                },
+                {
+                    name: `Local Independent Food Market & Delicatessen`,
+                    category: '● Eat & Drink',
+                    time: 'Lunch',
+                    address: `East District, ${cityName}`,
+                    description: `Loved by residents for artisanal cheeses, street snacks, and warm homemade treats.`
+                },
+                {
+                    name: `Rooftop Botanical Garden & Sunset Bar`,
+                    category: '● See & Do',
+                    time: 'Evening',
+                    address: `Sky Terrace, ${cityName}`,
+                    description: `A lush rooftop hideaway offering calm atmosphere and handcrafted botanical cocktails.`
+                }
+            ]
+        };
+    }
+
+    // Default: full day timed plan
+    return {
+        reply: `Here is a complete, balanced day plan for Day ${dayNum} in **${cityName}**:`,
+        suggestions: [
+            {
+                name: `${cityName} Old Town Walking Exploration`,
+                category: '● See & Do',
+                time: 'Morning',
+                address: `Historic Center, ${cityName}`,
+                description: `Discover quaint streets, bustling morning markets, and celebrated architecture.`
+            },
+            {
+                name: `Authentic Regional Lunch & Cafe Stop`,
+                category: '● Eat & Drink',
+                time: 'Lunch',
+                address: `Market Square, ${cityName}`,
+                description: `Savor traditional local flavors and refreshing drinks in a vibrant plaza setting.`
+            },
+            {
+                name: `Scenic Waterfront Promenade & Sunset Walk`,
+                category: '● See & Do',
+                time: 'Evening',
+                address: `Riverfront Boardwalk, ${cityName}`,
+                description: `Relax with golden hour reflections, street musicians, and delightful evening breeze.`
+            }
+        ]
+    };
 }

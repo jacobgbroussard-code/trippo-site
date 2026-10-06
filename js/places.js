@@ -262,7 +262,16 @@ export function renderCityPlaces() {
     const dayPlaces = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
 
     if (dayPlaces.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#8fa09c; margin-top:35px; font-size:14px;">No places added for Day ${activePlacesDayIndex + 1} yet.<br>Tap '+ Add Place' above to start routing.</p>`;
+        container.innerHTML = `
+            <div class="ai-empty-day-card">
+                <div class="ai-empty-day-sparkle">✨</div>
+                <div class="ai-empty-day-title">Plan Day ${activePlacesDayIndex + 1} with AI Copilot</div>
+                <div class="ai-empty-day-desc">Get personalized dining recommendations, sightseeing highlights, or a complete timed schedule for this day.</div>
+                <button type="button" class="ai-empty-day-action-btn" onclick="openAICopilot(${activePlacesStopIndex}, ${activePlacesDayIndex})">
+                    <span>🤖 Open AI Travel Copilot</span>
+                </button>
+            </div>
+        `;
         drawPlacesMapRoute([]);
         return;
     }
