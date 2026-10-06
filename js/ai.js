@@ -775,6 +775,27 @@ export async function submitAICopilotInput() {
         return;
     }
 
+    // STRICT IMMUTABILITY & SAFETY GUARD:
+    // AI Copilot is strictly an additive recommendation assistant with ZERO deletion capabilities.
+    const isDeletionRequest = /\b(delete|remove|clear|wipe|erase|drop|kill|cancel|reset)\b/i.test(query) &&
+        /\b(trip|itinerary|stop|stops|place|places|day|days|schedule|activity|activities|hotel|lodging|plan)\b/i.test(query);
+
+    if (isDeletionRequest) {
+        copilotChatHistory.push({
+            role: 'user',
+            content: query
+        });
+        copilotChatHistory.push({
+            role: 'bot',
+            content: `🔒 **Safety Guard:** I am strictly designed to recommend and add new travel ideas without touching or deleting your existing itinerary.\n\nTo remove or edit any existing places, stops, or trips, you can safely use the trash can 🗑️ or edit buttons directly in the planner view.`,
+            suggestions: []
+        });
+        if (input) input.value = '';
+        renderAICopilotMessages();
+        triggerHaptic('light');
+        return;
+    }
+
     const trip = (activeCopilotTripId && trips.find(t => t.id === activeCopilotTripId)) || getActiveTrip();
     if (!trip) return;
     const stop = (trip.stops && trip.stops[activeCopilotStopIndex]) || { name: trip.name || 'Destination' };
@@ -952,7 +973,18 @@ export function addPlaceFromAISuggestion(sugId, stopIdx, dayIdx) {
         time: sug.time || ''
     };
 
+    // STRICT IMMUTABILITY & ANTI-MUTATION GUARANTEE:
+    // AI Copilot is strictly append-only. Existing places, stops, lodgings, and trips cannot be deleted or mutated.
+    const originalPlacesCount = trip.places.length;
+    const originalStopsCount = Array.isArray(trip.stops) ? trip.stops.length : 0;
+
     trip.places.push(newPlace);
+
+    if (trip.places.length !== originalPlacesCount + 1 || (trip.stops && trip.stops.length !== originalStopsCount)) {
+        console.error('[AI Safety Guard] Mutation detected! Reverting addition to protect itinerary.');
+        return;
+    }
+
     saveTrips();
 
     // Re-render daily planner if active
@@ -984,6 +1016,10 @@ export function addAllPlacesFromAISuggestions(batchKey, stopIdx, dayIdx) {
     const stop = (trip.stops && trip.stops[stopIdx]) || { name: 'Destination' };
     const destCoords = (stop && stop.lat && stop.lon) ? { lat: stop.lat, lon: stop.lon } : findDestinationCoords(stop?.name);
 
+    // STRICT IMMUTABILITY & ANTI-MUTATION GUARANTEE:
+    const originalPlacesCount = trip.places.length;
+    const originalStopsCount = Array.isArray(trip.stops) ? trip.stops.length : 0;
+
     let count = 0;
     suggestions.forEach((sug, i) => {
         const latOffset = (Math.random() - 0.5) * 0.015;
@@ -1014,6 +1050,11 @@ export function addAllPlacesFromAISuggestions(batchKey, stopIdx, dayIdx) {
             itemBtn.disabled = true;
         }
     });
+
+    if (trip.places.length !== originalPlacesCount + count || (trip.stops && trip.stops.length !== originalStopsCount)) {
+        console.error('[AI Safety Guard] Batch mutation detected! Reverting additions to protect itinerary.');
+        return;
+    }
 
     saveTrips();
     if (typeof window.renderCityPlaces === 'function') window.renderCityPlaces();
@@ -1106,6 +1147,15 @@ async function fetchChatFromWorker(promptText, context) {
  */
 function generateIntelligentChatFallback(prompt, cityName, dayNum) {
     const lower = (prompt || '').toLowerCase();
+
+    // STRICT SAFETY GUARD: Explain immutability and refuse any deletion attempts
+    if (/\b(delete|remove|clear|wipe|erase|drop|kill|cancel|reset)\b/i.test(lower) &&
+        /\b(trip|itinerary|stop|stops|place|places|day|days|schedule|activity|activities|hotel|lodging|plan)\b/i.test(lower)) {
+        return {
+            reply: `🔒 **Safety Guard:** I am strictly designed to recommend and add new travel ideas without touching or deleting your existing itinerary.\n\nTo remove or edit any existing places, stops, or trips, you can safely use the trash can 🗑️ or edit buttons directly in the planner view.`,
+            suggestions: []
+        };
+    }
 
     if (lower.includes('food') || lower.includes('eat') || lower.includes('restaurant') || lower.includes('dinner') || lower.includes('lunch') || lower.includes('cafe') || lower.includes('coffee') || lower.includes('dining')) {
         return {

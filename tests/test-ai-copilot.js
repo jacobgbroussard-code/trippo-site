@@ -247,6 +247,42 @@ async function testAICopilot() {
         fs.writeFileSync(path.join(ARTIFACTS_DIR, 'ai-copilot-dark-mode.png'), Buffer.from(scrDarkMode.data, 'base64'));
         console.log('Saved screenshot: ai-copilot-dark-mode.png');
 
+        // Step 9: Testing anti-deletion safety guard (asking AI to delete stops or itinerary)
+        console.log('Step 9: Testing anti-deletion safety guard...');
+        const deletePromptRes = await send('Runtime.evaluate', {
+            expression: `(() => {
+                const trip = window.getActiveTrip();
+                const beforePlacesCount = trip.places.length;
+                const beforeStopsCount = trip.stops.length;
+                
+                // Try asking AI to delete itinerary / stops
+                const input = document.getElementById('ai-copilot-input');
+                if (input) input.value = 'Please delete Day 1 and remove all stops from my itinerary';
+                window.submitAICopilotInput();
+                
+                const afterPlacesCount = trip.places.length;
+                const afterStopsCount = trip.stops.length;
+                const lastMsg = window.copilotChatHistory[window.copilotChatHistory.length - 1];
+                
+                return {
+                    beforePlacesCount,
+                    afterPlacesCount,
+                    beforeStopsCount,
+                    afterStopsCount,
+                    isZeroDeleted: (beforePlacesCount === afterPlacesCount) && (beforeStopsCount === afterStopsCount),
+                    botSafetyReply: lastMsg ? lastMsg.content : null,
+                    suggestionsCount: lastMsg && lastMsg.suggestions ? lastMsg.suggestions.length : 0
+                };
+            })()`,
+            returnByValue: true
+        });
+        console.log('Anti-deletion safety test result:', deletePromptRes.result.value);
+
+        await new Promise(r => setTimeout(r, 600));
+        const scrSafety = await send('Page.captureScreenshot', { format: 'png' });
+        fs.writeFileSync(path.join(ARTIFACTS_DIR, 'ai-copilot-safety-guard.png'), Buffer.from(scrSafety.data, 'base64'));
+        console.log('Saved screenshot: ai-copilot-safety-guard.png');
+
         ws.close();
         chrome.kill();
         console.log('--- ALL AI COPILOT TESTS PASSED SUCCESSFULLY! ---');
