@@ -1,4 +1,4 @@
-const token = 'nfp_pdGK4Xc1vHW7QLzxQcfEScFbdZGfkKGD9d14';
+const token = process.env.NETLIFY_AUTH_TOKEN || '';
 
 async function checkAccountDetails() {
     const accountId = '6abf5d2111b014b27dab4657';

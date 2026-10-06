@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const SITE_ID = '884d84e4-c5e0-4d92-b3c1-7b8313fa3333';
-const AUTH_TOKEN = 'nfp_pdGK4Xc1vHW7QLzxQcfEScFbdZGfkKGD9d14';
+const AUTH_TOKEN = process.env.NETLIFY_AUTH_TOKEN || '';
 const ROOT_DIR = path.join(__dirname, '..');
 
 async function deployNow() {

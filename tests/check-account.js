@@ -1,4 +1,4 @@
-const token = 'nfp_pdGK4Xc1vHW7QLzxQcfEScFbdZGfkKGD9d14';
+const token = process.env.NETLIFY_AUTH_TOKEN || '';
 const siteId = '884d84e4-c5e0-4d92-b3c1-7b8313fa3333';
 
 async function testDeploy() {
