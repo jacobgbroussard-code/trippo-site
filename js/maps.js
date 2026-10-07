@@ -63,6 +63,8 @@ export function updateMapProvider() {
     let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
     let opts = {
         maxZoom: 19,
+        noWrap: true,
+        bounds: [[-90, -180], [90, 180]],
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
     };
 
@@ -78,6 +80,8 @@ export function updateMapProvider() {
         url = `https://api.mapbox.com/styles/v1/mapbox/${styleId}/tiles/256/{z}/{x}/{y}@2x?access_token=${mapboxKey}`;
         opts = {
             maxZoom: 19,
+            noWrap: true,
+            bounds: [[-90, -180], [90, 180]],
             attribution: '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         };
     }
@@ -188,7 +192,10 @@ export function initPlannerMap() {
                 touchZoom: true,
                 scrollWheelZoom: true,
                 doubleClickZoom: true,
-                boxZoom: true
+                boxZoom: true,
+                minZoom: 2,
+                maxBounds: [[-90, -180], [90, 180]],
+                maxBoundsViscosity: 1.0
             }).setView([30.2241, -92.0198], 3);
             createBaseTileLayer('planner').addTo(plannerMap);
             updateMapProvider();
@@ -215,7 +222,10 @@ export function initPlacesMap() {
                 touchZoom: true,
                 scrollWheelZoom: true,
                 doubleClickZoom: true,
-                boxZoom: true
+                boxZoom: true,
+                minZoom: 2,
+                maxBounds: [[-90, -180], [90, 180]],
+                maxBoundsViscosity: 1.0
             }).setView([30.2241, -92.0198], 12);
             createBaseTileLayer('places').addTo(placesMap);
             updateMapProvider();
@@ -242,7 +252,10 @@ export function initWishlistMap() {
                 touchZoom: true,
                 scrollWheelZoom: true,
                 doubleClickZoom: true,
-                boxZoom: true
+                boxZoom: true,
+                minZoom: 2,
+                maxBounds: [[-90, -180], [90, 180]],
+                maxBoundsViscosity: 1.0
             }).setView([20, 0], 2);
             createBaseTileLayer('wishlist').addTo(wishlistMap);
             updateMapProvider();
