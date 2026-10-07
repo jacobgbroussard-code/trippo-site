@@ -709,6 +709,7 @@ export async function submitAITripSearch() {
         const itinerary = await fetchItineraryFromCloudflareWorker(query);
         currentAIGeneratedItinerary = itinerary;
         setAILoadingState(false);
+        closeModal('ai-trip-search-modal');
         openAITripModal(itinerary);
         triggerHaptic('success');
     } catch (err) {
@@ -943,6 +944,25 @@ export function openAITripModal(itinerary) {
 }
 
 
+
+/**
+ * Open the AI Trip Generator search modal from Trip Tools in the sidebar
+ */
+export function openAITripSearchModal() {
+    toggleSidebar(false);
+    const modal = document.getElementById('ai-trip-search-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        triggerHaptic('light');
+        setTimeout(() => {
+            const input = document.getElementById('ai-trip-input');
+            if (input) input.focus();
+        }, 150);
+    }
+}
+if (typeof window !== 'undefined') {
+    window.openAITripSearchModal = openAITripSearchModal;
+}
 
 // --- INITIALIZE AI COMPONENT LISTENERS ---
 export function initAITripGenerator() {

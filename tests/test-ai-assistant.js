@@ -79,23 +79,30 @@ async function testAIAssistant() {
         console.log('Waiting for app initialization and service worker stabilization...');
         await new Promise(r => setTimeout(r, 3500));
 
-        // 1. Verify AI generator widget on home dashboard
-        console.log('\n--- 1. Testing AI Generator UI Elements ---');
+        // 1. Verify AI generator modal can be opened from Trip Tools in Sidebar
+        console.log('\n--- 1. Testing AI Generator in Trip Tools ---');
+        await evalCode(`
+            if (window.openAITripSearchModal) window.openAITripSearchModal();
+        `);
+        await new Promise(r => setTimeout(r, 400));
+
+        const modalVisible = await evalCode(`Boolean(document.getElementById('ai-trip-search-modal') && document.getElementById('ai-trip-search-modal').style.display === 'flex')`);
         const widgetExists = await evalCode(`Boolean(document.querySelector('.ai-generator-widget'))`);
         const inputExists = await evalCode(`Boolean(document.getElementById('ai-trip-input'))`);
         const btnExists = await evalCode(`Boolean(document.getElementById('ai-generate-btn'))`);
         const chipsCount = await evalCode(`document.querySelectorAll('.ai-chip').length`);
 
+        console.log(`  AI Modal visible: ${modalVisible}`);
         console.log(`  AI Widget exists: ${widgetExists}`);
         console.log(`  AI Input exists: ${inputExists}`);
         console.log(`  AI Generate Button exists: ${btnExists}`);
         console.log(`  Prompt Chips count: ${chipsCount}`);
 
-        if (!widgetExists || !inputExists || !btnExists) {
-            throw new Error("Missing AI generator UI elements on home dashboard!");
+        if (!modalVisible || !widgetExists || !inputExists || !btnExists) {
+            throw new Error("Missing AI generator UI elements in Trip Tools modal!");
         }
 
-        await takeScreenshot('ai-widget-home-dashboard.png');
+        await takeScreenshot('ai-widget-trip-tools-modal.png');
 
         // 2. Test prompt chip click
         console.log('\n--- 2. Testing Prompt Chips ---');
@@ -110,7 +117,10 @@ async function testAIAssistant() {
 
         // Close any preview modal opened by chip click before testing offline mode
         await evalCode(`
-            if (window.closeModal) window.closeModal('ai-trip-modal');
+            if (window.closeModal) {
+                window.closeModal('ai-trip-modal');
+                window.closeModal('ai-trip-search-modal');
+            }
         `);
         await new Promise(r => setTimeout(r, 400));
 

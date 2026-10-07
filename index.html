@@ -268,6 +268,9 @@
             <span id="sidebar-trip-tools-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
         </div>
         <div id="sidebar-trip-tools-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openAITripSearchModal()">
+                <span>✨</span> AI Trip Generator
+            </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openPackingModal()">
                 <span>🧳</span> Smart Packing Checklist
             </div>
@@ -377,39 +380,7 @@
         <div style="padding: 0 20px; display: flex; flex-direction: column; align-items: center;">
             <img src="fad.png" alt="Travel Globe Graphic" class="home-hero-graphic" onerror="this.style.display='none'" />
             
-            <!-- AI Trip Generator Dashboard Search Widget -->
-            <div class="ai-generator-widget">
-                <form id="ai-trip-form" onsubmit="event.preventDefault(); submitAITripSearch();" class="ai-search-form">
-                    <div class="ai-search-bar">
-                        <span class="ai-search-icon">✨</span>
-                        <input 
-                            type="text" 
-                            id="ai-trip-input" 
-                            class="ai-search-input" 
-                            placeholder="Where to? (e.g. 5 days in Tokyo, weekend in Rome...)"
-                            autocomplete="off"
-                        />
-                        <button type="submit" id="ai-generate-btn" class="ai-generate-btn" title="Generate Itinerary with AI">
-                            <span class="btn-text">Generate</span>
-                            <span class="btn-icon">⚡</span>
-                        </button>
-                    </div>
-                </form>
 
-                <!-- Offline Alert Banner -->
-                <div id="ai-offline-banner" class="ai-offline-banner" style="display:none;">
-                    <span>📡</span>
-                    <span>AI generation requires internet. Saved trips are available offline.</span>
-                </div>
-
-                <!-- Suggested Prompt Chips -->
-                <div class="ai-prompt-chips">
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('5 days in Tokyo exploring historic shrines and modern tech')">🎌 Tokyo (5d)</button>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('Weekend in Rome focused on pasta, gelato, and ancient ruins')">🍕 Rome Weekend</button>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('4-day scenic roadtrip through the Swiss Alps and mountain lakes')">🏔️ Swiss Alps</button>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('7-day tropical adventure in Costa Rica with rainforests and beaches')">🌴 Costa Rica</button>
-                </div>
-            </div>
 
             <button class="create-btn" onclick="openCreateTripModal()" style="width: 100%;">
                 <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
@@ -1608,6 +1579,58 @@
 
             <div style="margin-top: 16px;">
                 <button type="button" class="btn-secondary" onclick="cancelAIGeneration()" style="padding: 7px 20px; font-size: 12px; border-radius: 12px; cursor: pointer; display: inline-block; margin: 0 auto;">✕ Cancel Generation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Trip Generator Tool Modal (from Trip Tools) -->
+    <div id="ai-trip-search-modal" class="modal" onclick="handleModalBackdropClick(event, 'ai-trip-search-modal')">
+        <div class="modal-content" style="max-width: 520px;" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('ai-trip-search-modal')">✕</button>
+            
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 22px;">✨</span>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: var(--text);">AI Trip Generator</h2>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.45;">
+                    Describe your dream trip or vacation idea. Edge AI will craft a day-by-day plan with attractions, timings, and dining spots.
+                </p>
+            </div>
+
+            <!-- AI Trip Generator Search Widget -->
+            <div class="ai-generator-widget" style="margin-bottom: 0;">
+                <form id="ai-trip-form" onsubmit="event.preventDefault(); submitAITripSearch();" class="ai-search-form">
+                    <div class="ai-search-bar">
+                        <span class="ai-search-icon">✨</span>
+                        <input 
+                            type="text" 
+                            id="ai-trip-input" 
+                            class="ai-search-input" 
+                            placeholder="Where to? (e.g. 7 days in southern china, weekend in Rome...)"
+                            autocomplete="off"
+                        />
+                        <button type="submit" id="ai-generate-btn" class="ai-generate-btn" title="Generate Itinerary with AI">
+                            <span class="btn-text">Generate</span>
+                            <span class="btn-icon">⚡</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Offline Alert Banner -->
+                <div id="ai-offline-banner" class="ai-offline-banner" style="display:none;">
+                    <span>📡</span>
+                    <span>AI generation requires internet. Saved trips are available offline.</span>
+                </div>
+
+                <!-- Suggested Prompt Chips -->
+                <div class="ai-prompt-chips">
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('7 days in southern china exploring Guangzhou, Guilin, and Hong Kong')">🇨🇳 Southern China (7d)</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('5 days in Tokyo exploring historic shrines and modern tech')">🎌 Tokyo (5d)</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('Weekend in Rome focused on pasta, gelato, and ancient ruins')">🍕 Rome Weekend</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('10-day classic journey across Rome, Florence, and Venice')">🇮🇹 Italy Highlights</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('4-day scenic roadtrip through the Swiss Alps and mountain lakes')">🏔️ Swiss Alps</button>
+                </div>
             </div>
         </div>
     </div>
