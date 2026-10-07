@@ -371,7 +371,7 @@
         <div id="planner-map" class="map-container">
             <div class="map-controls-row">
                 <button class="map-btn" id="planner-gps-btn" onclick="toggleUserLocation('planner')">🎯 My Location</button>
-                <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner')">⛶ Full Map</button>
+                <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner', 'map')">⛶ Full Map</button>
                 <button class="map-btn" onclick="toggleTrails('planner')">🥾 Map Trails</button>
                 <button class="map-btn" id="planner-train-btn" onclick="cycleTrainOverlay('planner')">🚆 Trains: Off</button>
             </div>
@@ -451,7 +451,7 @@
                 </button>
                 <div class="map-controls-row">
                     <button class="map-btn" id="places-gps-btn" onclick="toggleUserLocation('places')">🎯 My Location</button>
-                    <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places')">⛶ Full Map</button>
+                    <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places', 'map')">⛶ Full Map</button>
                 </div>
             </div>
             <div class="sheet">
@@ -549,7 +549,7 @@
                 </button>
                 <div class="map-controls-row">
                     <button class="map-btn" id="wishlist-gps-btn" onclick="toggleUserLocation('wishlist')">🎯 My Location</button>
-                    <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist')">⛶ Full Map</button>
+                    <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist', 'map')">⛶ Full Map</button>
                     <button class="map-btn" onclick="toggleTrails('wishlist')">🥾 Map Trails</button>
                     <button class="map-btn" id="wishlist-train-btn" onclick="cycleTrainOverlay('wishlist')">🚆 Trains: Off</button>
                     <button class="map-btn" onclick="openAllTrailsNearCenter()">🌲 AllTrails</button>
@@ -1519,6 +1519,11 @@
                     <label style="font-size:11px; font-weight:700;">Map Provider</label>
                     <select id="setting-map-provider" class="form-control" style="font-weight:700; font-size:13px; padding:8px 12px;" onchange="saveMapProviderSetting(this.value)">
                         <option value="esri">Esri World Street (Free)</option>
+                        <option value="carto-voyager">CARTO Voyager (Free)</option>
+                        <option value="carto-positron">CARTO Positron (Free)</option>
+                        <option value="carto-dark">CARTO Dark Matter (Free)</option>
+                        <option value="esri-topo">Esri World Topo (Free)</option>
+                        <option value="osm">OpenStreetMap (Free)</option>
                         <option value="mapbox-outdoors">Mapbox Outdoors</option>
                         <option value="mapbox-streets">Mapbox Streets</option>
                         <option value="mapbox-light">Mapbox Light</option>

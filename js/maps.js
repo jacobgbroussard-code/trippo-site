@@ -66,7 +66,21 @@ export function updateMapProvider() {
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
     };
 
-    if (provider.startsWith('mapbox') && mapboxKey) {
+    if (provider === 'carto-voyager') {
+        url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    } else if (provider === 'carto-positron') {
+        url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    } else if (provider === 'carto-dark') {
+        url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    } else if (provider === 'esri-topo') {
+        url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+    } else if (provider === 'osm') {
+        url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    } else if (provider.startsWith('mapbox') && mapboxKey) {
         const style = provider.replace('mapbox-', '');
         const styleId = {
             'outdoors': 'outdoors-v12',
@@ -776,7 +790,7 @@ export async function drawPlacesMapRoute(dayPlaces) {
     }
 }
 
-export function toggleMapMode(target) {
+export function toggleMapMode(target, forceMode = null) {
     let containerEl = null;
     let mapInstance = null;
     let btnId = null;
@@ -797,10 +811,33 @@ export function toggleMapMode(target) {
 
     if (!containerEl) return;
 
-    const isExpanded = containerEl.classList.toggle('map-expanded');
+    const hasMapExpanded = containerEl.classList.contains('map-expanded');
+    const hasListExpanded = containerEl.classList.contains('list-expanded');
     const btn = btnId ? document.getElementById(btnId) : null;
+
+    if (forceMode === 'map') {
+        containerEl.classList.remove('list-expanded');
+        containerEl.classList.toggle('map-expanded');
+    } else if (forceMode === 'list') {
+        containerEl.classList.remove('map-expanded');
+        containerEl.classList.toggle('list-expanded');
+    } else {
+        if (hasMapExpanded) {
+            containerEl.classList.remove('map-expanded');
+            containerEl.classList.remove('list-expanded');
+        } else if (hasListExpanded) {
+            containerEl.classList.remove('list-expanded');
+            containerEl.classList.add('map-expanded');
+        } else {
+            containerEl.classList.add('list-expanded');
+        }
+    }
+
+    const isNowMapExpanded = containerEl.classList.contains('map-expanded');
+    const isNowListExpanded = containerEl.classList.contains('list-expanded');
+
     if (btn) {
-        if (isExpanded) {
+        if (isNowMapExpanded) {
             btn.innerHTML = '📋 Split View';
             btn.classList.add('active-mode');
         } else {
