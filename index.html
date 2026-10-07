@@ -446,8 +446,10 @@
 
         <div id="places-city-view" style="display: none; flex-direction: column; height: 100%;">
             <div id="places-map" class="map-container">
+                <button class="map-btn" onclick="showPlacesMasterList()" style="position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); z-index: 1000; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
+                    <span style="font-size: 18px; margin-top: -2px;">‹</span> Back
+                </button>
                 <div class="map-controls-row">
-                    <button class="map-btn" onclick="showPlacesMasterList()">‹ All Trips</button>
                     <button class="map-btn" id="places-gps-btn" onclick="toggleUserLocation('places')">🎯 My Location</button>
                     <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places')">⛶ Full Map</button>
                 </div>
@@ -542,8 +544,10 @@
 
         <div id="wishlist-detail-view" style="display: none; height: 100%; flex-direction: column;">
             <div id="wishlist-map" class="map-container" style="cursor: crosshair;">
+                <button class="map-btn" onclick="showWishlistDirectory()" style="position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); z-index: 1000; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
+                    <span style="font-size: 18px; margin-top: -2px;">‹</span> Back
+                </button>
                 <div class="map-controls-row">
-                    <button class="map-btn" onclick="showWishlistDirectory()">‹ Back to Lists</button>
                     <button class="map-btn" id="wishlist-gps-btn" onclick="toggleUserLocation('wishlist')">🎯 My Location</button>
                     <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist')">⛶ Full Map</button>
                     <button class="map-btn" onclick="toggleTrails('wishlist')">🥾 Map Trails</button>
