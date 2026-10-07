@@ -1,6 +1,6 @@
 /**
  * Trippo - Serverless Edge AI Travel Assistant
- * Powered by Cloudflare Workers AI & Llama 3 8B Instruct
+ * Powered by Cloudflare Workers AI & Llama 3.1 8B Instruct
  * worker/src/index.js
  */
 
@@ -31,7 +31,7 @@ export default {
         JSON.stringify({
           status: "online",
           service: "Trippo Serverless Edge AI Travel Assistant",
-          model: "@cf/meta/llama-3-8b-instruct",
+          model: "@cf/meta/llama-3.1-8b-instruct",
           timestamp: new Date().toISOString(),
         }),
         { status: 200, headers: corsHeaders }
@@ -136,7 +136,7 @@ CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
             conversationMessages.push({ role: "user", content: userPrompt });
           }
 
-          const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+          const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
             messages: conversationMessages,
             temperature: 0.35,
             max_tokens: 1600,
@@ -240,8 +240,8 @@ CRITICAL INSTRUCTIONS:
           );
         }
 
-        // Call fast free-tier model: @cf/meta/llama-3-8b-instruct
-        const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+        // Call fast free-tier model: @cf/meta/llama-3.1-8b-instruct
+        const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: `Plan a travel itinerary for: "${userPrompt}"` },
@@ -298,7 +298,7 @@ CRITICAL INSTRUCTIONS:
         return new Response(
           JSON.stringify({
             success: true,
-            model: "@cf/meta/llama-3-8b-instruct",
+            model: "@cf/meta/llama-3.1-8b-instruct",
             itinerary: parsedItinerary,
           }),
           { status: 200, headers: corsHeaders }

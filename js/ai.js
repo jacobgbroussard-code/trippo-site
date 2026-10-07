@@ -1,7 +1,7 @@
 /* ==========================================================================
    Trippo Travel Planner - Serverless Edge AI Travel Assistant
    js/ai.js
-   Powered by Cloudflare Workers AI & Llama 3 8B Instruct
+   Powered by Cloudflare Workers AI & Llama 3.1 8B Instruct
    ========================================================================== */
 
 import {
@@ -894,7 +894,7 @@ export function openAITripModal(itinerary) {
         statsEl.innerHTML = `
             <span class="ai-stat-chip">🗓️ ${totalDays} Day${totalDays !== 1 ? 's' : ''}</span>
             <span class="ai-stat-chip">📍 ${totalActivities} Activit${totalActivities !== 1 ? 'ies' : 'y'}</span>
-            <span class="ai-stat-chip edge">⚡ Llama 3 Edge AI</span>
+            <span class="ai-stat-chip edge">⚡ Llama 3.1 Edge AI</span>
         `;
     }
 

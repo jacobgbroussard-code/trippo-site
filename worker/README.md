@@ -1,6 +1,6 @@
 # Trippo Serverless Edge AI Travel Assistant
 
-A serverless Edge AI backend for **Trippo** powered by **Cloudflare Workers AI** and **Meta Llama 3 8B Instruct** (`@cf/meta/llama-3-8b-instruct`).
+A serverless Edge AI backend for **Trippo** powered by **Cloudflare Workers AI** and **Meta Llama 3.1 8B Instruct** (`@cf/meta/llama-3.1-8b-instruct`).
 
 ## Features
 - **100% Serverless & Free-Tier**: Runs on Cloudflare's global edge network using the native `@cloudflare/ai` binding (`env.AI`).
