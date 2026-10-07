@@ -190,41 +190,43 @@ CRITICAL INSTRUCTIONS:
 1. You are STRICTLY RESTRICTED to travel planning, vacations, itineraries, city guides, cultural landmarks, and activities.
 2. If the user's prompt is completely unrelated to travel or geography (e.g., coding, math, politics), return this JSON:
    {"error": "I can only assist with travel itineraries and vacation planning. Please share a travel destination or trip idea!"}
-3. For travel requests, you MUST return a valid JSON object matching the following structure EXACTLY:
+3. DURATION FIDELITY: If the user requests a specific number of days or weeks (e.g. "7 days in southern china", "10 days in japan", "weekend in rome"), you MUST generate an itinerary with EXACTLY that number of days in the "days" array, and set "durationDays" to that exact number. Do NOT shorten to 3 days if they asked for 7 days!
+4. MULTI-CITY & REGIONAL CLARIFICATION: When the user asks for a region, country, or multi-city route (e.g., "Southern China", "Northern Italy", "Southeast Asia", "Japan Golden Route"), you MUST explicitly name and visit real, specific cities in the itinerary (e.g., for Southern China: Guangzhou, Guilin/Yangshuo, Hong Kong/Shenzhen). Specify the city name clearly in the day theme, activity names, and activity locations.
+5. For travel requests, you MUST return a valid JSON object matching the following structure EXACTLY:
 {
-  "title": "A captivating, concise title (e.g. 5 Days in Tokyo: Shrines, Anime & Street Food)",
-  "destination": "Main City, Country (e.g. Tokyo, Japan)",
-  "durationDays": 5,
-  "summary": "A 2-3 sentence engaging summary highlighting the vibe, food specialties, and practical tips.",
+  "title": "A captivating, concise title (e.g. 7 Days in Southern China: Guangzhou, Guilin & Hong Kong)",
+  "destination": "Main Cities, Region or Country (e.g. Southern China: Guangzhou, Guilin, Hong Kong)",
+  "durationDays": 7,
+  "summary": "A 2-3 sentence engaging summary highlighting the route, cultural vibe, food specialties, and practical tips.",
   "days": [
     {
       "day": 1,
-      "theme": "Theme or neighborhood (e.g. Historic Asakusa & Akihabara)",
+      "theme": "City Name: Theme or neighborhood (e.g. Guangzhou: Historic Shamian Island & Dim Sum)",
       "activities": [
         {
           "time": "Morning",
-          "name": "Senso-ji Temple & Nakamise Street",
-          "description": "Explore Tokyo's oldest temple and sample freshly made melonpan and dango.",
-          "location": "Asakusa, Tokyo"
+          "name": "Shamian Island Heritage Walk",
+          "description": "Explore colonial architecture, shaded banyan lanes, and riverside promenades.",
+          "location": "Shamian Island, Guangzhou"
         },
         {
           "time": "Afternoon",
-          "name": "Akihabara Electric Town",
-          "description": "Browse multi-story retro arcade halls, manga shops, and electronics boutiques.",
-          "location": "Akihabara, Tokyo"
+          "name": "Traditional Dim Sum Lunch & Chen Clan Ancestral Hall",
+          "description": "Savor authentic Cantonese har gow and admire intricate Lingnan wood and brick carvings.",
+          "location": "Liwan District, Guangzhou"
         },
         {
           "time": "Evening",
-          "name": "Izakaya Alley Dining in Ueno",
-          "description": "Savor authentic yakitori and local craft beers beneath the train tracks.",
-          "location": "Ueno, Tokyo"
+          "name": "Canton Tower & Pearl River Illuminated Cruise",
+          "description": "Take in glittering panoramic views of the modern skyline from the river.",
+          "location": "Haizhu District, Guangzhou"
         }
       ]
     }
   ]
 }
-4. DO NOT wrap the output in markdown codeblocks (no \`\`\`json). Output RAW JSON only.
-5. Provide between 2 to 4 activities per day with actionable, realistic suggestions.`;
+6. DO NOT wrap the output in markdown codeblocks (no \`\`\`json). Output RAW JSON only.
+7. Provide between 2 to 4 activities per day with actionable, realistic suggestions.`;
 
         // Check for Cloudflare Workers AI binding
         if (!env.AI) {

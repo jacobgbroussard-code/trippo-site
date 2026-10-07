@@ -55,26 +55,47 @@ let isUserCancelledAI = false;
 const POPULAR_DESTINATION_COORDS = {
     'tokyo': { lat: 35.6762, lon: 139.6503, name: 'Tokyo, Japan' },
     'kyoto': { lat: 35.0116, lon: 135.7681, name: 'Kyoto, Japan' },
+    'osaka': { lat: 34.6937, lon: 135.5023, name: 'Osaka, Japan' },
+    'hiroshima': { lat: 34.3853, lon: 132.4553, name: 'Hiroshima, Japan' },
+    'guangzhou': { lat: 23.1291, lon: 113.2644, name: 'Guangzhou, China' },
+    'guilin': { lat: 25.2736, lon: 110.2902, name: 'Guilin, China' },
+    'yangshuo': { lat: 24.7784, lon: 110.4950, name: 'Yangshuo, China' },
+    'shenzhen': { lat: 22.5431, lon: 114.0579, name: 'Shenzhen, China' },
+    'hong kong': { lat: 22.3193, lon: 114.1694, name: 'Hong Kong' },
+    'macau': { lat: 22.1987, lon: 113.5439, name: 'Macau' },
+    'beijing': { lat: 39.9042, lon: 116.4074, name: 'Beijing, China' },
+    'shanghai': { lat: 31.2304, lon: 121.4737, name: 'Shanghai, China' },
+    'xian': { lat: 34.3416, lon: 108.9398, name: "Xi'an, China" },
+    'xi\'an': { lat: 34.3416, lon: 108.9398, name: "Xi'an, China" },
+    'chengdu': { lat: 30.5728, lon: 104.0668, name: 'Chengdu, China' },
     'paris': { lat: 48.8566, lon: 2.3522, name: 'Paris, France' },
+    'nice': { lat: 43.7102, lon: 7.2620, name: 'Nice, France' },
     'rome': { lat: 41.9028, lon: 12.4964, name: 'Rome, Italy' },
+    'florence': { lat: 43.7696, lon: 11.2558, name: 'Florence, Italy' },
+    'venice': { lat: 45.4408, lon: 12.3155, name: 'Venice, Italy' },
+    'milan': { lat: 45.4642, lon: 9.1900, name: 'Milan, Italy' },
     'london': { lat: 51.5074, lon: -0.1278, name: 'London, UK' },
+    'edinburgh': { lat: 55.9533, lon: -3.1883, name: 'Edinburgh, UK' },
     'new york': { lat: 40.7128, lon: -74.0060, name: 'New York, USA' },
     'barcelona': { lat: 41.3851, lon: 2.1734, name: 'Barcelona, Spain' },
+    'madrid': { lat: 40.4168, lon: -3.7038, name: 'Madrid, Spain' },
     'bangkok': { lat: 13.7563, lon: 100.5018, name: 'Bangkok, Thailand' },
+    'chiang mai': { lat: 18.7883, lon: 98.9853, name: 'Chiang Mai, Thailand' },
+    'phuket': { lat: 7.8804, lon: 98.3923, name: 'Phuket, Thailand' },
     'amsterdam': { lat: 52.3676, lon: 4.9041, name: 'Amsterdam, Netherlands' },
     'iceland': { lat: 64.1466, lon: -21.9426, name: 'Reykjavik, Iceland' },
     'costa rica': { lat: 9.9281, lon: -84.0907, name: 'San Jose, Costa Rica' },
     'swiss alps': { lat: 46.5590, lon: 8.5609, name: 'Interlaken, Switzerland' },
     'switzerland': { lat: 46.8182, lon: 8.2275, name: 'Bern, Switzerland' },
-    'florence': { lat: 43.7696, lon: 11.2558, name: 'Florence, Italy' },
-    'venice': { lat: 45.4408, lon: 12.3155, name: 'Venice, Italy' },
     'seoul': { lat: 37.5665, lon: 126.9780, name: 'Seoul, South Korea' },
+    'busan': { lat: 35.1796, lon: 129.0756, name: 'Busan, South Korea' },
     'san francisco': { lat: 37.7749, lon: -122.4194, name: 'San Francisco, USA' },
     'los angeles': { lat: 34.0522, lon: -118.2437, name: 'Los Angeles, USA' },
     'hawaii': { lat: 21.3069, lon: -157.8583, name: 'Honolulu, Hawaii' },
     'sydney': { lat: -33.8688, lon: 151.2093, name: 'Sydney, Australia' },
     'berlin': { lat: 52.5200, lon: 13.4050, name: 'Berlin, Germany' },
     'lisbon': { lat: 38.7223, lon: -9.1393, name: 'Lisbon, Portugal' },
+    'porto': { lat: 41.1579, lon: -8.6291, name: 'Porto, Portugal' },
     'singapore': { lat: 1.3521, lon: 103.8198, name: 'Singapore' },
     'dubai': { lat: 25.2048, lon: 55.2708, name: 'Dubai, UAE' }
 };
@@ -86,6 +107,544 @@ export function findDestinationCoords(text) {
         if (lower.includes(key)) return coords;
     }
     return { lat: 48.8566, lon: 2.3522, name: text };
+}
+
+/**
+ * Extracts requested duration in days from user prompt (e.g. "7 days in southern china", "2 weeks in japan", "weekend in rome")
+ */
+export function extractDurationDays(prompt) {
+    if (!prompt) return 3;
+    const lower = prompt.toLowerCase();
+
+    // 1. Check for weeks (e.g. "2 weeks", "a week", "1 week")
+    const weekMatch = lower.match(/(\d+)\s*(?:[- ]?week|weeks|wk|wks)\b/i);
+    if (weekMatch) {
+        const weeks = parseInt(weekMatch[1], 10);
+        if (weeks > 0 && weeks <= 4) return Math.min(14, weeks * 7);
+    }
+    if (/\b(?:a|one)\s+week\b/i.test(lower)) return 7;
+
+    // 2. Check for explicit number of days (e.g. "7 days", "10-day", "3d", "5 days")
+    const dayMatch = lower.match(/(\d+)\s*(?:[- ]?days?|d\b)/i);
+    if (dayMatch) {
+        const days = parseInt(dayMatch[1], 10);
+        if (days >= 1 && days <= 21) return days;
+    }
+
+    // 3. Spelled numbers ("three days", "five days", "seven days")
+    const wordNums = {
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+        'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+        'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14
+    };
+    for (const [word, val] of Object.entries(wordNums)) {
+        const re = new RegExp(`\\b${word}\\s+(?:days?)\\b`, 'i');
+        if (re.test(lower)) return val;
+    }
+
+    // 4. Weekend check
+    if (/\bweekend\b/i.test(lower)) return 3;
+
+    return 4; // Default pleasant trip length if unspecified
+}
+
+/**
+ * Multi-city & Regional Route Registry:
+ * Resolves regional queries ("Southern China", "Northern Italy", "Golden Route Japan", etc.)
+ * into distinct stop cities with coordinates and day distributions.
+ */
+const REGIONAL_ROUTES = [
+    {
+        keywords: ['southern china', 'south china', 'guangdong', 'guangxi', 'lingnan'],
+        regionName: 'Southern China',
+        stops: [
+            {
+                name: 'Guangzhou',
+                country: 'China',
+                lat: 23.1291,
+                lon: 113.2644,
+                share: 0.30,
+                themes: ['Dim Sum Culture & Shamian Island Heritage', 'Canton Tower & Pearl River Waterfront'],
+                places: [
+                    { name: 'Shamian Island Historic District', category: '● See & Do', time: 'Morning', location: 'Shamian Island, Guangzhou', description: 'Stroll shady avenues lined with European colonial architecture and traditional banyan trees.' },
+                    { name: 'Dim Sum at Panxi Restaurant', category: '● Eat & Drink', time: 'Lunch', location: 'Liwan District, Guangzhou', description: 'Feast on handcrafted har gow, siu mai, and char siu bao beside scenic lake gardens.' },
+                    { name: 'Canton Tower Observation & Pearl River Cruise', category: '● See & Do', time: 'Evening', location: 'Haizhu District, Guangzhou', description: 'Marvel at panoramic skyline views and take an illuminated evening boat ride along the Pearl River.' }
+                ]
+            },
+            {
+                name: 'Guilin & Yangshuo',
+                country: 'China',
+                lat: 24.7784,
+                lon: 110.4950,
+                share: 0.40,
+                themes: ['Li River Karst Peaks Cruise', 'Yangshuo Countryside & Yulong River Bamboo Rafting', 'West Street & Impression Sanjie Liu'],
+                places: [
+                    { name: 'Li River Karst Mountain Cruise', category: '● See & Do', time: 'Morning', location: 'Li River, Guilin to Yangshuo', description: 'Drift past world-famous limestone karst mountains depicted on the 20-yuan banknote.' },
+                    { name: 'Guilin Rice Noodles at Chunji', category: '● Eat & Drink', time: 'Lunch', location: 'Central Guilin', description: 'Sample beloved local sour-spicy rice noodles topped with crispy pork and pickled vegetables.' },
+                    { name: 'Yulong River Bamboo Rafting', category: '● See & Do', time: 'Afternoon', location: 'Yulong River, Yangshuo', description: 'Glide along emerald waters surrounded by picturesque rice paddies and ancient bridges.' },
+                    { name: 'Impression Sanjie Liu Light Show', category: '● See & Do', time: 'Evening', location: 'Yangshuo', description: 'Mesmerizing theatrical performance staged directly on the Li River by director Zhang Yimou.' }
+                ]
+            },
+            {
+                name: 'Hong Kong & Shenzhen',
+                country: 'China',
+                lat: 22.3193,
+                lon: 114.1694,
+                share: 0.30,
+                themes: ['Victoria Peak & Star Ferry Crossing', 'Neon Markets & Roast Goose Delicacies'],
+                places: [
+                    { name: 'Victoria Peak & Peak Tram', category: '● See & Do', time: 'Morning', location: 'Central, Hong Kong', description: 'Ride the iconic historic funicular railway for world-class panoramic views across Victoria Harbour.' },
+                    { name: 'Kam\'s Roast Goose', category: '● Eat & Drink', time: 'Lunch', location: 'Wan Chai, Hong Kong', description: 'Michelin-starred succulent roast goose with crispy skin and fragrant plum sauce.' },
+                    { name: 'Star Ferry & Tsim Sha Tsui Promenade', category: '● See & Do', time: 'Evening', location: 'Tsim Sha Tsui, Hong Kong', description: 'Enjoy the Symphony of Lights skyline show and atmospheric harbour breeze.' }
+                ]
+            }
+        ]
+    },
+    {
+        keywords: ['golden route', 'japan classic', 'tokyo and kyoto', 'japan tour'],
+        regionName: 'Japan Golden Route',
+        stops: [
+            {
+                name: 'Tokyo',
+                country: 'Japan',
+                lat: 35.6762,
+                lon: 139.6503,
+                share: 0.45,
+                themes: ['Historic Asakusa & Akihabara', 'Shibuya Crossing & Meiji Shrine', 'Shinjuku Skyscraper Lights'],
+                places: [
+                    { name: 'Senso-ji Temple & Nakamise-dori', category: '● See & Do', time: 'Morning', location: 'Asakusa, Tokyo', description: 'Tokyo\'s oldest temple surrounded by bustling craft and street snack stalls.' },
+                    { name: 'Meiji Jingu Shrine & Yoyogi Forest', category: '● See & Do', time: 'Afternoon', location: 'Shibuya, Tokyo', description: 'Serene forested cedar shrine dedicated to Emperor Meiji.' },
+                    { name: 'Shibuya Sky & Scramble Crossing', category: '● See & Do', time: 'Evening', location: 'Shibuya, Tokyo', description: 'Rooftop observatory overlooking the busiest intersection in the world.' }
+                ]
+            },
+            {
+                name: 'Kyoto',
+                country: 'Japan',
+                lat: 35.0116,
+                lon: 135.7681,
+                share: 0.35,
+                themes: ['Fushimi Inari Torii Gates & Gion Geisha District', 'Arashiyama Bamboo Grove & Golden Pavilion'],
+                places: [
+                    { name: 'Fushimi Inari Shrine', category: '● See & Do', time: 'Morning', location: 'Fushimi, Kyoto', description: 'Walk through thousands of vermilion torii gates winding up sacred Mount Inari.' },
+                    { name: 'Kinkaku-ji (Golden Pavilion)', category: '● See & Do', time: 'Afternoon', location: 'Kita Ward, Kyoto', description: 'Stunning Zen Buddhist temple whose top two floors are completely covered in gold leaf.' },
+                    { name: 'Gion Historic Tea Houses & Pontocho Alley', category: '● Eat & Drink', time: 'Evening', location: 'Gion, Kyoto', description: 'Atmospheric lantern-lit alleyways renowned for traditional kaiseki dining.' }
+                ]
+            },
+            {
+                name: 'Osaka',
+                country: 'Japan',
+                lat: 34.6937,
+                lon: 135.5023,
+                share: 0.20,
+                themes: ['Osaka Castle & Dotonbori Street Food Feast'],
+                places: [
+                    { name: 'Osaka Castle & Park Gardens', category: '● See & Do', time: 'Morning', location: 'Chuo Ward, Osaka', description: 'Grand historic fortress surrounded by massive stone walls and moats.' },
+                    { name: 'Dotonbori Street Food (Takoyaki & Okonomiyaki)', category: '● Eat & Drink', time: 'Evening', location: 'Dotonbori, Osaka', description: 'Vibrant canal district packed with neon signs, giant mechanical crabs, and sizzling snacks.' }
+                ]
+            }
+        ]
+    },
+    {
+        keywords: ['italy', 'northern italy', 'italian classic', 'rome florence venice'],
+        regionName: 'Classic Italy',
+        stops: [
+            {
+                name: 'Rome',
+                country: 'Italy',
+                lat: 41.9028,
+                lon: 12.4964,
+                share: 0.40,
+                themes: ['Colosseum & Roman Forum Ancient Empire', 'Vatican Museums, St. Peter\'s & Trastevere'],
+                places: [
+                    { name: 'Colosseum & Roman Forum', category: '● See & Do', time: 'Morning', location: 'Piazza del Colosseo, Rome', description: 'Walk the footsteps of gladiators and senators through ancient Rome\'s monumental heart.' },
+                    { name: 'Pantheon & Piazza Navona', category: '● See & Do', time: 'Afternoon', location: 'Centro Storico, Rome', description: 'Marvel at the ancient Roman dome and Bernini\'s famous fountains.' },
+                    { name: 'Trastevere Trattoria Dinner', category: '● Eat & Drink', time: 'Evening', location: 'Trastevere, Rome', description: 'Savor cacio e pepe and carbonara in lively cobblestone squares.' }
+                ]
+            },
+            {
+                name: 'Florence',
+                country: 'Italy',
+                lat: 43.7696,
+                lon: 11.2558,
+                share: 0.35,
+                themes: ['Duomo Cathedral & Uffizi Renaissance Art', 'Ponte Vecchio & Piazzale Michelangelo Sunset'],
+                places: [
+                    { name: 'Florence Duomo & Giotto\'s Bell Tower', category: '● See & Do', time: 'Morning', location: 'Piazza del Duomo, Florence', description: 'Brunelleschi\'s engineering masterpiece towering over the city.' },
+                    { name: 'Uffizi Gallery', category: '● See & Do', time: 'Afternoon', location: 'Piazzale degli Uffizi, Florence', description: 'World-renowned museum housing Botticelli\'s Birth of Venus and Da Vinci masterworks.' },
+                    { name: 'Sunset at Piazzale Michelangelo', category: '● See & Do', time: 'Evening', location: 'Oltrarno, Florence', description: 'Breathtaking golden-hour panoramic vista across the Arno River.' }
+                ]
+            },
+            {
+                name: 'Venice',
+                country: 'Italy',
+                lat: 45.4408,
+                lon: 12.3155,
+                share: 0.25,
+                themes: ['St. Mark\'s Basilica & Grand Canal Gondola Ride'],
+                places: [
+                    { name: 'St. Mark\'s Square & Doge\'s Palace', category: '● See & Do', time: 'Morning', location: 'Piazza San Marco, Venice', description: 'Opulent Venetian Gothic architecture and gold-adorned basilica.' },
+                    { name: 'Grand Canal & Rialto Bridge', category: '● See & Do', time: 'Afternoon', location: 'Rialto, Venice', description: 'Glide along Venice\'s primary water thoroughfare past historic palazzi.' },
+                    { name: 'Cicchetti & Spritz in Cannaregio', category: '● Eat & Drink', time: 'Evening', location: 'Cannaregio, Venice', description: 'Traditional Venetian tapas bars along quiet, charming canals.' }
+                ]
+            }
+        ]
+    },
+    {
+        keywords: ['thailand', 'thai tour', 'bangkok and islands'],
+        regionName: 'Thailand Highlights',
+        stops: [
+            {
+                name: 'Bangkok',
+                country: 'Thailand',
+                lat: 13.7563,
+                lon: 100.5018,
+                share: 0.40,
+                themes: ['Grand Palace & Wat Pho', 'Chao Phraya River & Night Food Markets'],
+                places: [
+                    { name: 'The Grand Palace & Wat Phra Kaew', category: '● See & Do', time: 'Morning', location: 'Phra Nakhon, Bangkok', description: 'Exquisite royal complex with the revered Emerald Buddha.' },
+                    { name: 'Wat Pho Reclining Buddha', category: '● See & Do', time: 'Afternoon', location: 'Bangkok', description: 'Massive gold-leaf covered Buddha and birthplace of traditional Thai massage.' },
+                    { name: 'Yaowarat Chinatown Street Food', category: '● Eat & Drink', time: 'Evening', location: 'Chinatown, Bangkok', description: 'World-famous buzzing food hub with seafood, noodle soups, and mango sticky rice.' }
+                ]
+            },
+            {
+                name: 'Chiang Mai',
+                country: 'Thailand',
+                lat: 18.7883,
+                lon: 98.9853,
+                share: 0.35,
+                themes: ['Old City Temples & Mountain Vistas', 'Elephant Sanctuary & Night Bazaar'],
+                places: [
+                    { name: 'Wat Phra That Doi Suthep', category: '● See & Do', time: 'Morning', location: 'Doi Suthep, Chiang Mai', description: 'Sacred mountain temple offering panoramic vistas over the valley.' },
+                    { name: 'Khao Soi Lam Duan Lunch', category: '● Eat & Drink', time: 'Lunch', location: 'Fa Ham, Chiang Mai', description: 'Rich northern coconut curry egg noodle soup with crispy toppings.' },
+                    { name: 'Sunday Walking Street Market', category: '● See & Do', time: 'Evening', location: 'Old City, Chiang Mai', description: 'Vibrant open-air market with local northern handicrafts and live music.' }
+                ]
+            },
+            {
+                name: 'Phuket',
+                country: 'Thailand',
+                lat: 7.8804,
+                lon: 98.3923,
+                share: 0.25,
+                themes: ['Andaman Sea Beaches & Island Cruise'],
+                places: [
+                    { name: 'Phang Nga Bay Island Speedboat Tour', category: '● See & Do', time: 'Morning', location: 'Phang Nga Bay, Phuket', description: 'Explore limestone cliffs, hidden lagoons, and emerald waters.' },
+                    { name: 'Kata Noi Beach Sunset', category: '● See & Do', time: 'Evening', location: 'Karon, Phuket', description: 'Relaxed pristine beach with golden sand and sea breeze.' }
+                ]
+            }
+        ]
+    }
+];
+
+/**
+ * Resolves destination context and stop breakdown for any prompt and duration.
+ */
+export function resolveTripDestinations(prompt, totalDays) {
+    const lower = (prompt || '').toLowerCase();
+
+    // Check regional route registry first
+    for (const route of REGIONAL_ROUTES) {
+        if (route.keywords.some(k => lower.includes(k))) {
+            let remainingDays = totalDays;
+            const stopsAllocated = [];
+
+            route.stops.forEach((st, idx) => {
+                let stopDays;
+                if (idx === route.stops.length - 1) {
+                    stopDays = Math.max(1, remainingDays);
+                } else {
+                    stopDays = Math.max(1, Math.round(totalDays * st.share));
+                    if (stopDays >= remainingDays) stopDays = Math.max(1, remainingDays - 1);
+                }
+                remainingDays -= stopDays;
+
+                stopsAllocated.push({
+                    name: st.name,
+                    fullName: `${st.name}, ${st.country}`,
+                    lat: st.lat,
+                    lon: st.lon,
+                    nights: stopDays,
+                    themes: st.themes,
+                    presetPlaces: st.places
+                });
+            });
+
+            return {
+                isMultiCity: true,
+                regionName: route.regionName,
+                stops: stopsAllocated
+            };
+        }
+    }
+
+    // Single destination fallback
+    const dest = findDestinationCoords(prompt);
+    const cityName = dest.name.split(',')[0].trim();
+    return {
+        isMultiCity: false,
+        regionName: cityName,
+        stops: [
+            {
+                name: cityName,
+                fullName: dest.name,
+                lat: dest.lat,
+                lon: dest.lon,
+                nights: totalDays,
+                themes: [],
+                presetPlaces: []
+            }
+        ]
+    };
+}
+
+// --- SAVE AI GENERATED TRIP TO TRIPPO ---
+export function saveAIGeneratedTrip() {
+    if (!currentAIGeneratedItinerary) {
+        showNotification("No generated itinerary available to save.");
+        return;
+    }
+
+    const plan = currentAIGeneratedItinerary;
+    const totalDays = Array.isArray(plan.days) ? plan.days.length : (plan.durationDays || 3);
+    const resolved = resolveTripDestinations(plan.destination || plan.title || '', totalDays);
+
+    // Compute dates starting tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const startDateStr = formatLocalDate(tomorrow);
+
+    const newTripId = 'trip_ai_' + Date.now();
+
+    // 1. Build Stops
+    let stops = [];
+    if (resolved.isMultiCity && resolved.stops.length > 0) {
+        stops = resolved.stops.map((st, sIdx) => ({
+            id: `stop_${Date.now()}_${sIdx + 1}`,
+            name: st.name,
+            lat: st.lat,
+            lon: st.lon,
+            nights: st.nights,
+            notes: [`AI Planned Stop ${sIdx + 1}: ${st.nights} nights in ${st.name}`],
+            transit: null,
+            lodging: null,
+            locked: false
+        }));
+    } else {
+        const destInfo = findDestinationCoords(plan.destination || plan.title);
+        stops = [
+            {
+                id: 'stop_' + Date.now() + '_1',
+                name: destInfo.name.split(',')[0].trim(),
+                lat: destInfo.lat,
+                lon: destInfo.lon,
+                nights: Math.max(1, totalDays),
+                notes: [`AI Generated: ${plan.title}`, plan.summary || ''],
+                transit: null,
+                lodging: null,
+                locked: false
+            }
+        ];
+    }
+
+    // Map each day number (1..N) to its corresponding city stop index
+    const dayToStopIndex = {};
+    let cumDay = 1;
+    stops.forEach((st, sIdx) => {
+        for (let d = 0; d < st.nights; d++) {
+            dayToStopIndex[cumDay] = sIdx;
+            cumDay++;
+        }
+    });
+
+    // 2. Convert Activities into Places
+    const places = [];
+    if (Array.isArray(plan.days)) {
+        plan.days.forEach((dayObj, dayIdx) => {
+            const dayNum = dayObj.day || (dayIdx + 1);
+            const stopIndex = dayToStopIndex[dayNum] !== undefined ? dayToStopIndex[dayNum] : 0;
+            const targetStop = stops[stopIndex] || stops[0];
+
+            if (Array.isArray(dayObj.activities)) {
+                dayObj.activities.forEach((act, actIdx) => {
+                    let category = '● See & Do';
+                    const nameLower = (act.name || '').toLowerCase();
+                    const descLower = (act.description || '').toLowerCase();
+                    const timeLower = (act.time || '').toLowerCase();
+
+                    if (nameLower.includes('dinner') || nameLower.includes('lunch') || nameLower.includes('food') || 
+                        nameLower.includes('ramen') || nameLower.includes('dim sum') || nameLower.includes('pasta') || 
+                        nameLower.includes('cafe') || nameLower.includes('bistro') || nameLower.includes('trattoria') ||
+                        timeLower.includes('evening') || descLower.includes('savor') || descLower.includes('sample') ||
+                        descLower.includes('feast') || descLower.includes('taste')) {
+                        category = '● Eat & Drink';
+                    }
+
+                    // Calculate local day index within that stop
+                    let stopStartDay = 1;
+                    for (let s = 0; s < stopIndex; s++) {
+                        stopStartDay += stops[s].nights;
+                    }
+                    const localDayIndex = Math.max(0, dayNum - stopStartDay);
+
+                    places.push({
+                        id: `poi_ai_${Date.now()}_${dayIdx}_${actIdx}`,
+                        cityIndex: stopIndex,
+                        dayIndex: localDayIndex,
+                        name: act.name || 'Activity',
+                        category: category,
+                        address: act.location || targetStop.name,
+                        notes: act.description ? `[${act.time || 'Day'}] ${act.description}` : '',
+                        lat: targetStop.lat + (Math.random() - 0.5) * 0.03,
+                        lon: targetStop.lon + (Math.random() - 0.5) * 0.03
+                    });
+                });
+            }
+        });
+    }
+
+    const newTrip = {
+        id: newTripId,
+        name: plan.title || 'AI Planned Trip',
+        startDate: startDateStr,
+        isRoundTrip: false,
+        budgetTravelers: 2,
+        stops: stops,
+        places: places,
+        expenses: [],
+        isExample: false,
+        isAIGenerated: true,
+        createdAt: Date.now()
+    };
+
+    trips.unshift(newTrip);
+    saveTrips();
+
+    closeModal('ai-trip-modal');
+    setActiveTripId(newTripId);
+    setActivePlacesTripId(newTripId);
+    setActivePlacesStopIndex(0);
+    setActivePlacesDayIndex(0);
+
+    if (window.renderHome) window.renderHome();
+    if (window.switchTab) window.switchTab('planner');
+    if (window.renderPlanner) window.renderPlanner();
+
+    showNotification(`✨ Added "${newTrip.name}" (${stops.length} cities, ${totalDays} days) to your planner!`);
+    triggerHaptic('success');
+}
+
+// Intelligent fallback generator when edge worker is not yet deployed or in local dev
+export function generateIntelligentFallbackItinerary(prompt) {
+    const totalDays = extractDurationDays(prompt);
+    const resolved = resolveTripDestinations(prompt, totalDays);
+
+    // If multi-city, generate rich days distributed across stops
+    if (resolved.isMultiCity) {
+        const cityNames = resolved.stops.map(s => s.name).join(' → ');
+        const days = [];
+        let currentDayNum = 1;
+
+        resolved.stops.forEach((stop) => {
+            for (let d = 0; d < stop.nights; d++) {
+                const themeName = (stop.themes && stop.themes[d % stop.themes.length]) 
+                    ? `${stop.name}: ${stop.themes[d % stop.themes.length]}` 
+                    : `${stop.name} Exploration & Discovery`;
+
+                // Rotate through stop's preset places or synthesize rich activities
+                const activities = [];
+                if (Array.isArray(stop.presetPlaces) && stop.presetPlaces.length >= 2) {
+                    const morningAct = stop.presetPlaces[0];
+                    const lunchAct = stop.presetPlaces[1] || stop.presetPlaces[0];
+                    const eveningAct = stop.presetPlaces[2] || stop.presetPlaces[stop.presetPlaces.length - 1];
+
+                    if (d === 0) {
+                        activities.push(
+                            { time: "Morning", name: morningAct.name, description: morningAct.description, location: morningAct.location },
+                            { time: "Afternoon", name: lunchAct.name, description: lunchAct.description, location: lunchAct.location },
+                            { time: "Evening", name: eveningAct.name, description: eveningAct.description, location: eveningAct.location }
+                        );
+                    } else {
+                        activities.push(
+                            { time: "Morning", name: `${stop.name} Cultural Old Town Walk`, description: `Wander through historic quarters, morning artisan bakeries, and vibrant neighborhood alleys.`, location: `Old District, ${stop.name}` },
+                            { time: "Afternoon", name: `${stop.name} Scenic Parks & Viewpoint`, description: `Experience local life, traditional tea gardens, and picturesque viewpoints.`, location: `Gardens & Vista, ${stop.name}` },
+                            { time: "Evening", name: `${stop.name} Food Market & Night Walk`, description: `Sample authentic local specialties and take in the illuminated night atmosphere.`, location: `Night Market, ${stop.name}` }
+                        );
+                    }
+                } else {
+                    activities.push(
+                        { time: "Morning", name: `${stop.name} Historic Walking Tour`, description: `Discover landmark architecture, vibrant morning squares, and local history.`, location: `City Center, ${stop.name}` },
+                        { time: "Afternoon", name: `${stop.name} Museum & Art District`, description: `Explore cultural exhibits, artisan workshops, and specialty cafes.`, location: `Arts Quarter, ${stop.name}` },
+                        { time: "Evening", name: `${stop.name} Traditional Dining & Evening Walk`, description: `Savor regional dishes with authentic local ingredients and evening ambiance.`, location: `Downtown, ${stop.name}` }
+                    );
+                }
+
+                days.push({
+                    day: currentDayNum,
+                    theme: themeName,
+                    activities: activities
+                });
+                currentDayNum++;
+            }
+        });
+
+        return {
+            title: `${totalDays}-Day ${resolved.regionName} Journey (${cityNames})`,
+            destination: `${resolved.regionName} (${cityNames})`,
+            durationDays: totalDays,
+            summary: `A curated ${totalDays}-day journey across ${resolved.regionName}, highlighting the best of ${cityNames} with immersive sightseeing, scenic nature, and iconic regional culinary experiences.`,
+            days: days
+        };
+    }
+
+    // Single city destination fallback: dynamically generate requested number of days (1..N)
+    const dest = findDestinationCoords(prompt);
+    const cityName = dest.name.split(',')[0].trim();
+
+    const DAY_THEMES = [
+        { theme: 'Historic Center & Iconic Heritage', morning: 'Old Town Walking Tour', afternoon: 'Cultural Museum & Heritage Square', evening: 'Authentic Local Dining' },
+        { theme: 'Panoramic Views & Waterfront Exploration', morning: 'Scenic Observation Deck & Vista', afternoon: 'Artisan Markets & Boutique Promenade', evening: 'Sunset River / Waterfront Promenade Walk' },
+        { theme: 'Hidden Neighborhoods & Gastronomy', morning: 'Botanical Gardens or Quiet Historic Temple', afternoon: 'Famous Food Hall & Regional Tasting', evening: 'Farewell Dinner at Rooftop Terrace' },
+        { theme: 'Art, Design & Modern Culture', morning: 'Contemporary Art District & Galleries', afternoon: 'Design Boutiques & Historic Cafes', evening: 'Live Music & Night District Exploration' },
+        { theme: 'Day Excursion & Nature Retreat', morning: 'Scenic Countryside or Mountain Vista', afternoon: 'Charming Village Walk & Local Vineyard/Farm', evening: 'Relaxed Fireside or Terrace Dinner' },
+        { theme: 'Architecture & Photography Highlights', morning: 'Architectural Landmarks & Sunlit Plazas', afternoon: 'Hidden Alleyways & Antique Quarters', evening: 'Night Lights Skyline Photography' },
+        { theme: 'Relaxed Leisure & Farewell Celebrations', morning: 'Leisurely Brunch & Local Flea Market', afternoon: 'Scenic Boat Tour or Serene Park Stroll', evening: 'Celebratory Gala Dinner & Toast' }
+    ];
+
+    const days = [];
+    for (let d = 1; d <= totalDays; d++) {
+        const template = DAY_THEMES[(d - 1) % DAY_THEMES.length];
+        days.push({
+            day: d,
+            theme: `${template.theme}`,
+            activities: [
+                {
+                    time: "Morning",
+                    name: `${cityName} ${template.morning}`,
+                    description: `Start the day discovering vibrant architecture, morning markets, and cultural landmarks.`,
+                    location: `Historic Center, ${cityName}`
+                },
+                {
+                    time: "Afternoon",
+                    name: `${cityName} ${template.afternoon}`,
+                    description: `Immerse yourself in world-class collections, artisan cafes, and scenic neighborhood courtyards.`,
+                    location: `Central District, ${cityName}`
+                },
+                {
+                    time: "Evening",
+                    name: `${cityName} ${template.evening}`,
+                    description: `Taste celebrated traditional specialties paired with refreshing local drinks and sunset vistas.`,
+                    location: `Evening Quarter, ${cityName}`
+                }
+            ]
+        });
+    }
+
+    return {
+        title: `${totalDays}-Day ${cityName} Adventure: AI Travel Plan`,
+        destination: dest.name,
+        durationDays: totalDays,
+        summary: `A personalized ${totalDays}-day itinerary for exploring ${cityName}. Enjoy historic landmarks, scenic viewpoints, cultural districts, and authentic regional cuisine curated by Edge AI.`,
+        days: days
+    };
 }
 
 // --- OFFLINE-FIRST SAFETY CHECKS ---
@@ -383,188 +942,7 @@ export function openAITripModal(itinerary) {
     triggerHaptic('medium');
 }
 
-// --- SAVE AI GENERATED TRIP TO TRIPPO ---
-export function saveAIGeneratedTrip() {
-    if (!currentAIGeneratedItinerary) {
-        showNotification("No generated itinerary available to save.");
-        return;
-    }
 
-    const plan = currentAIGeneratedItinerary;
-    const destInfo = findDestinationCoords(plan.destination || plan.title);
-
-    // Compute dates starting tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const startDateStr = formatLocalDate(tomorrow);
-
-    const totalDays = Array.isArray(plan.days) ? plan.days.length : 3;
-    const newTripId = 'trip_ai_' + Date.now();
-
-    // 1. Create Stops
-    // If multi-city, we can extract from days; otherwise create a primary destination stop
-    const stops = [
-        {
-            id: 'stop_' + Date.now() + '_1',
-            name: destInfo.name.split(',')[0].trim(),
-            lat: destInfo.lat,
-            lon: destInfo.lon,
-            nights: Math.max(1, totalDays),
-            notes: [`AI Generated: ${plan.title}`, plan.summary || ''],
-            transit: null,
-            lodging: null,
-            locked: false
-        }
-    ];
-
-    // 2. Convert Activities into Places
-    const places = [];
-    if (Array.isArray(plan.days)) {
-        plan.days.forEach((dayObj, dayIdx) => {
-            if (Array.isArray(dayObj.activities)) {
-                dayObj.activities.forEach((act, actIdx) => {
-                    let category = '● See & Do';
-                    const nameLower = (act.name || '').toLowerCase();
-                    const descLower = (act.description || '').toLowerCase();
-                    const timeLower = (act.time || '').toLowerCase();
-
-                    if (nameLower.includes('dinner') || nameLower.includes('lunch') || nameLower.includes('food') || 
-                        nameLower.includes('ramen') || nameLower.includes('pasta') || nameLower.includes('cafe') ||
-                        timeLower.includes('evening') || descLower.includes('savor') || descLower.includes('sample')) {
-                        category = '● Eat & Drink';
-                    }
-
-                    places.push({
-                        id: `poi_ai_${Date.now()}_${dayIdx}_${actIdx}`,
-                        cityIndex: 0,
-                        dayIndex: dayIdx,
-                        name: act.name || 'Activity',
-                        category: category,
-                        address: act.location || destInfo.name,
-                        notes: act.description ? `[${act.time || 'Day'}] ${act.description}` : '',
-                        lat: destInfo.lat + (Math.random() - 0.5) * 0.04,
-                        lon: destInfo.lon + (Math.random() - 0.5) * 0.04
-                    });
-                });
-            }
-        });
-    }
-
-    const newTrip = {
-        id: newTripId,
-        name: plan.title || 'AI Planned Trip',
-        startDate: startDateStr,
-        isRoundTrip: false,
-        budgetTravelers: 2,
-        stops: stops,
-        places: places,
-        expenses: [],
-        isExample: false,
-        isAIGenerated: true,
-        createdAt: Date.now()
-    };
-
-    trips.unshift(newTrip);
-    saveTrips();
-
-    closeModal('ai-trip-modal');
-    setActiveTripId(newTripId);
-    setActivePlacesTripId(newTripId);
-
-    if (window.renderHome) window.renderHome();
-    if (window.switchTab) window.switchTab('planner');
-    if (window.renderPlanner) window.renderPlanner();
-
-    showNotification(`✨ Added "${newTrip.name}" to your planner!`);
-    triggerHaptic('success');
-}
-
-// Intelligent fallback generator when edge worker is not yet deployed or in local dev
-function generateIntelligentFallbackItinerary(prompt) {
-    const dest = findDestinationCoords(prompt);
-    const cityName = dest.name.split(',')[0].trim();
-
-    return {
-        title: `${cityName} Highlights: AI Travel Plan`,
-        destination: dest.name,
-        durationDays: 3,
-        summary: `A personalized itinerary for exploring ${cityName}. Enjoy local landmarks, cultural districts, and authentic regional cuisine curated by Edge AI.`,
-        days: [
-            {
-                day: 1,
-                theme: `Historic Center & Neighborhood Discovery`,
-                activities: [
-                    {
-                        time: "Morning",
-                        name: `${cityName} Old Town Walking Tour`,
-                        description: `Start your trip exploring iconic architecture, local markets, and historic plazas.`,
-                        location: `Historic Center, ${cityName}`
-                    },
-                    {
-                        time: "Afternoon",
-                        name: `Renowned City Art & Cultural Museum`,
-                        description: `Immerse yourself in world-class collections and scenic courtyards.`,
-                        location: `Museum Quarter, ${cityName}`
-                    },
-                    {
-                        time: "Evening",
-                        name: `Authentic Local Dining & Evening Walk`,
-                        description: `Taste celebrated traditional specialties paired with regional wines or drinks.`,
-                        location: `Old Quarter, ${cityName}`
-                    }
-                ]
-            },
-            {
-                day: 2,
-                theme: `Iconic Landmarks & Panoramic Views`,
-                activities: [
-                    {
-                        time: "Morning",
-                        name: `Famous Viewpoint & Scenic Observation Deck`,
-                        description: `Catch breathtaking 360-degree vistas of the city skyline and landscape.`,
-                        location: `Observation Point, ${cityName}`
-                    },
-                    {
-                        time: "Afternoon",
-                        name: `Artisan Markets & Shopping Boutiques`,
-                        description: `Browse handmade crafts, specialty souvenirs, and local bakery treats.`,
-                        location: `Downtown Promenade, ${cityName}`
-                    },
-                    {
-                        time: "Evening",
-                        name: `Sunset River / Waterfront Promenade Walk`,
-                        description: `Relax with golden hour photography and waterfront bistros.`,
-                        location: `Waterfront, ${cityName}`
-                    }
-                ]
-            },
-            {
-                day: 3,
-                theme: `Hidden Gems & Culinary Exploration`,
-                activities: [
-                    {
-                        time: "Morning",
-                        name: `Botanical Gardens or Quiet Historic Temple`,
-                        description: `Enjoy a peaceful morning stroll surrounded by tranquil nature and greenery.`,
-                        location: `City Gardens, ${cityName}`
-                    },
-                    {
-                        time: "Afternoon",
-                        name: `Famous Food Hall & Cooking / Tasting Experience`,
-                        description: `Sample regional delicacies, cheeses, pastries, and street food.`,
-                        location: `Central Market, ${cityName}`
-                    },
-                    {
-                        time: "Evening",
-                        name: `Farewell Dinner at Rooftop Terrace`,
-                        description: `Celebrate the final evening with spectacular night skyline views.`,
-                        location: `Rooftop Terrace, ${cityName}`
-                    }
-                ]
-            }
-        ]
-    };
-}
 
 // --- INITIALIZE AI COMPONENT LISTENERS ---
 export function initAITripGenerator() {
