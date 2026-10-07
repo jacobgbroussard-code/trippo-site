@@ -208,11 +208,11 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     const endpoint = getWorkerEndpoint();
     console.log(`[AI Assistant] Fetching from Edge AI endpoint: ${endpoint}`);
 
-    // Set 25-second timeout via AbortController
+    // Set 6-second timeout via AbortController so users never wait indefinitely
     aiFetchAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (aiFetchAbortController) aiFetchAbortController.abort();
-    }, 25000);
+    }, 6000);
 
     try {
         const response = await fetch(endpoint, {
@@ -249,13 +249,20 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     } catch (fetchErr) {
         clearTimeout(timeoutId);
 
-        // If the live edge worker is not yet deployed or unreachable, provide an intelligent fallback
-        if (fetchErr.name !== 'AbortError' && (!checkIsOnline() || isEndpointUnreachable(fetchErr))) {
-            console.warn('[AI Assistant] Live worker endpoint unreachable. Generating intelligent fallback plan...', fetchErr);
-            return generateIntelligentFallbackItinerary(promptText);
+        // If user intentionally hit Cancel, do not fall back
+        if (isUserCancelledAI) {
+            throw fetchErr;
         }
 
-        throw fetchErr;
+        // Seamless Resilience: If the remote edge worker fails, times out, is blocked, or is not yet deployed,
+        // seamlessly generate the structured travel itinerary locally so the user never encounters a failure.
+        console.warn('[AI Assistant] Remote edge worker unavailable or returned error. Generating intelligent travel itinerary...', fetchErr);
+        try {
+            return generateIntelligentFallbackItinerary(promptText);
+        } catch (fallbackErr) {
+            console.error('[AI Assistant] Fallback generator failed:', fallbackErr);
+            throw fetchErr;
+        }
     }
 }
 
@@ -1102,7 +1109,7 @@ async function fetchChatFromWorker(promptText, context) {
     copilotAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (copilotAbortController) copilotAbortController.abort();
-    }, 25000);
+    }, 6000);
 
     try {
         const response = await fetch(endpoint, {
