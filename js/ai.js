@@ -768,11 +768,11 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     const endpoint = getWorkerEndpoint();
     console.log(`[AI Assistant] Fetching from Edge AI endpoint: ${endpoint}`);
 
-    // Set 6-second timeout via AbortController so users never wait indefinitely
+    // Set 10-second timeout via AbortController for multi-day plans so edge AI has room to respond
     aiFetchAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (aiFetchAbortController) aiFetchAbortController.abort();
-    }, 6000);
+    }, 10000);
 
     try {
         const response = await fetch(endpoint, {
@@ -1507,7 +1507,7 @@ async function fetchChatFromWorker(promptText, context) {
     copilotAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (copilotAbortController) copilotAbortController.abort();
-    }, 6000);
+    }, 9000);
 
     try {
         const response = await fetch(endpoint, {
