@@ -156,43 +156,7 @@
             <button class="close-modal" onclick="toggleSidebar(false)">✕</button>
         </div>
         
-        <!-- USER SETTINGS BUTTON -->
-        <div class="sidebar-item" onclick="openSettingsModal()" style="justify-content:space-between; cursor:pointer;" title="App settings & preferences">
-            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
-                <span>⚙️</span> App Settings & Preferences
-            </div>
-            <span style="font-size:13px; color:var(--text-light); font-weight:700;">›</span>
-        </div>
-
-        <!-- TRIP TOOLS COLLAPSIBLE ACCORDION -->
-        <div class="sidebar-item" onclick="toggleSidebarTripTools()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand trip tools">
-            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
-                <span>🛠️</span> Trip Tools
-            </div>
-            <span id="sidebar-trip-tools-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
-        </div>
-        <div id="sidebar-trip-tools-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openPackingModal()">
-                <span>🧳</span> Smart Packing Checklist
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="printPocketItinerary()">
-                <span>📄</span> Print / PDF Pocket Itinerary
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="exportTripToICS()">
-                <span>📅</span> Export to Calendar (.ics)
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openBudgetModal()">
-                <span>💰</span> Smart Split Budget Tracker
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openCurrencyModal()">
-                <span>💱</span> Currency & Tipping Guide
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openEsimModal()">
-                <span>📶</span> Travel eSIM Data Pass
-            </div>
-        </div>
-
-        <!-- FLIGHT HUB & EXPLORE EVERYWHERE CARD -->
+        <!-- FLIGHT HUB & EXPLORE EVERYWHERE CARD (TOP OF SIDEBAR) -->
         <div class="flight-hub-card">
             <div class="flight-hub-header">
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -287,6 +251,43 @@
                 </a>
             </div>
         </div>
+
+        <!-- USER SETTINGS BUTTON -->
+        <div class="sidebar-item" onclick="openSettingsModal()" style="justify-content:space-between; cursor:pointer;" title="App settings & preferences">
+            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
+                <span>⚙️</span> App Settings & Preferences
+            </div>
+            <span style="font-size:13px; color:var(--text-light); font-weight:700;">›</span>
+        </div>
+
+        <!-- TRIP TOOLS COLLAPSIBLE ACCORDION -->
+        <div class="sidebar-item" onclick="toggleSidebarTripTools()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand trip tools">
+            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
+                <span>🛠️</span> Trip Tools
+            </div>
+            <span id="sidebar-trip-tools-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
+        </div>
+        <div id="sidebar-trip-tools-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openPackingModal()">
+                <span>🧳</span> Smart Packing Checklist
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="printPocketItinerary()">
+                <span>📄</span> Print / PDF Pocket Itinerary
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="exportTripToICS()">
+                <span>📅</span> Export to Calendar (.ics)
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openBudgetModal()">
+                <span>💰</span> Smart Split Budget Tracker
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openCurrencyModal()">
+                <span>💱</span> Currency & Tipping Guide
+            </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openEsimModal()">
+                <span>📶</span> Travel eSIM Data Pass
+            </div>
+        </div>
+
 
 
         <div class="sidebar-item" onclick="toggleDarkMode()">
