@@ -29,6 +29,20 @@ if (storedVersion !== CURRENT_VERSION) {
             });
         });
     }
+// Dynamically inject Google Maps API if user has provided a key
+(function loadGoogleMapsSdk() {
+    const gmapsKey = localStorage.getItem('trippo_google_maps_key');
+    if (gmapsKey) {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${gmapsKey}&libraries=places&loading=async`;
+        script.async = true;
+        document.head.appendChild(script);
+        console.log('[Trippo] Google Maps SDK injecting using user-provided key.');
+    } else {
+        console.warn('[Trippo] No Google Maps API key found. Using fallback OSM search engine.');
+    }
+})();
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(regs => {
             regs.forEach(r => r.update());

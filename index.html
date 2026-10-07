@@ -1518,6 +1518,21 @@
                 </div>
             </div>
 
+            <!-- Location Services API Key -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">📍 Location Services API</div>
+                <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
+                    Provide your own Google Maps API Key to enable Places Autocomplete and Street View.
+                </div>
+                <div id="gmaps-input-wrapper" style="position: relative; display:flex; flex-direction:column; gap:8px;">
+                    <input type="password" id="gmaps-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Google Maps API Key">
+                    <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGoogleMapsApiKey()">💾 Save Key</button>
+                    <div id="gmaps-lock-overlay" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; border-radius: 8px; z-index: 10; display: none;">
+                        <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockGoogleMapsKey()">🔓 Click to Edit Key</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- AI Settings & API Key -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
                 <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">✨ AI Settings & API Key</div>

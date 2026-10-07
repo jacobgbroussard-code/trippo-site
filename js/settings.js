@@ -117,6 +117,17 @@ export function updateSettingsModalUI() {
             geminiOverlay.style.display = storedGeminiKey ? 'flex' : 'none';
         }
     }
+
+    const gmapsKeyInput = document.getElementById('gmaps-api-key-input');
+    if (gmapsKeyInput) {
+        const storedGmapsKey = localStorage.getItem('trippo_google_maps_key') || '';
+        gmapsKeyInput.value = storedGmapsKey;
+        
+        const gmapsOverlay = document.getElementById('gmaps-lock-overlay');
+        if (gmapsOverlay) {
+            gmapsOverlay.style.display = storedGmapsKey ? 'flex' : 'none';
+        }
+    }
 }
 
 export function saveHomeAirportSetting(val) {
@@ -180,7 +191,27 @@ export function unlockGeminiKey() {
     if (overlay) overlay.style.display = 'none';
 }
 
+export function saveGoogleMapsApiKey() {
+    const key = document.getElementById('gmaps-api-key-input')?.value.trim();
+    if (key) {
+        localStorage.setItem('trippo_google_maps_key', key);
+        showNotification("Google Maps API Key saved! Reloading to apply...");
+        setTimeout(() => window.location.reload(), 1500);
+    } else {
+        localStorage.removeItem('trippo_google_maps_key');
+        showNotification("Google Maps API Key removed. Reloading...");
+        setTimeout(() => window.location.reload(), 1500);
+    }
+}
+
+export function unlockGoogleMapsKey() {
+    const overlay = document.getElementById('gmaps-lock-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
 window.saveMapProviderSetting = saveMapProviderSetting;
 window.saveMapboxApiKey = saveMapboxApiKey;
 window.unlockMapboxKey = unlockMapboxKey;
 window.unlockGeminiKey = unlockGeminiKey;
+window.saveGoogleMapsApiKey = saveGoogleMapsApiKey;
+window.unlockGoogleMapsKey = unlockGoogleMapsKey;
