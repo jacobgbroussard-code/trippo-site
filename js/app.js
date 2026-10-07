@@ -18,7 +18,7 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.3.77';
+const CURRENT_VERSION = '2.4.0';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);

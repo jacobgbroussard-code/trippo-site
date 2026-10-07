@@ -809,11 +809,14 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     const endpoint = getWorkerEndpoint();
     console.log(`[AI Assistant] Fetching from Edge AI endpoint: ${endpoint}`);
 
-    // Set 10-second timeout via AbortController for multi-day plans so edge AI has room to respond
+    const durationDays = extractDurationDays(promptText);
+    const resolvedContext = resolveTripDestinations(promptText, durationDays);
+
+    // Set 15-second timeout via AbortController for multi-day plans so edge AI has room to respond
     aiFetchAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (aiFetchAbortController) aiFetchAbortController.abort();
-    }, 10000);
+    }, 15000);
 
     try {
         const response = await fetch(endpoint, {
@@ -822,7 +825,12 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ prompt: promptText }),
+            body: JSON.stringify({ 
+                prompt: promptText,
+                durationDays: durationDays,
+                isMultiCity: resolvedContext.isMultiCity,
+                resolvedCities: resolvedContext.stops.map(s => s.fullName)
+            }),
             signal: aiFetchAbortController.signal
         });
 

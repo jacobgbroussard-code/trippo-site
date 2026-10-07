@@ -4,23 +4,39 @@
    ========================================================================== */
 
 :root {
-    --primary: #124b43;
-    --primary-light: #e8f3f1;
+    --primary: #0f5132;
+    --primary-light: #e8f5e9;
     --accent: #ff4757;
-    --bg: #f4f7f6;
-    --text: #1d2b29;
+    --accent-hover: #ff6b81;
+    --bg: #f8fafc;
+    --text: #1e293b;
     --card-bg: #ffffff;
-    --border-subtle: #edf2f0;
+    --border-subtle: #e2e8f0;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #0f5132 0%, #198754 100%);
+    --gradient-accent: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
 
 body.dark-mode {
-    --primary: #41b8a6;
-    --primary-light: #163833;
-    --accent: #ff6b7b;
-    --bg: #0b1311;
-    --text: #e2e8f0;
-    --card-bg: #131f1c;
-    --border-subtle: #1e302c;
+    --primary: #20c997;
+    --primary-light: #064e3b;
+    --accent: #ff6b81;
+    --accent-hover: #ff4757;
+    --bg: #0f172a;
+    --text: #f8fafc;
+    --card-bg: #1e293b;
+    --border-subtle: #334155;
+    
+    /* Dark Mode Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -34,11 +50,16 @@ body, html {
     height: 100%;
     height: 100dvh;
     width: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--bg);
     color: var(--text);
     overflow: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6, .header-title {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    letter-spacing: -0.02em;
 }
 
 .flatpickr-calendar {

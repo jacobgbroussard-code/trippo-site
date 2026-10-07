@@ -247,11 +247,18 @@ CRITICAL INSTRUCTIONS:
           );
         }
 
+        const explicitDuration = requestBody.durationDays ? \`\nREQUIREMENT: You MUST generate exactly \${requestBody.durationDays} days.\` : '';
+        const explicitCities = requestBody.resolvedCities && requestBody.resolvedCities.length > 0 
+          ? \`\nREQUIREMENT: You MUST include stops in these cities: \${requestBody.resolvedCities.join(', ')}.\` 
+          : '';
+
+        const userContextPrompt = \`Plan a travel itinerary for: "\${userPrompt}"\${explicitDuration}\${explicitCities}\`;
+
         // Call fast free-tier model: @cf/meta/llama-3.1-8b-instruct with fine-tuned sampling parameters
         const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Plan a travel itinerary for: "${userPrompt}"` },
+            { role: "user", content: userContextPrompt },
           ],
           temperature: 0.3,
           top_p: 0.9,
