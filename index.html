@@ -177,7 +177,7 @@
                     <span class="flight-hub-label">From</span>
                     <input type="text" id="flight-hub-origin" class="flight-hub-input" maxlength="3" spellcheck="false" placeholder="LFT" value="LFT" oninput="handleFlightHubOriginInput(event)">
                 </div>
-                <div class="flight-hub-input-wrap" style="flex: 1.4;">
+                <div class="flight-hub-input-wrap" style="flex: 1; min-width: 0;">
                     <span class="flight-hub-label">Date</span>
                     <input type="date" id="flight-hub-date" class="flight-hub-input" style="font-size:12px; padding-left:0;" onchange="handleFlightHubOriginInput(event)">
                 </div>
@@ -185,12 +185,8 @@
             </div>
 
             <!-- Quick Chips -->
-            <div class="flight-hub-chips">
-                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('LFT')">LFT</button>
-                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('MSY')">MSY</button>
-                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('IAH')">IAH</button>
-                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('DFW')">DFW</button>
-                <button type="button" class="flight-hub-chip" onclick="selectFlightHubChip('ATL')">ATL</button>
+            <div class="flight-hub-chips" id="flight-hub-chips-container">
+                <!-- Populated by JS initFlightHubChips() -->
             </div>
 
             <!-- Flight Hub Segmented Control -->

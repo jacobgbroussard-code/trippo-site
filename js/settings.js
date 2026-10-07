@@ -67,7 +67,7 @@ export function updateSettingsModalUI() {
 
     const originInput = document.getElementById('setting-home-airport');
     if (originInput) {
-        originInput.value = safeGetStorage('trippo_flighthub_origin', 'LFT');
+        originInput.value = safeGetStorage('trippo_home_airport', 'LFT');
     }
 
     const currSelect = document.getElementById('setting-default-currency');
@@ -122,10 +122,20 @@ export function updateSettingsModalUI() {
 export function saveHomeAirportSetting(val) {
     const clean = (val || '').toUpperCase().trim();
     if (clean) {
-        safeSetStorage('trippo_flighthub_origin', clean);
-        const originDisplay = document.getElementById('flighthub-origin-input');
-        if (originDisplay) originDisplay.value = clean;
-        showNotification(`Default airport set to ${clean}`);
+        safeSetStorage('trippo_home_airport', clean);
+        
+        // Update flight hub input if it exists
+        const originDisplay = document.getElementById('flight-hub-origin');
+        if (originDisplay) {
+            const firstAirport = clean.split(',')[0].trim().substring(0, 3);
+            originDisplay.value = firstAirport;
+            if (window.updateFlightHubLinks) window.updateFlightHubLinks(firstAirport);
+        }
+        
+        // Re-init flight hub chips if the function is available
+        if (window.initFlightHubChips) window.initFlightHubChips();
+        
+        showNotification(`Default airport(s) set to ${clean}`);
     }
 }
 

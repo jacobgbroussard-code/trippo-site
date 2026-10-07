@@ -1296,7 +1296,11 @@ export function getFlightHubOrigin() {
     } catch (e) {
         console.warn(e);
     }
-    return (stored && stored.length === 3) ? stored.toUpperCase() : FLIGHT_HUB_DEFAULT_AIRPORT;
+    if (stored && stored.length >= 3) {
+        const first = stored.split(',')[0].trim().substring(0, 3);
+        return first.toUpperCase();
+    }
+    return FLIGHT_HUB_DEFAULT_AIRPORT;
 }
 
 export function updateFlightHubLinks(origin) {
@@ -1458,11 +1462,42 @@ export function saveDefaultFlightHubOrigin() {
 }
 
 export function initFlightHub() {
+    initFlightHubChips();
     const origin = getFlightHubOrigin();
     const input = document.getElementById('flight-hub-origin');
     if (input) input.value = origin;
     updateFlightHubLinks(origin);
 }
+
+export function initFlightHubChips() {
+    const container = document.getElementById('flight-hub-chips-container');
+    if (!container) return;
+    
+    let stored = null;
+    try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            stored = window.localStorage.getItem('trippo_home_airport');
+        }
+    } catch (e) {
+        console.warn(e);
+    }
+    
+    let airports = ['LFT', 'MSY', 'IAH', 'DFW', 'ATL']; // Defaults
+    if (stored && stored.length >= 3) {
+        airports = stored.split(',').map(s => s.trim().substring(0, 3).toUpperCase()).filter(s => s.length === 3);
+    }
+    
+    container.innerHTML = '';
+    airports.forEach(code => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'flight-hub-chip';
+        btn.onclick = () => selectFlightHubChip(code);
+        btn.innerText = code;
+        container.appendChild(btn);
+    });
+}
+window.initFlightHubChips = initFlightHubChips;
 
 
 
