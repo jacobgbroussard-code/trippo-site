@@ -86,7 +86,7 @@ export function updateSettingsModalUI() {
     const mapboxKeyInput = document.getElementById('mapbox-api-key-input');
     
     if (providerSelect) {
-        const currentProvider = safeGetStorage('trippo_map_provider', 'esri');
+        const currentProvider = safeGetStorage('trippo_map_provider', 'mapbox-light');
         providerSelect.value = currentProvider;
         if (mapboxKeyContainer) {
             mapboxKeyContainer.style.display = currentProvider.startsWith('mapbox') ? 'block' : 'none';

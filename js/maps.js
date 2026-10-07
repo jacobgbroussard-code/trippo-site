@@ -57,7 +57,7 @@ export function openStreetViewModal(lat, lon, title = 'Street View') {
 export let baseLayers = { planner: null, places: null, wishlist: null };
 
 export function updateMapProvider() {
-    const provider = safeGetStorage('trippo_map_provider', 'esri');
+    const provider = safeGetStorage('trippo_map_provider', 'mapbox-light');
     const mapboxKey = safeGetStorage('trippo_mapbox_key', '');
     
     let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
