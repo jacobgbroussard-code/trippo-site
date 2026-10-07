@@ -159,3 +159,23 @@ h1, h2, h3, h4, h5, h6, .header-title {
         display: none !important;
     }
 }
+
+body.hotline-mode {
+    --primary: #ff00ff;
+    --primary-light: #2d0036;
+    --accent: #00ffff;
+    --accent-hover: #ff007f;
+    --bg: #1a0024;
+    --text: #00ffff;
+    --card-bg: #2d004d;
+    --border-subtle: #ff00ff;
+    
+    /* Hotline Mode Shadows */
+    --shadow-sm: 0 1px 3px rgba(255, 0, 255, 0.3);
+    --shadow-md: 0 4px 12px rgba(255, 0, 255, 0.4);
+    --shadow-lg: 0 12px 24px rgba(0, 255, 255, 0.5);
+    
+    /* Hotline Mode Gradients */
+    --gradient-primary: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+    --gradient-accent: linear-gradient(135deg, #00ffff 0%, #ff007f 100%);
+}

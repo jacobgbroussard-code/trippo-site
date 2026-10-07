@@ -43,17 +43,49 @@ export function safeParseStorage(key, defaultValue) {
     }
 }
 
-// --- DARK MODE STATE ---
-export let isDarkMode = safeGetStorage('trippoDarkMode', 'false') === 'true';
+// --- THEME STATE ---
+export let currentTheme = safeGetStorage('trippoTheme', 'light');
 
-export function toggleDarkMode() {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    safeSetStorage('trippoDarkMode', isDarkMode);
+// Fallback logic for old `trippoDarkMode` setting
+if (!safeGetStorage('trippoTheme')) {
+    if (safeGetStorage('trippoDarkMode', 'false') === 'true') {
+        currentTheme = 'dark';
+        safeSetStorage('trippoTheme', 'dark');
+    }
+}
+
+export let isDarkMode = currentTheme === 'dark'; // kept for backwards compatibility where used
+
+export function toggleDarkMode() { // renamed internally but exported as toggleDarkMode for backward compat in HTML
+    const themes = ['light', 'dark', 'hotline'];
+    let currentIndex = themes.indexOf(currentTheme);
+    if (currentIndex === -1) currentIndex = 0;
+    
+    currentTheme = themes[(currentIndex + 1) % themes.length];
+    isDarkMode = currentTheme === 'dark'; // update backward compat variable
+
+    document.body.classList.remove('dark-mode', 'hotline-mode');
+    if (currentTheme !== 'light') {
+        document.body.classList.add(currentTheme + '-mode');
+    }
+
+    safeSetStorage('trippoTheme', currentTheme);
+    
     const icon = document.getElementById('dark-mode-icon');
     const label = document.getElementById('dark-mode-label');
-    if (icon) icon.innerText = isDarkMode ? '☀️' : '🌙';
-    if (label) label.innerText = isDarkMode ? 'Disable Dark Mode' : 'Toggle Dark Mode';
+    
+    if (icon) {
+        if (currentTheme === 'light') icon.innerText = '☀️';
+        else if (currentTheme === 'dark') icon.innerText = '🌙';
+        else icon.innerText = '🌴';
+    }
+    
+    if (label) {
+        if (currentTheme === 'light') label.innerText = 'Switch to Dark Mode';
+        else if (currentTheme === 'dark') label.innerText = 'Switch to Hotline Mode';
+        else label.innerText = 'Switch to Light Mode';
+    }
+    
     toggleSidebar(false);
 }
 

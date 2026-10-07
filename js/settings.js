@@ -77,8 +77,12 @@ export function updateSettingsModalUI() {
 
     const themeBtn = document.getElementById('settings-theme-toggle-btn');
     if (themeBtn) {
+        const isHotline = document.body.classList.contains('hotline-mode');
         const isDark = document.body.classList.contains('dark-mode');
-        themeBtn.innerHTML = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+        
+        if (isHotline) themeBtn.innerHTML = '☀️ Light Mode';
+        else if (isDark) themeBtn.innerHTML = '🌴 Hotline Mode';
+        else themeBtn.innerHTML = '🌙 Dark Mode';
     }
 
     const providerSelect = document.getElementById('setting-map-provider');

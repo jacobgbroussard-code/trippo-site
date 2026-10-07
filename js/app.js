@@ -181,13 +181,16 @@ function bootstrapApp() {
     tools.initSearchClearButtons();
     tools.initFlightHub();
 
-    const isDark = state.safeGetStorage('trippoDarkMode', 'false') === 'true';
-    if (isDark) {
-        document.body.classList.add('dark-mode');
+    if (state.currentTheme !== 'light') {
+        document.body.classList.add(state.currentTheme + '-mode');
         const icon = document.getElementById('dark-mode-icon');
         const label = document.getElementById('dark-mode-label');
-        if (icon) icon.innerText = '☀️';
-        if (label) label.innerText = 'Disable Dark Mode';
+        if (icon) {
+            icon.innerText = state.currentTheme === 'dark' ? '🌙' : '🌴';
+        }
+        if (label) {
+            label.innerText = state.currentTheme === 'dark' ? 'Switch to Hotline Mode' : 'Switch to Light Mode';
+        }
     }
 
     // Default entry view
