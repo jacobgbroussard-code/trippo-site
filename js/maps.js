@@ -3,7 +3,7 @@
    js/maps.js
    ========================================================================== */
 
-import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate } from './state.js';
+import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage } from './state.js';
 
 export let plannerMap = null;
 export let placesMap = null;
@@ -54,15 +54,58 @@ export function openStreetViewModal(lat, lon, title = 'Street View') {
     if (modal) modal.style.display = 'flex';
 }
 
-export function createBaseTileLayer() {
-    const layer = L.tileLayer(BASE_MAP_URL, BASE_MAP_OPTS);
-    layer.on('tileerror', (error) => {
-        if (error.tile && !error.tile.dataset.fallback) {
-            error.tile.dataset.fallback = 'true';
-            const { z, x, y } = error.coords;
-            error.tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
-        }
-    });
+export let baseLayers = { planner: null, places: null, wishlist: null };
+
+export function updateMapProvider() {
+    const provider = safeGetStorage('trippo_map_provider', 'esri');
+    const mapboxKey = safeGetStorage('trippo_mapbox_key', '');
+    
+    let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    let opts = {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+    };
+
+    if (provider.startsWith('mapbox') && mapboxKey) {
+        const style = provider.replace('mapbox-', '');
+        const styleId = {
+            'outdoors': 'outdoors-v12',
+            'streets': 'streets-v12',
+            'light': 'light-v11',
+            'dark': 'dark-v11'
+        }[style] || 'outdoors-v12';
+
+        url = `https://api.mapbox.com/styles/v1/mapbox/${styleId}/tiles/256/{z}/{x}/{y}@2x?access_token=${mapboxKey}`;
+        opts = {
+            maxZoom: 19,
+            attribution: '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        };
+    }
+
+    const replaceLayer = (mapObj, key) => {
+        if (!mapObj) return;
+        if (baseLayers[key]) mapObj.removeLayer(baseLayers[key]);
+        baseLayers[key] = L.tileLayer(url, opts);
+        baseLayers[key].on('tileerror', (error) => {
+            if (error.tile && !error.tile.dataset.fallback) {
+                error.tile.dataset.fallback = 'true';
+                const { z, x, y } = error.coords;
+                error.tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`;
+            }
+        });
+        baseLayers[key].addTo(mapObj);
+        baseLayers[key].bringToBack();
+    };
+
+    replaceLayer(plannerMap, 'planner');
+    replaceLayer(placesMap, 'places');
+    replaceLayer(wishlistMap, 'wishlist');
+}
+window.updateMapProvider = updateMapProvider;
+
+export function createBaseTileLayer(mapKey) {
+    const layer = L.tileLayer('', { maxZoom: 19 });
+    baseLayers[mapKey] = layer;
     return layer;
 }
 
@@ -147,7 +190,8 @@ export function initPlannerMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([30.2241, -92.0198], 3);
-            createBaseTileLayer().addTo(plannerMap);
+            createBaseTileLayer('planner').addTo(plannerMap);
+            updateMapProvider();
             attachMapResizeObserver(plannerMap, 'planner-map');
         }
     }
@@ -173,7 +217,8 @@ export function initPlacesMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([30.2241, -92.0198], 12);
-            createBaseTileLayer().addTo(placesMap);
+            createBaseTileLayer('places').addTo(placesMap);
+            updateMapProvider();
             attachMapResizeObserver(placesMap, 'places-map');
         }
     }
@@ -199,7 +244,8 @@ export function initWishlistMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([20, 0], 2);
-            createBaseTileLayer().addTo(wishlistMap);
+            createBaseTileLayer('wishlist').addTo(wishlistMap);
+            updateMapProvider();
             attachMapResizeObserver(wishlistMap, 'wishlist-map');
             if (window.handleWishlistMapClick) {
                 wishlistMap.on('click', window.handleWishlistMapClick);

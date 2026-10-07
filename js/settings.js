@@ -80,6 +80,22 @@ export function updateSettingsModalUI() {
         const isDark = document.body.classList.contains('dark-mode');
         themeBtn.innerHTML = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
     }
+
+    const providerSelect = document.getElementById('setting-map-provider');
+    const mapboxKeyContainer = document.getElementById('mapbox-key-container');
+    const mapboxKeyInput = document.getElementById('mapbox-api-key-input');
+    
+    if (providerSelect) {
+        const currentProvider = safeGetStorage('trippo_map_provider', 'esri');
+        providerSelect.value = currentProvider;
+        if (mapboxKeyContainer) {
+            mapboxKeyContainer.style.display = currentProvider.startsWith('mapbox') ? 'block' : 'none';
+        }
+    }
+    
+    if (mapboxKeyInput) {
+        mapboxKeyInput.value = safeGetStorage('trippo_mapbox_key', '');
+    }
 }
 
 export function saveHomeAirportSetting(val) {
@@ -98,3 +114,30 @@ export function saveDefaultCurrencySetting(curr) {
     if (currFrom) currFrom.value = curr;
     showNotification(`Default currency set to ${curr}`);
 }
+
+export function saveMapProviderSetting(provider) {
+    safeSetStorage('trippo_map_provider', provider);
+    updateSettingsModalUI();
+    
+    if (window.updateMapProvider) {
+        window.updateMapProvider();
+    }
+    showNotification(`Map provider set to ${provider}`);
+}
+
+export function saveMapboxApiKey() {
+    const key = document.getElementById('mapbox-api-key-input')?.value.trim();
+    if (key) {
+        safeSetStorage('trippo_mapbox_key', key);
+        showNotification("Mapbox Key saved locally!");
+        if (window.updateMapProvider) {
+            window.updateMapProvider();
+        }
+    } else {
+        localStorage.removeItem('trippo_mapbox_key');
+        showNotification("Mapbox Key removed.");
+    }
+}
+
+window.saveMapProviderSetting = saveMapProviderSetting;
+window.saveMapboxApiKey = saveMapboxApiKey;

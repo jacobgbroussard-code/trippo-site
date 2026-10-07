@@ -1512,6 +1512,30 @@
                 </div>
             </div>
 
+            <!-- Map Settings -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">🗺 Map Engine</div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:11px; font-weight:700;">Map Provider</label>
+                    <select id="setting-map-provider" class="form-control" style="font-weight:700; font-size:13px; padding:8px 12px;" onchange="saveMapProviderSetting(this.value)">
+                        <option value="esri">Esri World Street (Free)</option>
+                        <option value="mapbox-outdoors">Mapbox Outdoors</option>
+                        <option value="mapbox-streets">Mapbox Streets</option>
+                        <option value="mapbox-light">Mapbox Light</option>
+                        <option value="mapbox-dark">Mapbox Dark</option>
+                    </select>
+                </div>
+                <div id="mapbox-key-container" style="display: none;">
+                    <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
+                        Bring your own Mapbox Public Access Token to use premium Mapbox styles. <a href="https://account.mapbox.com/access-tokens/" target="_blank" style="color:var(--primary);">Get a free key here</a>.
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <input type="password" id="mapbox-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="pk.ey...">
+                        <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveMapboxApiKey()">💾 Save Token</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- AI Settings & API Key -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
                 <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">✨ AI Settings & API Key</div>
