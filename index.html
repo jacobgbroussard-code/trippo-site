@@ -330,6 +330,23 @@
             </div>
         </div>
 
+        <div class="sidebar-item" onclick="toggleSidebarAiSettings()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand AI settings">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>✨</span> AI Settings & API Key
+            </div>
+            <span id="sidebar-ai-settings-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
+        </div>
+        <div id="sidebar-ai-settings-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
+            <div style="padding: 10px 14px; font-size:13px; color:var(--text-light);">
+                Bring your own Google Gemini API key to use the AI directly from your browser.<br><br>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary);">Get a free key here</a>.
+            </div>
+            <div style="padding: 0 14px 10px 14px;">
+                <input type="password" id="gemini-api-key-input" class="form-control" style="padding:8px; font-size:13px; margin-bottom:8px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
+                <button class="save-btn" style="padding:8px; font-size:13px; width: 100%; margin: 0;" onclick="saveGeminiApiKey()">💾 Save Key</button>
+            </div>
+        </div>
+
         <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
 
         <!-- CLOUD AUTHENTICATION IN SIDEBAR -->

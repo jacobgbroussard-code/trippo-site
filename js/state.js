@@ -147,6 +147,17 @@ export function toggleSidebarSettings() {
     }
 }
 
+export function toggleSidebarAiSettings() {
+    const group = document.getElementById('sidebar-ai-settings-group');
+    const arrow = document.getElementById('sidebar-ai-settings-arrow');
+    if (!group) return;
+    const isHidden = group.style.display === 'none' || !group.style.display;
+    group.style.display = isHidden ? 'block' : 'none';
+    if (arrow) {
+        arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
 export function toggleSidebarTripTools() {
     const group = document.getElementById('sidebar-trip-tools-group');
     const arrow = document.getElementById('sidebar-trip-tools-arrow');

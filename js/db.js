@@ -47,6 +47,15 @@ export function updateAuthUI(user) {
         if (statusBadge) statusBadge.innerHTML = `☁️ Synced (${escapeHTML(displayName)})`;
         if (inView) inView.style.display = 'block';
         if (outView) outView.style.display = 'none';
+        if (userEmailEl) userEmailEl.innerText = user.email;
+
+        // Restore Gemini API Key if it exists in metadata
+        if (user.user_metadata?.gemini_api_key) {
+            localStorage.setItem('trippoGeminiApiKey', user.user_metadata.gemini_api_key);
+            const keyInput = document.getElementById('gemini-api-key-input');
+            if (keyInput) keyInput.value = user.user_metadata.gemini_api_key;
+        }
+        if (outView) outView.style.display = 'none';
         if (userEmailEl) userEmailEl.innerText = user.email || displayName;
     } else {
         if (statusBadge) statusBadge.innerHTML = `☁️ Cloud Sync`;
@@ -279,5 +288,18 @@ export async function pushLocalToCloud() {
         }
     } catch(e) {
         console.error("Cloud push error:", e);
+    }
+}
+
+export async function saveUserGeminiKeyToCloud(key) {
+    const client = getSupabase();
+    if (!currentUser || !client) return;
+    const { data, error } = await client.auth.updateUser({
+        data: { gemini_api_key: key }
+    });
+    if (error) {
+        console.error('Failed to sync Gemini API key to cloud:', error);
+    } else {
+        console.log('Gemini API key synced to cloud securely.');
     }
 }

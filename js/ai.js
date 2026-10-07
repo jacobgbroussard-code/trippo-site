@@ -819,6 +819,57 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     }, 15000);
 
     try {
+        if (getGeminiApiKey()) {
+            console.log(`[AI Assistant] Bypassing Edge AI - hitting Gemini directly.`);
+            const systemPrompt = `You are the core AI travel assistant for Trippo, a modern travel planner web app.
+CRITICAL INSTRUCTIONS:
+1. STRICT DOMAIN CONSTRAINT: You are STRICTLY RESTRICTED to travel planning, vacations, itineraries, city guides, cultural landmarks, and activities.
+2. DURATION FIDELITY: If the user requests a specific number of days, you MUST generate an itinerary with EXACTLY that number of days in the "days" array, and set "durationDays" to that exact number.
+3. MULTI-CITY & REGIONAL CLARIFICATION: When the user asks for a region, country, or multi-city route, explicitly name and visit real, specific cities in the itinerary.
+4. GEOGRAPHIC CLUSTERING & REALISTIC PACING: Group activities each day by physical proximity or neighborhood.
+5. LOCATION SPECIFICITY: Every activity's "location" field MUST include a specific neighborhood, street, or landmark district.
+6. TRANSIT & CONNECTIVITY GUIDANCE: When an activity involves inter-city travel, briefly mention transit details in the description.
+7. Use Google Search Grounding to ensure all restaurants, hotels, and attractions are REAL, verified locations that actually exist!
+8. You MUST return a valid JSON object matching the following structure EXACTLY:
+{
+  "title": "A captivating, concise title",
+  "destination": "Main Cities, Region or Country",
+  "durationDays": 7,
+  "summary": "A 2-3 sentence engaging summary highlighting the route, cultural vibe, food specialties, and practical tips.",
+  "days": [
+    {
+      "day": 1,
+      "theme": "City Name: Theme or neighborhood",
+      "activities": [
+        {
+          "time": "Morning",
+          "name": "Shamian Island Heritage Walk",
+          "category": "● See & Do",
+          "description": "Explore colonial architecture, shaded banyan lanes, and riverside promenades.",
+          "location": "Shamian Island, Guangzhou"
+        }
+      ]
+    }
+  ]
+}`;
+            const explicitDuration = durationDays ? `\nREQUIREMENT: You MUST generate exactly ${durationDays} days.` : '';
+            const explicitCities = resolvedContext.stops && resolvedContext.stops.length > 0 
+                ? `\nREQUIREMENT: You MUST include stops in these cities: ${resolvedContext.stops.map(s => s.fullName).join(', ')}.` 
+                : '';
+            const userContextPrompt = `Plan a travel itinerary for: "${promptText}"${explicitDuration}${explicitCities}`;
+
+            const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true);
+            let parsedItinerary = null;
+            try {
+                parsedItinerary = JSON.parse(rawContent);
+            } catch (e) {
+                let cleanedJson = rawContent.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+                parsedItinerary = JSON.parse(cleanedJson);
+            }
+            clearTimeout(timeoutId);
+            return parsedItinerary;
+        }
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -1574,6 +1625,64 @@ async function fetchChatFromWorker(promptText, context) {
     }, 9000);
 
     try {
+        if (getGeminiApiKey()) {
+            console.log(`[AI Copilot] Bypassing Edge AI - hitting Gemini directly.`);
+            const city = context.city || "your destination";
+            const day = context.day || 1;
+            const tripName = context.tripName || "Vacation";
+            const existingPlaces = Array.isArray(context.existingPlaces) && context.existingPlaces.length > 0
+                ? context.existingPlaces.join(", ")
+                : "None scheduled yet";
+            const chatSystemPrompt = `You are the in-app AI Travel Copilot for Trippo, assisting a traveler currently planning their daily itinerary.
+Current Context:
+- Destination City: ${city}
+- Active Day: Day ${day}
+- Trip: ${tripName}
+- Already Scheduled Places for Day ${day}: ${existingPlaces}
+
+CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
+1. STRICT IMMUTABILITY & NO-DELETION RESTRICTION: You are strictly an ADDITIVE recommendation assistant. You do NOT have any authority, ability, or permission to delete, modify, clear, remove, or overwrite existing trips, itineraries, stops, or places.
+2. If the user asks you to delete, cancel, wipe, clear, remove, or replace any trips, cities, days, stops, or places, you MUST decline politely and explain:
+   {"reply": "I am designed to suggest and add new travel ideas without altering or deleting your existing plans. To remove or edit any existing places, stops, or trips, you can safely use the trash icon 🗑️ or edit buttons directly in the planner.", "suggestions": []}
+3. You are strictly restricted to travel planning, itineraries, restaurants, sightseeing, and local cultural advice.
+4. If the user's inquiry is completely unrelated to travel or geography, politely decline.
+5. Use Google Search Grounding to find REAL, currently open restaurants and attractions. Do not invent places!
+6. If recommending specific spots, activities, or an itinerary, ALWAYS provide them in the structured "suggestions" array.
+7. You MUST return a valid JSON object matching this schema EXACTLY:
+{
+  "reply": "Friendly conversational advice...",
+  "suggestions": [
+    {
+      "name": "Official name of the place/activity",
+      "category": "● See & Do",
+      "time": "Morning",
+      "description": "Why it's recommended and practical advice",
+      "address": "Neighborhood or area in ${city}"
+    }
+  ]
+}`;
+            const conversationMessages = copilotChatHistory.slice(-8).map(m => ({
+                role: m.role === 'bot' ? 'assistant' : 'user',
+                content: m.content
+            }));
+            if (conversationMessages.length === 0 || conversationMessages[conversationMessages.length - 1].content !== promptText) {
+                conversationMessages.push({ role: "user", content: promptText });
+            }
+            const rawContent = await callGeminiDirectly(chatSystemPrompt, conversationMessages, true);
+            let parsedChat = null;
+            try {
+                parsedChat = JSON.parse(rawContent);
+            } catch (e) {
+                let cleanedJson = rawContent.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+                parsedChat = JSON.parse(cleanedJson);
+            }
+            clearTimeout(timeoutId);
+            return {
+                reply: parsedChat.reply || "Here are some recommendations for your itinerary:",
+                suggestions: Array.isArray(parsedChat.suggestions) ? parsedChat.suggestions : []
+            };
+        }
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -1740,4 +1849,46 @@ function generateIntelligentChatFallback(prompt, cityName, dayNum) {
             }
         ]
     };
+}
+
+export function getGeminiApiKey() {
+    return localStorage.getItem('trippoGeminiApiKey') || '';
+}
+
+export function saveGeminiApiKey() {
+    const key = document.getElementById('gemini-api-key-input')?.value.trim();
+    if (key) {
+        localStorage.setItem('trippoGeminiApiKey', key);
+        if (window.saveUserGeminiKeyToCloud) window.saveUserGeminiKeyToCloud(key);
+        if (window.showNotification) window.showNotification('Gemini API Key saved successfully!');
+    } else {
+        localStorage.removeItem('trippoGeminiApiKey');
+        if (window.saveUserGeminiKeyToCloud) window.saveUserGeminiKeyToCloud('');
+        if (window.showNotification) window.showNotification('Gemini API Key removed.');
+    }
+}
+window.saveGeminiApiKey = saveGeminiApiKey;
+
+async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch) {
+    const apiKey = getGeminiApiKey();
+    const contents = conversationMessages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+    }));
+    const payload = {
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        contents: contents,
+        generationConfig: { temperature: 0.35, topP: 0.9, responseMimeType: 'application/json' }
+    };
+    if (enableSearch) { payload.tools = [{ googleSearch: {} }]; }
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: aiFetchAbortController?.signal || copilotAbortController?.signal
+    });
+    if (!res.ok) { const errText = await res.text(); throw new Error('Gemini API Error (' + res.status + '): ' + errText); }
+    const json = await res.json();
+    if (!json.candidates || json.candidates.length === 0) throw new Error('No response candidates returned from Gemini.');
+    return json.candidates[0].content.parts[0].text;
 }
