@@ -257,14 +257,6 @@
             </div>
         </div>
 
-        <!-- USER SETTINGS BUTTON -->
-        <div class="sidebar-item" onclick="openSettingsModal()" style="justify-content:space-between; cursor:pointer;" title="App settings & preferences">
-            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
-                <span>⚙️</span> App Settings & Preferences
-            </div>
-            <span style="font-size:13px; color:var(--text-light); font-weight:700;">›</span>
-        </div>
-
         <!-- TRIP TOOLS COLLAPSIBLE ACCORDION -->
         <div class="sidebar-item" onclick="toggleSidebarTripTools()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand trip tools">
             <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
@@ -302,49 +294,11 @@
             <span id="dark-mode-icon">🌙</span> <span id="dark-mode-label">Toggle Dark Mode</span>
         </div>
 
-        <!-- SETTINGS & DATA COLLAPSIBLE ACCORDION -->
-        <div class="sidebar-item" onclick="toggleSidebarSettings()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand settings">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span>⚙️</span> Settings & Data
+        <div class="sidebar-item" onclick="openSettingsModal()" style="justify-content:space-between; cursor:pointer;" title="App settings & preferences">
+            <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
+                <span>⚙️</span> App Settings & Preferences
             </div>
-            <span id="sidebar-settings-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
-        </div>
-        <div id="sidebar-settings-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="exportAppDataJSON()">
-                <span>💾</span> Export All Data (.json)
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="document.getElementById('import-app-json-input').click()">
-                <span>📂</span> Restore All Data (.json)
-            </div>
-            <input type="file" id="import-app-json-input" accept=".json" style="display:none" onchange="importAppDataJSON(event)">
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openShareTripModal(); toggleSidebar(false);">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary); flex-shrink:0;">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                    <polyline points="16 6 12 2 8 6"></polyline>
-                    <line x1="12" y1="2" x2="12" y2="15"></line>
-                </svg>
-                <span>Share & Export Trip Hub</span>
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="forceAppRefresh()">
-                <span>🔄</span> Check for Updates / Refresh App
-            </div>
-        </div>
-
-        <div class="sidebar-item" onclick="toggleSidebarAiSettings()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand AI settings">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span>✨</span> AI Settings & API Key
-            </div>
-            <span id="sidebar-ai-settings-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
-        </div>
-        <div id="sidebar-ai-settings-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
-            <div style="padding: 10px 14px; font-size:13px; color:var(--text-light);">
-                Bring your own Google Gemini API key to use the AI directly from your browser.<br><br>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary);">Get a free key here</a>.
-            </div>
-            <div style="padding: 0 14px 10px 14px;">
-                <input type="password" id="gemini-api-key-input" class="form-control" style="padding:8px; font-size:13px; margin-bottom:8px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
-                <button class="save-btn" style="padding:8px; font-size:13px; width: 100%; margin: 0;" onclick="saveGeminiApiKey()">💾 Save Key</button>
-            </div>
+            <span style="font-size:13px; color:var(--text-light); font-weight:700;">></span>
         </div>
 
         <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
@@ -1551,6 +1505,18 @@
                     <button type="button" class="micro-action-btn" onclick="toggleDarkMode(); updateSettingsModalUI();" id="settings-theme-toggle-btn" style="padding:6px 12px; font-size:12px;">
                         🌙 Toggle Dark Mode
                     </button>
+                </div>
+            </div>
+
+            <!-- AI Settings & API Key -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">✨ AI Settings & API Key</div>
+                <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
+                    Bring your own Google Gemini API key to use the AI directly from your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary);">Get a free key here</a>.
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <input type="password" id="gemini-api-key-input" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
+                    <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGeminiApiKey()">💾 Save Key</button>
                 </div>
             </div>
 
