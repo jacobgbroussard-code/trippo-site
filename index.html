@@ -385,7 +385,7 @@
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block; cursor:pointer;" onclick="openEditTripModal()" title="Click to edit trip details">Trip Route</h2>
                         <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates">✏️</button>
-                        <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Live Co-Planning Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> 👥 Live Co-Plan</span>
+                        <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Plan with Friends Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> 👥 Plan with Friends</span>
                         <button id="planner-ios-share-btn" class="ios-share-action-btn" onclick="openShareTripModal()" title="Share trip, co-plan live, or export" aria-label="Share Trip">
                             <svg class="ios-share-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
@@ -1038,14 +1038,14 @@
                     <div class="share-mode-badge copy">Independent</div>
                 </div>
 
-                <!-- Option 2: Live Co-Plan -->
+                <!-- Option 2: Plan with Friends -->
                 <div id="share-mode-collab-card" class="share-mode-card" onclick="selectShareMode('collab')">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="share-mode-icon">⚡</span>
                             <div>
-                                <div class="share-mode-title">Live Co-Plan</div>
-                                <div class="share-mode-subtitle">Real-time collaboration</div>
+                                <div class="share-mode-title">Plan with Friends</div>
+                                <div class="share-mode-subtitle">Live real-time sync</div>
                             </div>
                         </div>
                         <input type="radio" name="share-mode-radio" id="share-radio-collab" style="accent-color:var(--primary); cursor:pointer;">
@@ -1068,6 +1068,13 @@
                 <div style="display:flex; gap:8px;">
                     <input type="text" id="share-link-input" readonly class="form-control" style="font-size:12px; font-family:monospace; background:var(--input-bg, #f8fcfb); cursor:text; flex:1;" onclick="this.select()">
                     <button type="button" class="btn-secondary" onclick="shareViaNative()" title="Share via device app" style="padding:10px 14px; font-size:14px;">📤</button>
+                </div>
+            </div>
+
+            <!-- QR Code Section -->
+            <div style="display:flex; justify-content:center; align-items:center; margin-top:16px;">
+                <div style="padding: 10px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                    <img id="share-qr-code" src="" alt="Share QR Code" style="width:160px; height:160px; display:block; border-radius: 4px;" />
                 </div>
             </div>
 

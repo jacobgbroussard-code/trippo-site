@@ -172,7 +172,7 @@ export function selectShareMode(mode) {
 
         if (descEl) {
             descEl.innerHTML = `
-                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">⚡ Live Co-Planning (Real-Time)</div>
+                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">⚡ Plan with Friendsning (Real-Time)</div>
                 <div>Multiple friends can co-plan together in real time! Adding stops, places, notes, or budget updates <b>syncs live across all devices</b>.</div>
             `;
         }
@@ -187,6 +187,13 @@ export function selectShareMode(mode) {
         const encoded = encodeTripPayload(trip);
         const link = `${origin}#collab=${trip.collabRoomId}&tripId=${trip.id}&seed=${encoded}`;
         if (linkInput) linkInput.value = link;
+    }
+    
+    // Update QR Code
+    const qrImg = document.getElementById('share-qr-code');
+    if (qrImg && linkInput && linkInput.value) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkInput.value)}`;
+        qrImg.style.display = 'block';
     }
 }
 
@@ -374,7 +381,7 @@ function updateCollabBadge(tripId, isConnected) {
     const active = getActiveTrip();
     if (active && active.id === tripId && active.isCollaborative) {
         badge.style.display = 'inline-flex';
-        badge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Live Co-Plan`;
+        badge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Plan with Friends`;
     } else {
         badge.style.display = 'none';
     }
@@ -446,7 +453,7 @@ export function openImportTripModal(data, mode) {
     } else {
         if (badgeEl) {
             badgeEl.className = 'import-badge collab';
-            badgeEl.innerHTML = `<span>⚡</span> Live Co-Planning`;
+            badgeEl.innerHTML = `<span>⚡</span> Plan with Friendsning`;
         }
         if (descEl) {
             descEl.innerHTML = `You've been invited to <b>plan this trip together in real time</b>! Changes you or your friends make will sync live across accounts.`;
@@ -521,7 +528,7 @@ export function confirmImportTrip(asPrivateCopy = false) {
     if (window.renderHome) window.renderHome();
     if (window.switchTab) window.switchTab('planner');
     
-    showNotification(isCollab ? `🚀 Joined "${importedTrip.name}" live co-planning!` : `✨ Added "${importedTrip.name}" to your planner!`);
+    showNotification(isCollab ? `🚀 Joined "${importedTrip.name}" Plan with Friendsning!` : `✨ Added "${importedTrip.name}" to your planner!`);
     triggerHaptic('success');
 }
 

@@ -85,7 +85,7 @@ export function renderHome() {
             countdownBadge = `<span class="trip-countdown-badge tbd">🗓️ Dates TBD</span>`;
         }
 
-        const collabChip = trip.isCollaborative ? `<span class="trip-countdown-badge" style="background:rgba(59,130,246,0.12); color:#2563eb; border:1px solid rgba(59,130,246,0.25);">👥 Live Co-Plan</span>` : '';
+        const collabChip = trip.isCollaborative ? `<span class="trip-countdown-badge" style="background:rgba(59,130,246,0.12); color:#2563eb; border:1px solid rgba(59,130,246,0.25);">👥 Plan with Friends</span>` : '';
 
         return `
         <div class="trip-card">

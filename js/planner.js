@@ -118,7 +118,7 @@ export function renderPlanner() {
     if (collabBadge) {
         if (trip.isCollaborative) {
             collabBadge.style.display = 'inline-flex';
-            collabBadge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Live Co-Plan`;
+            collabBadge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Plan with Friends`;
         } else {
             collabBadge.style.display = 'none';
         }
