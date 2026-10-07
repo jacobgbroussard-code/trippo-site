@@ -94,7 +94,24 @@ export function updateSettingsModalUI() {
     }
     
     if (mapboxKeyInput) {
-        mapboxKeyInput.value = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
+        const storedKey = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
+        mapboxKeyInput.value = storedKey;
+        
+        const overlay = document.getElementById('mapbox-lock-overlay');
+        if (overlay) {
+            overlay.style.display = storedKey ? 'flex' : 'none';
+        }
+    }
+    
+    const geminiKeyInput = document.getElementById('gemini-api-key-input');
+    if (geminiKeyInput) {
+        const storedGeminiKey = localStorage.getItem('trippoGeminiApiKey') || '';
+        geminiKeyInput.value = storedGeminiKey;
+        
+        const geminiOverlay = document.getElementById('gemini-lock-overlay');
+        if (geminiOverlay) {
+            geminiOverlay.style.display = storedGeminiKey ? 'flex' : 'none';
+        }
     }
 }
 
@@ -139,5 +156,17 @@ export function saveMapboxApiKey() {
     }
 }
 
+export function unlockMapboxKey() {
+    const overlay = document.getElementById('mapbox-lock-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+export function unlockGeminiKey() {
+    const overlay = document.getElementById('gemini-lock-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
 window.saveMapProviderSetting = saveMapProviderSetting;
 window.saveMapboxApiKey = saveMapboxApiKey;
+window.unlockMapboxKey = unlockMapboxKey;
+window.unlockGeminiKey = unlockGeminiKey;

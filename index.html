@@ -1529,9 +1529,12 @@
                     <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
                         Bring your own Mapbox Public Access Token to use premium Mapbox styles. <a href="https://account.mapbox.com/access-tokens/" target="_blank" style="color:var(--primary);">Get a free key here</a>.
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div id="mapbox-input-wrapper" style="position: relative; display:flex; flex-direction:column; gap:8px;">
                         <input type="password" id="mapbox-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="pk.ey...">
                         <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveMapboxApiKey()">💾 Save Token</button>
+                        <div id="mapbox-lock-overlay" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; border-radius: 8px; z-index: 10; display: none;">
+                            <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockMapboxKey()">🔒 Click to Edit Token</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1542,9 +1545,12 @@
                 <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
                     Bring your own Google Gemini API key to use the AI directly from your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary);">Get a free key here</a>.
                 </div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
+                <div id="gemini-input-wrapper" style="position: relative; display:flex; flex-direction:column; gap:8px;">
                     <input type="password" id="gemini-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
                     <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGeminiApiKey()">💾 Save Key</button>
+                    <div id="gemini-lock-overlay" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; border-radius: 8px; z-index: 10; display: none;">
+                        <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockGeminiKey()">🔒 Click to Edit Key</button>
+                    </div>
                 </div>
             </div>
 
