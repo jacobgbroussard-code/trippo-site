@@ -1217,7 +1217,7 @@
             <div class="form-group">
                 <label>Search Global Location</label>
                 <div class="search-input-wrapper">
-                    <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." oninput="searchWishlistLocation(this.value)" autocomplete="off">
+                    <input type="text" id="wishlist-search-input" class="form-control" placeholder="Search destination (e.g. Kyoto, Banff)..." autocomplete="off">
                     <button type="button" class="search-clear-btn" id="clear-wishlist-search-input" onclick="clearSearchField('wishlist-search-input', 'wishlist-search-results')" aria-label="Clear wishlist search">✕</button>
                 </div>
             </div>
@@ -1515,7 +1515,7 @@
                     Bring your own Google Gemini API key to use the AI directly from your browser. <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary);">Get a free key here</a>.
                 </div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
-                    <input type="password" id="gemini-api-key-input" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
+                    <input type="password" id="gemini-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
                     <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGeminiApiKey()">💾 Save Key</button>
                 </div>
             </div>

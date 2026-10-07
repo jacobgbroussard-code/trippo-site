@@ -236,6 +236,8 @@ export function saveDroppedWishlistPin(lat, lon) {
     showNotification(`Dropped and saved ${name}!`);
 }
 
+let wishlistAutocompleteInit = false;
+
 export function openWishlistSearchModal() {
     const modal = document.getElementById('wishlist-search-modal');
     if (modal) modal.style.display = 'flex';
@@ -247,55 +249,21 @@ export function openWishlistSearchModal() {
     if (results) results.innerHTML = '';
     const clearBtn = document.getElementById('clear-wishlist-search-input');
     if (clearBtn) clearBtn.style.display = 'none';
+    
+    if (input && !wishlistAutocompleteInit && window.google && window.google.maps && window.google.maps.places) {
+        wishlistAutocompleteInit = true;
+        const ac = new google.maps.places.Autocomplete(input);
+        ac.addListener('place_changed', () => {
+            const place = ac.getPlace();
+            if (!place.geometry) return;
+            selectWishlistLocation(place.name, place.geometry.location.lat(), place.geometry.location.lng());
+        });
+    }
+
     setTimeout(() => { if (input) input.focus(); }, 150);
 }
 
-export function searchWishlistLocation(query) {
-    clearTimeout(wishlistSearchTimeout);
-    if (wishlistSearchAbortController) {
-        wishlistSearchAbortController.abort();
-        wishlistSearchAbortController = null;
-    }
-    const resultsDiv = document.getElementById('wishlist-search-results');
-    if (!resultsDiv) return;
 
-    if (!query || query.trim().length < 2) {
-        resultsDiv.innerHTML = '';
-        resultsDiv.style.display = 'none';
-        return;
-    }
-
-    wishlistSearchTimeout = setTimeout(async () => {
-        try {
-            wishlistSearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
-                signal: wishlistSearchAbortController.signal
-            });
-            const data = await res.json();
-            if (data && data.length > 0) {
-                resultsDiv.innerHTML = data.map(item => {
-                    const rawName = item.name || item.display_name.split(',')[0];
-                    const safeName = escapeJS(rawName);
-                    const displayName = escapeHTML(rawName);
-                    const safeAddress = escapeHTML(item.display_name.substring(0, 50));
-                    return `
-                    <div class="search-result" onclick="selectWishlistLocation('${safeName}', ${item.lat}, ${item.lon})">
-                        <strong>${displayName}</strong><br>
-                        <small style="color:var(--text-muted, #777);">${safeAddress}...</small>
-                    </div>`;
-                }).join('');
-                resultsDiv.style.display = 'block';
-            } else {
-                resultsDiv.innerHTML = `<div style="padding: 10px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No locations found for "${escapeHTML(query)}"</div>`;
-                resultsDiv.style.display = 'block';
-            }
-        } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error("Wishlist search failed:", e);
-            }
-        }
-    }, 300);
-}
 
 export function selectWishlistLocation(name, lat, lon) {
     const results = document.getElementById('wishlist-search-results');
