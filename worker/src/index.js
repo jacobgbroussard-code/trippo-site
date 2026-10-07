@@ -194,9 +194,10 @@ CRITICAL INSTRUCTIONS:
    {"error": "I can only assist with travel itineraries and vacation planning. Please share a travel destination or trip idea!"}
 3. DURATION FIDELITY: If the user requests a specific number of days or weeks (e.g. "7 days in southern china", "10 days in japan", "weekend in rome"), you MUST generate an itinerary with EXACTLY that number of days in the "days" array, and set "durationDays" to that exact number. Do NOT shorten to 3 days if they asked for 7 days!
 4. MULTI-CITY & REGIONAL CLARIFICATION: When the user asks for a region, country, or multi-city route (e.g., "Southern China", "Northern Italy", "Southeast Asia", "Japan Golden Route"), you MUST explicitly name and visit real, specific cities in the itinerary (e.g., for Southern China: Guangzhou, Guilin/Yangshuo, Hong Kong/Shenzhen). Specify the city name clearly in the day theme, activity names, and activity locations.
-5. GEOGRAPHIC CLUSTERING & REALISTIC PACING: Group activities each day by physical proximity or neighborhood (e.g. Asakusa in the morning, Ueno in the afternoon). Do NOT propose cross-city zigzagging that requires unrealistic transit times. Include 2 to 4 actionable, realistic activities per day (typically morning sight, lunch/afternoon cultural stop, and evening dinner or sunset walk).
+5. GEOGRAPHIC CLUSTERING & REALISTIC PACING: Group activities each day by physical proximity or neighborhood (e.g. Asakusa in the morning, Ueno in the afternoon). Do NOT propose cross-city zigzagging that requires unrealistic transit times. Include 2 to 4 actionable, realistic activities per day.
 6. LOCATION SPECIFICITY: Every activity's "location" field MUST include a specific neighborhood, street, or landmark district with city (e.g. "Liwan District, Guangzhou" or "Shibuya, Tokyo"), never generic labels like "Downtown" or "City Center".
-7. For travel requests, you MUST return a valid JSON object matching the following structure EXACTLY:
+7. TRANSIT & CONNECTIVITY GUIDANCE: When an activity involves inter-city travel or changing districts, briefly mention transit details in the description (e.g., "1-hour high-speed train from Guangzhou South to Guilin" or "15-min subway ride").
+8. For travel requests, you MUST return a valid JSON object matching the following structure EXACTLY:
 {
   "title": "A captivating, concise title (e.g. 7 Days in Southern China: Guangzhou, Guilin & Hong Kong)",
   "destination": "Main Cities, Region or Country (e.g. Southern China: Guangzhou, Guilin, Hong Kong)",
@@ -210,18 +211,21 @@ CRITICAL INSTRUCTIONS:
         {
           "time": "Morning",
           "name": "Shamian Island Heritage Walk",
+          "category": "● See & Do",
           "description": "Explore colonial architecture, shaded banyan lanes, and riverside promenades.",
           "location": "Shamian Island, Guangzhou"
         },
         {
-          "time": "Afternoon",
-          "name": "Traditional Dim Sum Lunch & Chen Clan Ancestral Hall",
+          "time": "Lunch",
+          "name": "Traditional Dim Sum at Panxi Restaurant",
+          "category": "● Eat & Drink",
           "description": "Savor authentic Cantonese har gow and admire intricate Lingnan wood and brick carvings.",
           "location": "Liwan District, Guangzhou"
         },
         {
           "time": "Evening",
           "name": "Canton Tower & Pearl River Illuminated Cruise",
+          "category": "● See & Do",
           "description": "Take in glittering panoramic views of the modern skyline from the river.",
           "location": "Haizhu District, Guangzhou"
         }
@@ -229,7 +233,7 @@ CRITICAL INSTRUCTIONS:
     }
   ]
 }
-8. DO NOT wrap the output in markdown codeblocks (no \`\`\`json). Output RAW JSON only.`;
+9. DO NOT wrap the output in markdown codeblocks (no \`\`\`json). Output RAW JSON only.`;
 
         // Check for Cloudflare Workers AI binding
         if (!env.AI) {
@@ -264,6 +268,32 @@ CRITICAL INSTRUCTIONS:
           .replace(/\s*```$/i, "")
           .trim();
 
+        // Helper: Attempt to auto-repair slightly truncated JSON strings
+        function tryRepairTruncatedJson(str) {
+          try {
+            return JSON.parse(str);
+          } catch (e) {
+            let repaired = str.trim();
+            // Remove trailing dangling commas or colon
+            repaired = repaired.replace(/,\s*$/, '').replace(/:\s*$/, '');
+            // Close open quote if odd number of unescaped quotes
+            const quotes = (repaired.match(/(?<!\\)"/g) || []).length;
+            if (quotes % 2 !== 0) repaired += '"';
+            // Balance brackets and braces
+            const openBrackets = (repaired.match(/\[/g) || []).length;
+            const closeBrackets = (repaired.match(/\]/g) || []).length;
+            for (let i = 0; i < (openBrackets - closeBrackets); i++) repaired += ']';
+            const openBraces = (repaired.match(/\{/g) || []).length;
+            const closeBraces = (repaired.match(/\}/g) || []).length;
+            for (let i = 0; i < (openBraces - closeBraces); i++) repaired += '}';
+            try {
+              return JSON.parse(repaired);
+            } catch (repairErr) {
+              return null;
+            }
+          }
+        }
+
         let parsedItinerary = null;
         try {
           parsedItinerary = JSON.parse(cleanedJson);
@@ -274,8 +304,10 @@ CRITICAL INSTRUCTIONS:
             try {
               parsedItinerary = JSON.parse(match[0]);
             } catch (secondErr) {
-              console.error("Failed secondary JSON parse:", secondErr);
+              parsedItinerary = tryRepairTruncatedJson(match[0]);
             }
+          } else {
+            parsedItinerary = tryRepairTruncatedJson(cleanedJson);
           }
         }
 

@@ -405,7 +405,46 @@ export function saveAIGeneratedTrip() {
 
     const plan = currentAIGeneratedItinerary;
     const totalDays = Array.isArray(plan.days) ? plan.days.length : (plan.durationDays || 3);
-    const resolved = resolveTripDestinations(plan.destination || plan.title || '', totalDays);
+    let resolved = resolveTripDestinations(plan.destination || plan.title || '', totalDays);
+
+    // Dynamic Multi-City Discovery:
+    // If resolved wasn't in our hardcoded registry but days feature distinct cities (e.g. "Munich: ...", "Nuremberg: ...")
+    if (!resolved.isMultiCity && Array.isArray(plan.days) && plan.days.length > 1) {
+        const discoveredCityDays = [];
+        plan.days.forEach((d) => {
+            let cityName = null;
+            if (d.theme && d.theme.includes(':')) {
+                cityName = d.theme.split(':')[0].trim();
+            } else if (Array.isArray(d.activities) && d.activities.length > 0 && d.activities[0].location) {
+                const parts = d.activities[0].location.split(',');
+                if (parts.length > 1) cityName = parts[parts.length - 1].trim();
+            }
+            discoveredCityDays.push(cityName);
+        });
+
+        const uniqueCities = [...new Set(discoveredCityDays.filter(Boolean))];
+        if (uniqueCities.length >= 2) {
+            const discoveredStops = uniqueCities.map((cName) => {
+                const nightsCount = discoveredCityDays.filter(c => c === cName).length;
+                const coords = findDestinationCoords(cName);
+                return {
+                    name: cName,
+                    fullName: coords.name || cName,
+                    lat: coords.lat,
+                    lon: coords.lon,
+                    nights: Math.max(1, nightsCount),
+                    themes: [],
+                    presetPlaces: []
+                };
+            });
+
+            resolved = {
+                isMultiCity: true,
+                regionName: plan.destination || uniqueCities.join(' & '),
+                stops: discoveredStops
+            };
+        }
+    }
 
     // Compute dates starting tomorrow
     const tomorrow = new Date();
@@ -465,17 +504,19 @@ export function saveAIGeneratedTrip() {
 
             if (Array.isArray(dayObj.activities)) {
                 dayObj.activities.forEach((act, actIdx) => {
-                    let category = '● See & Do';
+                    let category = act.category || '● See & Do';
                     const nameLower = (act.name || '').toLowerCase();
                     const descLower = (act.description || '').toLowerCase();
                     const timeLower = (act.time || '').toLowerCase();
 
-                    if (nameLower.includes('dinner') || nameLower.includes('lunch') || nameLower.includes('food') || 
-                        nameLower.includes('ramen') || nameLower.includes('dim sum') || nameLower.includes('pasta') || 
-                        nameLower.includes('cafe') || nameLower.includes('bistro') || nameLower.includes('trattoria') ||
-                        timeLower.includes('evening') || descLower.includes('savor') || descLower.includes('sample') ||
-                        descLower.includes('feast') || descLower.includes('taste')) {
-                        category = '● Eat & Drink';
+                    if (!act.category) {
+                        if (nameLower.includes('dinner') || nameLower.includes('lunch') || nameLower.includes('food') || 
+                            nameLower.includes('ramen') || nameLower.includes('dim sum') || nameLower.includes('pasta') || 
+                            nameLower.includes('cafe') || nameLower.includes('bistro') || nameLower.includes('trattoria') ||
+                            timeLower.includes('evening') || descLower.includes('savor') || descLower.includes('sample') ||
+                            descLower.includes('feast') || descLower.includes('taste')) {
+                            category = '● Eat & Drink';
+                        }
                     }
 
                     // Calculate local day index within that stop
@@ -891,9 +932,24 @@ export function openAITripModal(itinerary) {
     }
 
     if (statsEl) {
+        // Detect distinct cities across days
+        const cityList = [];
+        if (Array.isArray(itinerary.days)) {
+            itinerary.days.forEach(d => {
+                if (d.theme && d.theme.includes(':')) {
+                    const c = d.theme.split(':')[0].trim();
+                    if (!cityList.includes(c)) cityList.push(c);
+                }
+            });
+        }
+        const routeBadge = cityList.length > 1
+            ? `<span class="ai-stat-chip" style="background:var(--primary-light,#e3f1ed); color:var(--primary); font-weight:700;">🗺️ ${cityList.map(c => escapeHTML(c)).join(' → ')}</span>`
+            : '';
+
         statsEl.innerHTML = `
             <span class="ai-stat-chip">🗓️ ${totalDays} Day${totalDays !== 1 ? 's' : ''}</span>
             <span class="ai-stat-chip">📍 ${totalActivities} Activit${totalActivities !== 1 ? 'ies' : 'y'}</span>
+            ${routeBadge}
             <span class="ai-stat-chip edge">⚡ Llama 3.1 Edge AI</span>
         `;
     }
