@@ -374,19 +374,10 @@
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
         <div style="padding: 0 20px; display: flex; flex-direction: column; align-items: center;">
-            <img src="fad.jpg" alt="Travel Globe Graphic" style="width: 100%; max-width: 280px; height: auto; margin-bottom: 20px; mix-blend-mode: multiply; border-radius: 16px;" onerror="this.style.display='none'" />
+            <img src="fad.png" alt="Travel Globe Graphic" class="home-hero-graphic" onerror="this.style.display='none'" />
             
-            <!-- AI Trip Generator Dashboard Search Widget (Serverless Edge AI) -->
+            <!-- AI Trip Generator Dashboard Search Widget -->
             <div class="ai-generator-widget">
-                <div class="ai-widget-header">
-                    <div class="ai-widget-title-row">
-                        <span class="ai-sparkle-icon">✨</span>
-                        <span class="ai-widget-title">AI Trip Generator</span>
-                        <span class="ai-edge-badge">Edge AI</span>
-                    </div>
-                    <p class="ai-widget-subtitle">Describe your dream vacation in plain English. Powered by Cloudflare Workers & Meta Llama 3.</p>
-                </div>
-
                 <form id="ai-trip-form" onsubmit="event.preventDefault(); submitAITripSearch();" class="ai-search-form">
                     <div class="ai-search-bar">
                         <span class="ai-search-icon">✨</span>
@@ -394,35 +385,34 @@
                             type="text" 
                             id="ai-trip-input" 
                             class="ai-search-input" 
-                            placeholder="e.g. 5 days in Tokyo for ramen & anime, or weekend in Rome..."
+                            placeholder="Where to? (e.g. 5 days in Tokyo, weekend in Rome...)"
                             autocomplete="off"
                         />
-                        <button type="submit" id="ai-generate-btn" class="ai-generate-btn" title="Generate Itinerary with Cloudflare Edge AI">
+                        <button type="submit" id="ai-generate-btn" class="ai-generate-btn" title="Generate Itinerary with AI">
                             <span class="btn-text">Generate</span>
                             <span class="btn-icon">⚡</span>
                         </button>
                     </div>
                 </form>
 
-                <!-- Offline Alert Banner (shown when navigator.onLine is false) -->
+                <!-- Offline Alert Banner -->
                 <div id="ai-offline-banner" class="ai-offline-banner" style="display:none;">
                     <span>📡</span>
-                    <span>AI generation requires an internet connection, but your saved trips are available offline.</span>
+                    <span>AI generation requires internet. Saved trips are available offline.</span>
                 </div>
 
                 <!-- Suggested Prompt Chips -->
                 <div class="ai-prompt-chips">
-                    <span class="ai-chips-label">Ideas:</span>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('5 days in Tokyo exploring historic shrines and modern tech')">🎌 5 Days in Tokyo</button>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('Weekend in Rome focused on pasta, gelato, and ancient ruins')">🍕 Weekend in Rome</button>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('4-day scenic roadtrip through the Swiss Alps and mountain lakes')">🏔️ 4 Days Swiss Alps</button>
-                    <button type="button" class="ai-chip" onclick="setAIPrompt('7-day tropical adventure in Costa Rica with rainforests and beaches')">🌴 1 Week Costa Rica</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('5 days in Tokyo exploring historic shrines and modern tech')">🎌 Tokyo (5d)</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('Weekend in Rome focused on pasta, gelato, and ancient ruins')">🍕 Rome Weekend</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('4-day scenic roadtrip through the Swiss Alps and mountain lakes')">🏔️ Swiss Alps</button>
+                    <button type="button" class="ai-chip" onclick="setAIPrompt('7-day tropical adventure in Costa Rica with rainforests and beaches')">🌴 Costa Rica</button>
                 </div>
             </div>
 
             <button class="create-btn" onclick="openCreateTripModal()" style="width: 100%;">
                 <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
-                Create new trip manually
+                Create a Trip
             </button>
             <div id="trip-list" style="width: 100%;"></div>
         </div>

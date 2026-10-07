@@ -28,6 +28,7 @@ const STATIC_ASSETS = [
     './icon-192.png',
     './icon-512.png',
     './fad.jpg',
+    './fad.png',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',

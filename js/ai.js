@@ -103,9 +103,9 @@ export function updateAIOfflineStatus() {
     if (input) {
         input.disabled = !isOnline;
         if (!isOnline) {
-            input.placeholder = "⚠️ AI requires internet. Saved trips are available offline.";
+            input.placeholder = "⚠️ Offline: Saved trips available offline.";
         } else {
-            input.placeholder = "e.g. 5 days in Tokyo for ramen & anime, or weekend in Rome...";
+            input.placeholder = "Where to? (e.g. 5 days in Tokyo, weekend in Rome...)";
         }
     }
 
