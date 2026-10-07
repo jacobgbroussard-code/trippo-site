@@ -689,15 +689,16 @@
                     <input type="number" id="curr-amount" class="form-control" value="100" min="0" step="any" oninput="convertCurrency()">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label>From</label>
                     <select id="curr-from" class="form-control" onchange="convertCurrency()" style="font-weight:700;">
                         <option value="USD" selected>USD ($)</option>
                         <option value="EUR">EUR (€)</option>
                         <option value="JPY">JPY (¥)</option>
                         <option value="GBP">GBP (£)</option>
+                        <option value="CNY">CNY (¥)</option>
                         <option value="CAD">CAD ($)</option>
                         <option value="MXN">MXN ($)</option>
                         <option value="AUD">AUD ($)</option>
+                        <option value="THB">THB (฿)</option>
                     </select>
                 </div>
                 <div class="form-group" style="flex: 1;">
@@ -707,6 +708,7 @@
                         <option value="EUR">EUR (€)</option>
                         <option value="USD">USD ($)</option>
                         <option value="GBP">GBP (£)</option>
+                        <option value="CNY">CNY (¥)</option>
                         <option value="CAD">CAD ($)</option>
                         <option value="MXN">MXN ($)</option>
                         <option value="AUD">AUD ($)</option>
@@ -728,10 +730,19 @@
                     <strong>🇯🇵 Japan / South Korea:</strong> No tipping. Good service is standard; leaving cash can be considered rude.
                 </div>
                 <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇨🇳 China:</strong> No tipping. Like Japan, it is not part of the culture and may cause confusion.
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇹🇭 Southeast Asia (Thailand, Vietnam):</strong> Not strictly expected, but 10% or leaving change is highly appreciated in tourist areas.
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
                     <strong>🇪🇺 Europe (France, Italy, Spain):</strong> Service charge often included. 5–10% or round up for great service.
                 </div>
                 <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
                     <strong>🇬🇧 United Kingdom:</strong> 10–12.5% in sit-down restaurants (check bill for optional service charge).
+                </div>
+                <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
+                    <strong>🇦🇺 Australia / New Zealand:</strong> Not expected. 10% only for exceptional service in high-end dining.
                 </div>
                 <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
                     <strong>🇲🇽 Mexico:</strong> 10–15% in restaurants (called "propina").
@@ -825,47 +836,6 @@
                     <button class="optimize-btn" style="width:auto; margin:0; padding:6px 12px; font-size:11px;" onclick="toggleAllPacking(false)">Uncheck All</button>
                 </div>
                 <button onclick="resetPackingList()" style="background:none; border:none; color:var(--text-light); font-size:11px; font-weight:600; cursor:pointer;">Reset Default</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CURRENCY CONVERTER MODAL -->
-    <div id="currency-modal" class="modal" onclick="handleModalBackdropClick(event, 'currency-modal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="closeModal('currency-modal')">✕</button>
-            <h2 style="margin: 0 0 16px 0; font-size: 20px;">💱 Travel Currency Converter</h2>
-            
-            <div class="form-group">
-                <label>Amount</label>
-                <input type="number" id="curr-amount" class="form-control" value="100" oninput="convertCurrency()">
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>From</label>
-                    <select id="curr-from" class="form-control" onchange="convertCurrency()">
-                        <option value="USD" selected>USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="JPY">JPY (¥)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="CNY">CNY (¥)</option>
-                        <option value="AUD">AUD ($)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>To</label>
-                    <select id="curr-to" class="form-control" onchange="convertCurrency()">
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="JPY" selected>JPY (¥)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="CNY">CNY (¥)</option>
-                        <option value="AUD">AUD ($)</option>
-                    </select>
-                </div>
-            </div>
-            <div style="background:var(--primary-light); padding:20px; border-radius:16px; text-align:center; margin-top:10px; border:1px solid var(--border-subtle);">
-                <span style="font-size:12px; font-weight:700; color:var(--primary); text-transform:uppercase;">Converted Result</span>
-                <div id="curr-result" style="font-size:28px; font-weight:800; color:var(--primary); margin-top:6px;">—</div>
             </div>
         </div>
     </div>
