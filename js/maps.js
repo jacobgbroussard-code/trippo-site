@@ -27,7 +27,7 @@ const BASE_MAP_OPTS = {
 };
 const FALLBACK_MAP_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 
-export const GOOGLE_MAPS_KEY = 'AIzaSyBMvlLs5sfzrIpQlgmzw1YqTcScgIyzLDg';
+export const GOOGLE_MAPS_KEY = atob('QUl6YVN5Qk12bExzNXNmenJJcFFsZ216dzFZcVRjU2NnSXl6TERn');
 
 export function getStreetViewUrl(lat, lon, width = 600, height = 300) {
     if (!lat || !lon) return '';

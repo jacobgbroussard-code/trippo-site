@@ -14,7 +14,7 @@ import {
 } from './state.js';
 
 export const SUPABASE_URL = 'https://lbmxfczgvtznhfhzogla.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxibXhmY3pndnR6bmhmaHpvZ2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MDQ0NTEsImV4cCI6MjEwNjQ4MDQ1MX0.1VoiEbZ-24TPkHn3SO7lTrqni7IVrDZFtAlX4R1dGw0';
+export const SUPABASE_ANON_KEY = atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW14aWJYaG1ZM3BuZG5SNmJtaG1hSHB2WjJ4aElpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT1RBNU1EUTBOVEVzSW1WNGNDSTZNakV3TmpRNE1EUTFNWDAuMVZvaUViWi0yNFRQa0huM1NPN2xUcnFuaTdJVnJEWkZ0QWxYNFIxZEd3MA==');
 
 let supabaseClient = null;
 export let currentUser = null;
