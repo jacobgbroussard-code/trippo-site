@@ -94,7 +94,7 @@ export function updateSettingsModalUI() {
     }
     
     if (mapboxKeyInput) {
-        mapboxKeyInput.value = safeGetStorage('trippo_mapbox_key', '');
+        mapboxKeyInput.value = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
     }
 }
 

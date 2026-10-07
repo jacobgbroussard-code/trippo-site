@@ -58,7 +58,7 @@ export let baseLayers = { planner: null, places: null, wishlist: null };
 
 export function updateMapProvider() {
     const provider = safeGetStorage('trippo_map_provider', 'mapbox-light');
-    const mapboxKey = safeGetStorage('trippo_mapbox_key', '');
+    const mapboxKey = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
     
     let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
     let opts = {
