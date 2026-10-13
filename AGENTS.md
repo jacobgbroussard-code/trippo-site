@@ -12,7 +12,7 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   `planner.js`, `places.js`, `places-autocomplete.js`, `maps.js` (Leaflet + tile providers),
   `wishlist.js`, `bookings.js` (Trip.com / Booking / Google Flights deep links),
   `travel-payouts.js`, `tools.js`, `weather.js`, `settings.js`, `collab.js` ("Plan with Friends"),
-  `db.js` (Supabase auth + sync), `ai.js` (AI assistant/copilot)
+  `db.js` (Supabase auth), `sync.js` (offline-first cloud sync), `ai.js` (AI assistant/copilot)
 - `styles/main.css`, `styles/components.css`
 - `sw.js` — service worker with a static-asset cache list
 - `worker/` — separate Cloudflare Worker (Gemini-backed "Edge AI"), deployed with wrangler
@@ -35,6 +35,14 @@ The version string appears in several places and they must match, or users get s
 - `js/tools.js` → `trippoVersion` (share export) and `version` (full backup)
 Bump all of them together (`tests/test-transpacific-and-locking.js` checks they match) for any user-visible change. If you add a new JS/CSS/image file the app
 needs offline, add it to `STATIC_ASSETS` in `sw.js`.
+
+## Cloud sync (offline-first)
+- localStorage is the source of truth; js/sync.js uploads changed/deleted items (content-hash diff vs
+  `trippo_sync_v1`) after saves, on start/sign-in, on foreground and when back online.
+- Full objects go in a `data` jsonb column; schema lives in `supabase/full-sync-migration.sql` (run manually
+  in the Supabase SQL editor). Code falls back to the legacy columns if it hasn't been run.
+- Test: `node tests/test-offline-sync.js` (fake in-memory backend, no account needed).
+- Every new JS module must also be listed in `STATIC_ASSETS` in `sw.js` or offline cold starts break.
 
 ## Rules
 - **Never commit secrets.** `.env`, `site-credentials-and-services.csv`, `SITE_MANAGEMENT_DIRECTORY.md`,

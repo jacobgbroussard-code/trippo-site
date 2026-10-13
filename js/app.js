@@ -18,7 +18,7 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.4.4';
+const CURRENT_VERSION = '2.4.5';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -220,6 +220,7 @@ function bootstrapApp() {
 
     setTimeout(() => {
         db.checkAuthSession();
+        db.initCloudSync();
     }, 150);
 }
 

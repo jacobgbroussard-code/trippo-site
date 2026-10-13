@@ -4,15 +4,11 @@
    ========================================================================== */
 
 import {
-    trips,
-    setTrips,
-    wishlistPins,
-    setWishlistPins,
-    normalizeCategory,
     showNotification,
     toggleSidebar,
     escapeHTML
 } from './state.js';
+import { syncNow, schedulePush, onSyncStatus, pendingChangeCount, initSyncTriggers } from './sync.js';
 
 export const SUPABASE_URL = 'https://lbmxfczgvtznhfhzogla.supabase.co';
 export const SUPABASE_ANON_KEY = atob('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW14aWJYaG1ZM3BuZG5SNmJtaG1hSHB2WjJ4aElpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT1RBNU1EUTBOVEVzSW1WNGNDSTZNakV3TmpRNE1EUTFNWDAuMVZvaUViWi0yNFRQa0huM1NPN2xUcnFuaTdJVnJEWkZ0QWxYNFIxZEd3MA==');
@@ -99,7 +95,34 @@ export function setCurrentUser(user) {
     currentUser = user;
 }
 
-export function updateAuthUI(user) {
+const LAST_USER_KEY = 'trippo_last_user';
+
+function displayNameOf(user) {
+    return user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : 'User');
+}
+
+// Cloud badge reflects sync state: synced / syncing / offline with pending changes / error
+function renderSyncBadge(status, detail) {
+    const statusBadge = document.getElementById('cloud-status-badge');
+    if (!statusBadge || !currentUser) return;
+    const name = escapeHTML(displayNameOf(currentUser));
+    const pending = pendingChangeCount();
+    if (status === 'syncing') {
+        statusBadge.innerHTML = `🔄 Syncing…`;
+    } else if (status === 'offline') {
+        statusBadge.innerHTML = pending ? `📴 Offline · ${pending} to sync` : `📴 Offline (${name})`;
+    } else if (status === 'error') {
+        statusBadge.innerHTML = `⚠️ Sync paused`;
+        logAuth(`Sync error: ${detail || 'unknown'}`);
+        statusBadge.title = `Changes are safe on this device. ${detail || ''}`;
+    } else {
+        statusBadge.innerHTML = `☁️ Synced (${name})`;
+        statusBadge.title = '';
+    }
+}
+onSyncStatus(renderSyncBadge);
+
+export function updateAuthUI(user, { offline = false } = {}) {
     currentUser = user;
     const statusBadge = document.getElementById('cloud-status-badge');
     const inView = document.getElementById('sidebar-auth-logged-in');
@@ -107,8 +130,12 @@ export function updateAuthUI(user) {
     const userEmailEl = document.getElementById('sidebar-user-email');
 
     if (user) {
-        const displayName = user.user_metadata?.full_name || user.user_metadata?.name || (user.email ? user.email.split('@')[0] : 'User');
-        if (statusBadge) statusBadge.innerHTML = `☁️ Synced (${escapeHTML(displayName)})`;
+        const displayName = displayNameOf(user);
+        // Remember who's signed in so the app can stay "signed in" while offline
+        try {
+            localStorage.setItem(LAST_USER_KEY, JSON.stringify({ id: user.id, email: user.email, user_metadata: { full_name: user.user_metadata?.full_name, name: user.user_metadata?.name } }));
+        } catch (e) {}
+        if (statusBadge) statusBadge.innerHTML = offline ? `📴 Offline (${escapeHTML(displayName)})` : `☁️ Synced (${escapeHTML(displayName)})`;
         if (inView) inView.style.display = 'block';
         if (outView) outView.style.display = 'none';
         if (userEmailEl) userEmailEl.innerText = user.email;
@@ -141,20 +168,64 @@ export async function checkAuthSession() {
         await handleAuthRedirect(client);
         const { data: { session }, error: sessionError } = await client.auth.getSession();
         if (sessionError) logAuth(`getSession error: ${sessionError.message}`);
-        updateAuthUI(session ? session.user : null);
+
         if (session) {
-            await pullCloudData();
+            updateAuthUI(session.user);
+            syncNow();
+        } else if (hasStoredSession() && (navigator.onLine === false || isNetworkError(sessionError))) {
+            // Offline with a saved login: stay signed in using the cached profile; the
+            // session refreshes and everything syncs once the connection is back.
+            const cached = getCachedUser();
+            if (cached) {
+                updateAuthUI(cached, { offline: true });
+                renderSyncBadge('offline');
+            } else {
+                updateAuthUI(null);
+            }
+        } else {
+            updateAuthUI(null);
         }
 
-        client.auth.onAuthStateChange(async (event, newSession) => {
-            updateAuthUI(newSession ? newSession.user : null);
-            if (newSession && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
-                await pullCloudData();
-            }
-        });
+        if (!authListenerAttached) {
+            authListenerAttached = true;
+            client.auth.onAuthStateChange((event, newSession) => {
+                if (event === 'SIGNED_OUT') {
+                    updateAuthUI(null);
+                    return;
+                }
+                if (newSession) updateAuthUI(newSession.user);
+                if (newSession && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+                    // Don't await Supabase calls inside this callback (can deadlock the auth lock)
+                    setTimeout(() => syncNow(), 0);
+                }
+            });
+        }
     } catch (e) {
         console.warn("Session check deferred:", e);
     }
+}
+
+let authListenerAttached = false;
+let syncTriggersAttached = false;
+
+function getCachedUser() {
+    try { return JSON.parse(localStorage.getItem(LAST_USER_KEY) || 'null'); } catch (e) { return null; }
+}
+
+function hasStoredSession() {
+    try { return Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token')); } catch (e) { return false; }
+}
+
+function isNetworkError(err) {
+    return !!err && /fetch|network|load failed|offline/i.test(err.message || '');
+}
+
+/** Wire up automatic sync (back online, app foregrounded). Called once at startup. */
+export function initCloudSync() {
+    if (syncTriggersAttached) return;
+    syncTriggersAttached = true;
+    // Back online: refresh the session first (it may have expired while offline), then sync
+    initSyncTriggers(() => checkAuthSession());
 }
 
 export async function handlePasswordSignIn() {
@@ -253,117 +324,64 @@ export async function handleGoogleSignIn() {
 
 export async function handleSignOut() {
     const client = getSupabase();
-    if (!client) return;
-    await client.auth.signOut();
+    // Try to upload anything still pending before signing out
+    if (client && currentUser && navigator.onLine !== false) {
+        try { await syncNow({ pullFirst: false }); } catch (e) {}
+    }
+    if (client) {
+        try {
+            // 'local' signs out this device only (doesn't kill your other devices' sessions)
+            // and always clears the saved session, even offline
+            const { error } = await client.auth.signOut({ scope: 'local' });
+            if (error) logAuth(`Sign-out error (cleared locally anyway): ${error.message}`);
+        } catch (e) {
+            logAuth(`Sign-out threw: ${e?.message || e}`);
+        }
+    }
+    // Belt and braces: make sure no stale session or sync bookkeeping blocks the next sign-in
+    try {
+        Object.keys(localStorage).filter(k => k.startsWith('sb-')).forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem(LAST_USER_KEY);
+    } catch (e) {}
+    logAuth('Signed out');
     updateAuthUI(null);
     toggleSidebar(false);
-    showNotification("Signed out. Using local storage.");
+    showNotification("Signed out. Your trips stay on this device.");
 }
 
+// Cloud sync lives in sync.js (offline-first, queued uploads). These names are kept because
+// other modules call them: saveTrips()/saveWishlist() -> pushLocalToCloud(), sign-in -> pullCloudData().
 export async function pullCloudData() {
-    const client = getSupabase();
-    if (!currentUser || !client) return;
-    try {
-        const { data: cTrips, error: tErr } = await client.from('trips').select('*');
-        if (!tErr && cTrips && cTrips.length > 0) {
-            const cloudTrips = cTrips.map(t => ({
-                id: t.id,
-                name: t.name,
-                startDate: t.start_date,
-                stops: t.stops || [],
-                places: t.places || [],
-                budgetTravelers: t.budget_travelers || 2,
-                expenses: t.expenses || [],
-                isExample: false
-            }));
-
-            const mergedTrips = [...cloudTrips];
-            trips.forEach(localT => {
-                if (localT.isExample && localT.name === "Asia Adventure") return;
-                const matchIndex = mergedTrips.findIndex(ct => ct.id === localT.id);
-                if (matchIndex === -1) {
-                    mergedTrips.push(localT);
-                } else if ((localT.stops && localT.stops.length > mergedTrips[matchIndex].stops.length) ||
-                           (localT.places && localT.places.length > mergedTrips[matchIndex].places.length)) {
-                    mergedTrips[matchIndex] = localT;
-                }
-            });
-
-            setTrips(mergedTrips);
-            localStorage.setItem('myTrips', JSON.stringify(trips));
-            if (window.renderHome) window.renderHome();
-        }
-
-        const { data: cWish, error: wErr } = await client.from('wishlist').select('*');
-        if (!wErr && cWish && cWish.length > 0) {
-            const cloudWishlist = cWish.map(w => ({
-                id: w.id,
-                wishlistId: w.wishlist_id || 'master',
-                name: w.name,
-                category: normalizeCategory(w.category),
-                lat: w.lat,
-                lon: w.lon,
-                notes: w.notes
-            }));
-
-            const mergedWishlist = [...cloudWishlist];
-            wishlistPins.forEach(localP => {
-                if (!mergedWishlist.some(cp => cp.id === localP.id || (cp.name === localP.name && Math.abs(cp.lat - localP.lat) < 0.001))) {
-                    mergedWishlist.push(localP);
-                }
-            });
-
-            setWishlistPins(mergedWishlist);
-            localStorage.setItem('myWishlist', JSON.stringify(wishlistPins));
-            const wishDetail = document.getElementById('wishlist-detail-view');
-            if (wishDetail && wishDetail.style.display === 'flex') {
-                if (window.renderWishlistPins) window.renderWishlistPins(false);
-            } else {
-                if (window.renderWishlistCollections) window.renderWishlistCollections();
-            }
-        }
-        showNotification("☁️ Data synced from cloud!");
-    } catch(e) {
-        console.error("Cloud pull error:", e);
-    }
+    await syncNow();
 }
 
 export async function pushLocalToCloud() {
-    const client = getSupabase();
-    if (!currentUser || !client) return;
-    try {
-        for (let trip of trips) {
-            if (trip.isExample && trip.name === "Asia Adventure") continue;
-
-            await client.from('trips').upsert({
-                id: trip.id,
-                user_id: currentUser.id,
-                name: trip.name,
-                start_date: trip.startDate,
-                stops: trip.stops,
-                places: trip.places
-            });
-        }
-        for (let pin of wishlistPins) {
-            const payload = {
-                id: pin.id,
-                user_id: currentUser.id,
-                name: pin.name,
-                category: pin.category,
-                lat: pin.lat,
-                lon: pin.lon,
-                notes: pin.notes
-            };
-            let { error } = await client.from('wishlist').upsert({ ...payload, wishlist_id: pin.wishlistId || 'master' });
-            if (error && error.message && error.message.includes('wishlist_id')) {
-                await client.from('wishlist').upsert(payload);
-            }
-        }
-    } catch(e) {
-        console.error("Cloud push error:", e);
-    }
+    schedulePush();
 }
 
+/** "Sync Cloud Now" button: sync and say what happened. */
+export async function manualSync() {
+    if (!currentUser) {
+        showNotification('Sign in to sync your trips to the cloud.');
+        return;
+    }
+    if (navigator.onLine === false) {
+        showNotification('Offline — your changes are saved on this device and will sync when you reconnect.', 5000);
+        return;
+    }
+    await syncNow();
+    const pending = pendingChangeCount();
+    showNotification(pending ? `⚠️ ${pending} change(s) couldn't sync yet — they're safe on this device.` : '☁️ Everything is synced!');
+}
+
+/** Sidebar "Sign-in trouble? Show log" */
+export function toggleAuthLog() {
+    const el = document.getElementById('auth-log-view');
+    if (!el) return;
+    const show = el.style.display === 'none';
+    el.textContent = getAuthLog().slice().reverse().join('\n') || 'No sign-in attempts recorded on this device yet.';
+    el.style.display = show ? 'block' : 'none';
+}
 export async function saveUserGeminiKeyToCloud(key) {
     const client = getSupabase();
     if (!currentUser || !client) return;
