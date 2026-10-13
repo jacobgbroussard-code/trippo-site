@@ -27,3 +27,5 @@ tests/test-wmi-spawn.ps1
 
 # Test screenshots (shared by Claude Code & Antigravity)
 tests/artifacts/
+# Test screenshots (tests also copy them to tests/artifacts/)
+tests/*.png

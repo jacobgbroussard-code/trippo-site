@@ -13,7 +13,7 @@ async function testNewFeatures() {
 
     const chrome = spawn(CHROME_PATH, [
         '--headless=new',
-        '--remote-debugging-port=9250',
+        '--remote-debugging-port=9253',
         `--user-data-dir=${USER_DATA_DIR}`,
         '--disable-gpu',
         '--no-first-run'
@@ -22,7 +22,9 @@ async function testNewFeatures() {
     await new Promise(r => setTimeout(r, 2500));
 
     try {
-        const tab = await (await fetch('http://127.0.0.1:9250/json/new?http://localhost:8080/', { method: 'PUT' })).json();
+        // Wait for headless Chrome to start listening instead of trusting a fixed sleep.
+        for (let i = 0; i < 60; i++) { try { await fetch(`http://127.0.0.1:9253/json/version`); break; } catch (e) { await new Promise(r => setTimeout(r, 250)); } }
+        const tab = await (await fetch('http://127.0.0.1:9253/json/new?http://localhost:8080/', { method: 'PUT' })).json();
         const ws = new WebSocket(tab.webSocketDebuggerUrl);
         await new Promise(r => ws.onopen = r);
 

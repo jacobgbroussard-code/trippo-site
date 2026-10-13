@@ -18,7 +18,7 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.4.9';
+const CURRENT_VERSION = '2.4.10';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -132,8 +132,11 @@ window.initDatePickers = initDatePickers;
 // Register Service Worker for offline asset caching
 if ('serviceWorker' in navigator) {
     let refreshing = false;
+    // On a first visit the new worker taking control isn't an update; reloading then would
+    // wipe whatever the visitor had started doing. Only reload to swap in a newer version.
+    const hadController = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
+        if (hadController && !refreshing) {
             refreshing = true;
             window.location.reload();
         }
@@ -219,8 +222,10 @@ function bootstrapApp() {
     ai.initAITripGenerator();
 
     setTimeout(() => {
-        db.checkAuthSession();
+        const authChecked = db.checkAuthSession();
         db.initCloudSync();
+        // Boot finished (auth state known): tests wait on this instead of guessing with timers.
+        Promise.resolve(authChecked).catch(() => {}).finally(() => { window.trippoReady = true; });
     }, 150);
 }
 

@@ -10,6 +10,13 @@ fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
 async function testTripSharingAndCollaboration() {
     console.log('🚀 Starting Test: Trip Sharing (Send a Copy vs Live Co-Plan) & Decoupled Deletion...');
 
+    // A previous run's Chrome can still be shutting down on this port with this profile; a new
+    // launch would hand off to it and exit. Wait until the port is free.
+    for (let i = 0; i < 40; i++) {
+        try { await fetch('http://127.0.0.1:9298/json/version'); } catch (e) { break; }
+        await new Promise(r => setTimeout(r, 250));
+    }
+
     // Clean scratch profile
     if (fs.existsSync(USER_DATA_DIR)) {
         try { fs.rmSync(USER_DATA_DIR, { recursive: true, force: true }); } catch (e) {}
@@ -27,6 +34,8 @@ async function testTripSharingAndCollaboration() {
     await new Promise(r => setTimeout(r, 2000));
 
     try {
+        // Wait for headless Chrome to start listening instead of trusting a fixed sleep.
+        for (let i = 0; i < 60; i++) { try { await fetch(`http://127.0.0.1:9298/json/version`); break; } catch (e) { await new Promise(r => setTimeout(r, 250)); } }
         const tab = await (await fetch('http://127.0.0.1:9298/json/new?http://127.0.0.1:8080/', { method: 'PUT' })).json();
         const ws = new WebSocket(tab.webSocketDebuggerUrl);
         await new Promise(r => ws.onopen = r);
@@ -76,24 +85,32 @@ async function testTripSharingAndCollaboration() {
         }
 
         async function takeScreenshot(fileName) {
-            const res = await send('Page.captureScreenshot', { format: 'png' });
+            // Headless Chrome occasionally never answers a capture; screenshots are only
+            // evidence, so skip one rather than hang the whole test.
+            const res = await Promise.race([
+                send('Page.captureScreenshot', { format: 'png' }),
+                new Promise(r => setTimeout(() => r(null), 10000)),
+            ]);
+            if (!res) { console.log(`  ⏭️  Screenshot skipped (capture stalled): ${fileName}`); return; }
             const buffer = Buffer.from(res.data, 'base64');
-            const localPath = path.join(__dirname, fileName);
-            fs.writeFileSync(localPath, buffer);
             const artifactPath = path.join(ARTIFACT_DIR, fileName);
             fs.writeFileSync(artifactPath, buffer);
             console.log(`  📸 Screenshot saved: ${fileName}`);
         }
 
-        // Wait for app load and trips initialization
+        // Wait until the app has fully booted (window.trippoReady is set after the startup auth
+        // check). Acting earlier races the boot sequence's own renders and tab switches.
         let tripCount = 0;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 60; i++) {
             try {
+                const ready = await evalExpr(`window.trippoReady === true`);
                 tripCount = await evalExpr(`window.trips ? window.trips.length : 0`);
-                if (tripCount > 0) break;
+                if (ready && tripCount > 0) break;
             } catch (e) {}
             await new Promise(r => setTimeout(r, 500));
         }
+        // Dismiss anything the first launch pops up (e.g. the "what's new" sheet).
+        await evalExpr(`document.querySelectorAll('.modal').forEach(m => { m.style.display = 'none'; })`);
         console.log(`  Found ${tripCount} initial trips in state.`);
         if (tripCount === 0) throw new Error('No trips found in state!');
 

@@ -43,7 +43,7 @@ async function testIosIcon() {
     assert('sw.js caches icon-192.png', swJs.includes("'./icon-192.png'"));
     assert('sw.js caches icon-512.png', swJs.includes("'./icon-512.png'"));
     assert('sw.js caches fad.jpg', swJs.includes("'./fad.jpg'"));
-    assert('sw.js is updated with cache version', swJs.includes("trippo-cache-v2.3."));
+    assert('sw.js is updated with cache version', /trippo-cache-v\d+\.\d+\.\d+/.test(swJs));
 
     // 4. Verify file sizes and PNG magic headers on disk
     function checkPng(filename, expectedW, expectedH) {

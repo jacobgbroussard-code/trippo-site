@@ -11,7 +11,7 @@ async function testSleekButtons() {
     console.log('🚀 Testing Sleek Buttons & Bottom Bar via CDP...');
     const chrome = spawn(CHROME_PATH, [
         '--headless=new',
-        '--remote-debugging-port=9298',
+        '--remote-debugging-port=9300',
         `--user-data-dir=${USER_DATA_DIR}`,
         '--window-size=412,915',
         '--disable-gpu',
@@ -21,7 +21,9 @@ async function testSleekButtons() {
     await new Promise(r => setTimeout(r, 2000));
 
     try {
-        const tab = await (await fetch('http://127.0.0.1:9298/json/new?http://127.0.0.1:8080/', { method: 'PUT' })).json();
+        // Wait for headless Chrome to start listening instead of trusting a fixed sleep.
+        for (let i = 0; i < 60; i++) { try { await fetch(`http://127.0.0.1:9300/json/version`); break; } catch (e) { await new Promise(r => setTimeout(r, 250)); } }
+        const tab = await (await fetch('http://127.0.0.1:9300/json/new?http://127.0.0.1:8080/', { method: 'PUT' })).json();
         const ws = new WebSocket(tab.webSocketDebuggerUrl);
         await new Promise(r => ws.onopen = r);
 

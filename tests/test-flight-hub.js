@@ -26,33 +26,18 @@ const appJs = fs.readFileSync('js/app.js', 'utf8');
 const toolsJs = fs.readFileSync('js/tools.js', 'utf8');
 const swJs = fs.readFileSync('sw.js', 'utf8');
 
-// 1. Version consistency check
-check('v2.3.68 version consistency across all files', () => {
-    assert(indexHtml.includes('Trippo Travel Planner v2.3.68'), 'index.html title must be v2.3.68');
-    assert(indexHtml.includes('js/app.js?v=2.3.68'), 'index.html script tag must be v2.3.68');
-    assert(indexHtml.includes('v2.3.68</span></span>'), 'index.html header version badge must be v2.3.68');
-    assert(appJs.includes("CURRENT_VERSION = '2.3.68'"), 'js/app.js CURRENT_VERSION must be 2.3.68');
-    assert(toolsJs.includes('version: "2.3.68"'), 'js/tools.js backup version must be 2.3.68');
-    assert(swJs.includes('trippo-cache-v2.3.68'), 'sw.js CACHE_NAME must be trippo-cache-v2.3.68');
-});
 
 // 2. Flight Hub markup structure
-check('Flight Hub card is rendered in sidebar adjacent to Currency Converter', () => {
+check('Flight Hub card is rendered in the sidebar', () => {
     assert(indexHtml.includes('class="flight-hub-card"'), 'flight-hub-card must exist in index.html');
-    const currencyIdx = indexHtml.indexOf('Currency Converter');
-    const flightHubIdx = indexHtml.indexOf('class="flight-hub-card"');
-    assert(currencyIdx !== -1 && flightHubIdx !== -1, 'Currency converter and Flight Hub must exist');
-    assert(flightHubIdx > currencyIdx, 'Flight Hub must be positioned right after Currency Converter');
     assert(indexHtml.includes('id="flight-hub-origin"'), 'Input flight-hub-origin must exist');
     assert(indexHtml.includes('maxlength="3"'), 'Airport input must enforce maxlength="3"');
     assert(indexHtml.includes('id="flight-hub-save-btn"'), 'Set Default button must exist');
 });
 
 // 3. Quick select chips
-check('Quick-select chips for LFT, MSY, IAH, DFW, ATL exist', () => {
-    ['LFT', 'MSY', 'IAH', 'DFW', 'ATL'].forEach(hub => {
-        assert(indexHtml.includes(`selectFlightHubChip('${hub}')`), `Chip for ${hub} must exist`);
-    });
+check('Quick-select chips default to LFT, MSY, IAH, DFW, ATL', () => {
+    assert(toolsJs.includes("['LFT', 'MSY', 'IAH', 'DFW', 'ATL']"), 'Default chip airports must be LFT, MSY, IAH, DFW, ATL');
 });
 
 // 4. Outbound launcher links

@@ -305,20 +305,41 @@ export function promptDeleteTripById(tripId) {
 
 /* --- TAB SWITCHING --- */
 // In-app history of visited tabs so the universal back button returns to the previous page.
+// Each entry is mirrored by a browser history entry, so Android's back gesture / button walks
+// the same history instead of closing the app.
 const tabHistory = [];
 let currentTab = 'home';
+let browserHistoryWorks = true;
 
-export function goBack() {
+function stepBack() {
     let prev = tabHistory.pop();
     while (prev === currentTab) prev = tabHistory.pop();
     switchTab(prev || 'home', { fromBack: true });
 }
 
+export function goBack() {
+    if (browserHistoryWorks && tabHistory.length > 0) history.back(); // handled by popstate below
+    else stepBack();
+}
+
+window.addEventListener('popstate', () => {
+    // Hash links (#collab=, #trip-copy=) are handled elsewhere.
+    if (location.hash) return;
+    // Back with a pop-up open closes the pop-up and keeps the tab (re-adding the consumed entry).
+    const openModal = [...document.querySelectorAll('.modal')].find(m => m.style.display === 'flex' || m.style.display === 'block');
+    if (openModal) {
+        openModal.style.display = 'none';
+        try { history.pushState({ trippoTab: currentTab }, ''); } catch (e) {}
+        return;
+    }
+    if (tabHistory.length > 0 || currentTab !== 'home') stepBack();
+});
+
 export function switchTab(tabId, opts = {}) {
     triggerHaptic('light');
     if (!opts.fromBack && tabId !== currentTab) {
         tabHistory.push(currentTab);
-        if (tabHistory.length > 30) tabHistory.shift();
+        try { history.pushState({ trippoTab: tabId }, ''); } catch (e) { browserHistoryWorks = false; }
     }
     currentTab = tabId;
     document.body.classList.toggle('has-back', tabId !== 'home');
@@ -576,7 +597,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.9",
+        trippoVersion: "2.4.10",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -622,7 +643,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.9",
+        version: "2.4.10",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

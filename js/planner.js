@@ -395,11 +395,10 @@ export function focusStopOnMap(event, index) {
     if (!hasCoords(stop)) return;
 
     plannerMap.flyTo([stop.lat, stop.lon], 11, { duration: 1.2 });
-    if (pMarkers && pMarkers[index]) {
+    const marker = (pMarkers || []).find(m => m.stopIndex === index);
+    if (marker) {
         setTimeout(() => {
-            if (pMarkers[index] && typeof pMarkers[index].openPopup === 'function') {
-                pMarkers[index].openPopup();
-            }
+            if (typeof marker.openPopup === 'function') marker.openPopup();
         }, 1250);
     }
 }

@@ -37,6 +37,8 @@ async function runTestOnTarget(baseUrl) {
         await new Promise(r => setTimeout(r, 1500));
 
         try {
+            // Wait for headless Chrome to start listening instead of trusting a fixed sleep.
+            for (let i = 0; i < 60; i++) { try { await fetch(`http://127.0.0.1:9250/json/version`); break; } catch (e) { await new Promise(r => setTimeout(r, 250)); } }
             const newTab = await (await fetch(`http://127.0.0.1:9250/json/new?${baseUrl}`, { method: 'PUT' })).json();
             const ws = new WebSocket(newTab.webSocketDebuggerUrl);
             let id = 1;

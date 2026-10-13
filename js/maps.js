@@ -459,7 +459,7 @@ export function drawPlannerMapRoute() {
     const stops = trip.stops;
 
     const bounds = L.latLngBounds();
-    stops.forEach(stop => {
+    stops.forEach((stop, stopIndex) => {
         if (!hasCoords(stop)) return;
         const marker = L.circleMarker([stop.lat, stop.lon], {
             radius: 8,
@@ -469,6 +469,7 @@ export function drawPlannerMapRoute() {
             fillOpacity: 1
         }).addTo(plannerMap);
         marker.bindPopup(`<div style="font-weight:700; font-size:14px; color:#124b43; padding:2px 0;">📍 ${escapeHTML(stop.name)}</div><div style="font-size:12px; color:#555;">${stop.nights} Night${stop.nights !== 1 ? 's' : ''}</div>`);
+        marker.stopIndex = stopIndex; // pMarkers also holds transit icons and skips unmapped stops
         pMarkers.push(marker);
         bounds.extend([stop.lat, stop.lon]);
     });

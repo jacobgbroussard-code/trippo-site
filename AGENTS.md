@@ -23,7 +23,7 @@ Node comes from a system install if present, otherwise Antigravity's bundled
 `C:\Users\Jacob\AppData\Roaming\Antigravity\bin\agy-node.cmd`. The `.cmd`/`.ps1` launchers pick automatically.
 
 - Local dev server: `node dev-server.js` → http://127.0.0.1:8080/
-- Main regression checks: `node tests/comprehensive-verify.js`, `node tests/test-transpacific-and-locking.js`, `node tests/audit.js`
+- Tests: `node tests/run-all.js` (core suite, needs the dev server), `--all` for every test; see `tests/README.md`
 - Browser tests save screenshots to `tests/artifacts/` (gitignored)
 - Deploy: `node deploy-to-github.js` — runs `git add .`, commits, pushes `main`; GitHub Pages serves it in ~30s
 
