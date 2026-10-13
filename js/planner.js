@@ -16,7 +16,7 @@ import {
     triggerHaptic
 } from './state.js';
 
-import { drawPlannerMapRoute, plannerMap, pMarkers } from './maps.js';
+import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords } from './maps.js';
 import { getDestinationWeather } from './weather.js';
 import { getDistanceUnit, getShowDistances } from './settings.js';
 
@@ -392,7 +392,7 @@ export function focusStopOnMap(event, index) {
     const trip = getActiveTrip();
     if (!trip || !trip.stops || !trip.stops[index] || !plannerMap) return;
     const stop = trip.stops[index];
-    if (stop.lat === 0 && stop.lon === 0) return;
+    if (!hasCoords(stop)) return;
 
     plannerMap.flyTo([stop.lat, stop.lon], 11, { duration: 1.2 });
     if (pMarkers && pMarkers[index]) {

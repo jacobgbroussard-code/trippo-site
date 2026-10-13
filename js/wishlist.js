@@ -31,7 +31,7 @@ import {
     activeTripId
 } from './state.js';
 
-import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers } from './maps.js';
+import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers, hasCoords } from './maps.js';
 
 let droppedTempMarker = null;
 export let wishlistSearchTimeout = null;
@@ -444,6 +444,7 @@ export function renderWishlistPins(autoFit = true) {
 
     const bounds = L.latLngBounds();
     filteredPins.forEach(p => {
+        if (!hasCoords(p)) return;
         const visuals = getCategoryVisuals(p.category);
         const normCat = normalizeCategory(p.category);
         const safeId = escapeJS(p.id);
@@ -498,10 +499,11 @@ export function renderWishlistPins(autoFit = true) {
     });
 
     if (autoFit) {
-        if (filteredPins.length > 1) {
+        const mappable = filteredPins.filter(hasCoords);
+        if (mappable.length > 1) {
             wishlistMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 4 });
-        } else if (filteredPins.length === 1) {
-            wishlistMap.setView([filteredPins[0].lat, filteredPins[0].lon], 3);
+        } else if (mappable.length === 1) {
+            wishlistMap.setView([mappable[0].lat, mappable[0].lon], 3);
         } else {
             wishlistMap.setView([20, 0], 2);
         }

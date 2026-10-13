@@ -445,7 +445,7 @@ export function getShortestRoutePath(lat1, lon1, lat2, lon2) {
 }
 
 // Stops from older or partial data can lack coordinates; Leaflet throws on those.
-const hasCoords = s => !!s && Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)) && s.lat !== null && s.lon !== null && !(s.lat === 0 && s.lon === 0);
+export const hasCoords = s => !!s && Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)) && s.lat !== null && s.lon !== null && !(s.lat === 0 && s.lon === 0);
 
 export function drawPlannerMapRoute() {
     if (!plannerMap) return;
@@ -629,7 +629,7 @@ export async function drawPlacesMapRoute(dayPlaces) {
         const trip = trips.find(t => t.id === activePlacesTripId);
         if (trip && trip.stops && trip.stops[activePlacesStopIndex]) {
             const city = trip.stops[activePlacesStopIndex];
-            if (placesMap) {
+            if (placesMap && hasCoords(city)) {
                 placesMap.setView([city.lat, city.lon], 12);
                 safeInvalidate(placesMap);
             }

@@ -172,7 +172,7 @@ export function selectShareMode(mode) {
 
         if (descEl) {
             descEl.innerHTML = `
-                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">⚡ Plan with Friendsning (Real-Time)</div>
+                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">⚡ Plan with Friends (Real-Time)</div>
                 <div>Multiple friends can co-plan together in real time! Adding stops, places, notes, or budget updates <b>syncs live across all devices</b>.</div>
             `;
         }
@@ -453,7 +453,7 @@ export function openImportTripModal(data, mode) {
     } else {
         if (badgeEl) {
             badgeEl.className = 'import-badge collab';
-            badgeEl.innerHTML = `<span>⚡</span> Plan with Friendsning`;
+            badgeEl.innerHTML = `<span>⚡</span> Planning with Friends`;
         }
         if (descEl) {
             descEl.innerHTML = `You've been invited to <b>plan this trip together in real time</b>! Changes you or your friends make will sync live across accounts.`;
@@ -528,7 +528,7 @@ export function confirmImportTrip(asPrivateCopy = false) {
     if (window.renderHome) window.renderHome();
     if (window.switchTab) window.switchTab('planner');
     
-    showNotification(isCollab ? `🚀 Joined "${importedTrip.name}" Plan with Friendsning!` : `✨ Added "${importedTrip.name}" to your planner!`);
+    showNotification(isCollab ? `🚀 Joined "${importedTrip.name}" — planning with friends!` : `✨ Added "${importedTrip.name}" to your planner!`);
     triggerHaptic('success');
 }
 

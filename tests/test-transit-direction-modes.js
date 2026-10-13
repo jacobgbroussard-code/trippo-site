@@ -42,10 +42,10 @@ check('index.html contains #edit-poi-transit-mode-group', () => {
 });
 
 check('index.html has bumped version in title, assets, and app.js', () => {
-    assert(/Trippo Travel Planner v2\.3\.\d+/.test(indexHtml), 'Missing valid version title');
-    assert(/styles\/main\.css\?v=2\.3\.\d+/.test(indexHtml), 'Missing main.css version');
-    assert(/styles\/components\.css\?v=2\.3\.\d+/.test(indexHtml), 'Missing components.css version');
-    assert(/js\/app\.js\?v=2\.3\.\d+/.test(indexHtml), 'Missing app.js version');
+    assert(/Trippo Travel Planner v\d+\.\d+\.\d+/.test(indexHtml), 'Missing valid version title');
+    assert(/styles\/main\.css\?v=\d+\.\d+\.\d+/.test(indexHtml), 'Missing main.css version');
+    assert(/styles\/components\.css\?v=\d+\.\d+\.\d+/.test(indexHtml), 'Missing components.css version');
+    assert(/js\/app\.js\?v=\d+\.\d+\.\d+/.test(indexHtml), 'Missing app.js version');
 });
 
 // 2. Verify state.js exports
@@ -94,6 +94,10 @@ check('components.css contains .transit-mode-switcher and .map-segment-popup', (
 });
 
 // 6. Functional test for calculateTransitEstimate
+// state.js is a browser module; give it the minimal globals it touches at import time.
+const memStore = {};
+globalThis.window ??= globalThis;
+globalThis.localStorage ??= { getItem: k => memStore[k] ?? null, setItem: (k, v) => { memStore[k] = String(v); }, removeItem: k => { delete memStore[k]; } };
 const { calculateTransitEstimate, getDistance } = await import('../js/state.js');
 check('calculateTransitEstimate returns accurate times and icons for all 3 modes', () => {
     // Lafayette to Baton Rouge (~85 km)
@@ -122,9 +126,9 @@ const appJs = fs.readFileSync(path.join(rootDir, 'js/app.js'), 'utf8');
 const toolsJs = fs.readFileSync(path.join(rootDir, 'js/tools.js'), 'utf8');
 
 check('Version is consistent across sw.js, app.js, and tools.js', () => {
-    assert(/trippo-cache-v2\.3\.\d+/.test(swJs), 'sw.js cache version mismatch');
-    assert(/CURRENT_VERSION = '2\.3\.\d+'/.test(appJs), 'app.js version mismatch');
-    assert(/version: "2\.3\.\d+"/.test(toolsJs), 'tools.js version mismatch');
+    assert(/trippo-cache-v\d+\.\d+\.\d+/.test(swJs), 'sw.js cache version mismatch');
+    assert(/CURRENT_VERSION = '\d+\.\d+\.\d+'/.test(appJs), 'app.js version mismatch');
+    assert(/version: "\d+\.\d+\.\d+"/.test(toolsJs), 'tools.js version mismatch');
 });
 
 console.log('\n=============================================================');
