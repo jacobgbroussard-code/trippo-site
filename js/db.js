@@ -10,7 +10,8 @@ import {
     setWishlistPins,
     normalizeCategory,
     showNotification,
-    toggleSidebar
+    toggleSidebar,
+    escapeHTML
 } from './state.js';
 
 export const SUPABASE_URL = 'https://lbmxfczgvtznhfhzogla.supabase.co';
@@ -23,12 +24,75 @@ export function getSupabase() {
     if (supabaseClient) return supabaseClient;
     try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    flowType: 'implicit',
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    // The OAuth return URL is handled explicitly in handleAuthRedirect() so failures
+                    // are visible instead of silently leaving the user signed out
+                    detectSessionInUrl: false
+                }
+            });
         }
     } catch (e) {
         console.warn("Supabase init deferred:", e);
     }
     return supabaseClient;
+}
+
+// Small persistent log of sign-in attempts (Settings → read via getAuthLog() in the console)
+function logAuth(message) {
+    console.log('[Trippo Auth]', message);
+    try {
+        const log = JSON.parse(localStorage.getItem('trippo_auth_log') || '[]');
+        log.push(`${new Date().toISOString()} ${message}`);
+        localStorage.setItem('trippo_auth_log', JSON.stringify(log.slice(-15)));
+    } catch (e) { /* storage full or blocked — nothing else to do */ }
+}
+export function getAuthLog() {
+    try { return JSON.parse(localStorage.getItem('trippo_auth_log') || '[]'); } catch (e) { return []; }
+}
+
+/**
+ * Finish a Google (OAuth) sign-in when the page loads with Supabase's response in the URL:
+ * #access_token=…&refresh_token=… (implicit), ?code=… (PKCE), or #error=…/?error=… on failure.
+ * Shows the real error instead of failing silently, then strips the auth params from the URL.
+ */
+async function handleAuthRedirect(client) {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const query = new URLSearchParams(window.location.search);
+    const err = hash.get('error_description') || query.get('error_description') || hash.get('error') || query.get('error');
+    const accessToken = hash.get('access_token');
+    const refreshToken = hash.get('refresh_token');
+    const code = query.get('code');
+    if (!err && !accessToken && !code) return;
+
+    const cleanUrl = () => {
+        try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+    };
+
+    if (err) {
+        logAuth(`OAuth error returned: ${err}`);
+        showNotification(`Google sign-in failed: ${err.replace(/\+/g, ' ')}`, 8000);
+        cleanUrl();
+        return;
+    }
+
+    try {
+        const { error } = accessToken
+            ? await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' })
+            : await client.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+        logAuth('Sign-in completed from redirect');
+    } catch (e) {
+        const msg = e?.message || String(e);
+        logAuth(`Could not save session: ${msg}`);
+        showNotification(/quota|storage/i.test(msg)
+            ? 'Sign-in failed: phone storage for Trippo is full. Free up space or clear old data, then try again.'
+            : `Sign-in failed: ${msg}`, 8000);
+    }
+    cleanUrl();
 }
 
 export function setCurrentUser(user) {
@@ -66,9 +130,17 @@ export function updateAuthUI(user) {
 
 export async function checkAuthSession() {
     const client = getSupabase();
-    if (!client) return;
+    if (!client) {
+        if (/access_token=|[?&]code=|error_description=/.test(window.location.href)) {
+            logAuth('Returned from Google but Supabase library failed to load');
+            showNotification('Sign-in failed: cloud library did not load. Check your connection and try again.', 8000);
+        }
+        return;
+    }
     try {
-        const { data: { session } } = await client.auth.getSession();
+        await handleAuthRedirect(client);
+        const { data: { session }, error: sessionError } = await client.auth.getSession();
+        if (sessionError) logAuth(`getSession error: ${sessionError.message}`);
         updateAuthUI(session ? session.user : null);
         if (session) {
             await pullCloudData();
@@ -163,6 +235,7 @@ export async function handleGoogleSignIn() {
     }
     try {
         const redirectUrl = window.location.origin + window.location.pathname;
+        logAuth(`Starting Google sign-in (standalone app: ${window.matchMedia?.('(display-mode: standalone)').matches || !!navigator.standalone})`);
         const { error } = await client.auth.signInWithOAuth({
             provider: 'google',
             options: {

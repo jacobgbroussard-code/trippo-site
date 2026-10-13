@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.4.3';
+const CACHE_NAME = 'trippo-cache-v2.4.4';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -32,9 +32,9 @@ const STATIC_ASSETS = [
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js',
+    'https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js',
     'https://cdn.jsdelivr.net/npm/flatpickr',
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3'
 ];
 
 // Install: Cache core local assets and CDN dependencies
@@ -105,7 +105,25 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Local static assets & CDN dependencies: Cache-First with Network fallback / Stale-While-Revalidate
+    // Trippo's own files (JS modules, CSS, images): Network-First with cache fallback for offline.
+    // ES modules are imported without ?v= params, so cache-first could run a new app.js against
+    // stale modules on the first launch after a deploy.
+    if (url.origin === self.location.origin) {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseToCache = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+                    }
+                    return networkResponse;
+                })
+                .catch(async () => (await caches.match(event.request)) || (await caches.match(event.request, { ignoreSearch: true })))
+        );
+        return;
+    }
+
+    // Version-pinned CDN dependencies: Cache-First with Network fallback / Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {

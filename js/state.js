@@ -141,7 +141,7 @@ export function escapeJS(str) {
 }
 
 // --- NOTIFICATION TOAST ---
-export function showNotification(msg) {
+export function showNotification(msg, durationMs = 2600) {
     const div = document.createElement('div');
     div.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#1d2b29; color:white; padding:12px 22px; border-radius:14px; z-index:999999; box-shadow:0 6px 18px rgba(0,0,0,0.3); font-size:13px; font-weight:600; text-align:center; transition:opacity 0.25s ease;';
     div.innerText = msg;
@@ -149,7 +149,7 @@ export function showNotification(msg) {
     setTimeout(() => {
         div.style.opacity = '0';
         setTimeout(() => div.remove(), 250);
-    }, 2600);
+    }, durationMs);
 }
 
 // --- MODALS & DRAWER ---
