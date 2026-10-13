@@ -97,8 +97,17 @@ function persistLocal() {
     safeSetStorage('myWishlistCollections', JSON.stringify(wishlistCollections));
 }
 
+function logSync(message) {
+    console.log('[Trippo Sync]', message);
+    try {
+        const log = JSON.parse(localStorage.getItem('trippo_auth_log') || '[]');
+        log.push(`${new Date().toISOString()} ${message}`);
+        localStorage.setItem('trippo_auth_log', JSON.stringify(log.slice(-15)));
+    } catch (e) {}
+}
+
 function rerender() {
-    try { if (window.renderHome) window.renderHome(); } catch (e) {}
+    try { if (window.renderHome) window.renderHome(); } catch (e) { logSync(`Trips page render failed: ${e?.message || e}`); }
     try {
         const wishDetail = document.getElementById('wishlist-detail-view');
         if (wishDetail && wishDetail.style.display === 'flex') {
@@ -244,6 +253,7 @@ async function pull(client, userId, st) {
 
     persistLocal();
     rerender();
+    logSync(`Synced: ${tripRows.length} trip(s) in cloud, ${trips.length} on this device`);
 }
 
 // ---------- push (phone -> cloud) ----------

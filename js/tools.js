@@ -48,7 +48,8 @@ export function renderHome() {
         return;
     }
 
-    listEl.innerHTML = trips.map(trip => {
+    // Each card renders independently: one malformed trip must not blank the whole list
+    listEl.innerHTML = trips.map(trip => { try {
         const totalNights = trip.stops ? trip.stops.reduce((sum, stop) => sum + (Number(stop.nights) || 0), 0) : 0;
         const hasDate = Boolean(trip.startDate && trip.startDate.trim());
         const sDate = hasDate ? parseLocalDate(trip.startDate) : null;
@@ -110,7 +111,21 @@ export function renderHome() {
                 <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${safeTripId}')">›</div>
             </div>
         </div>`;
-    }).join('');
+    } catch (err) {
+        console.error('[Trippo] Could not render trip card:', trip, err);
+        try {
+            const log = JSON.parse(localStorage.getItem('trippo_auth_log') || '[]');
+            log.push(`${new Date().toISOString()} Trip card error (${trip && trip.id}): ${err && err.message}`);
+            localStorage.setItem('trippo_auth_log', JSON.stringify(log.slice(-15)));
+        } catch (e) {}
+        return `
+        <div class="trip-card">
+            <div class="trip-card-content" onclick="openTrip('${escapeJS(trip && trip.id)}')">
+                <h3>${escapeHTML((trip && trip.name) || 'Untitled Trip')}</h3>
+                <p>⚠️ Some details couldn't be displayed — tap to open</p>
+            </div>
+        </div>`;
+    } }).join('');
 }
 
 export function openCreateTripModal() {
@@ -545,7 +560,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.5",
+        trippoVersion: "2.4.6",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -591,7 +606,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.5",
+        version: "2.4.6",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

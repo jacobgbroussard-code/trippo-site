@@ -216,7 +216,39 @@ export function getCategoryVisuals(categoryStr) {
 }
 
 // --- STATE STORAGE & INITIALIZATION ---
+
+function toList(value) {
+    if (Array.isArray(value)) return value.filter(v => v !== null && v !== undefined);
+    if (typeof value === 'string') {
+        try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.filter(v => v !== null && v !== undefined) : []; } catch (e) { return []; }
+    }
+    if (value && typeof value === 'object') return Object.values(value).filter(v => v && typeof v === 'object');
+    return [];
+}
+
+/**
+ * Repair a trip in place so every screen can render it: data from older app versions,
+ * imports or the cloud can carry text/object stops, null entries or non-text dates.
+ */
+export function normalizeTrip(trip) {
+    if (!trip || typeof trip !== 'object') return trip;
+    trip.id = String(trip.id ?? `trip_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+    trip.name = typeof trip.name === 'string' && trip.name.trim() ? trip.name : 'Untitled Trip';
+    trip.stops = toList(trip.stops);
+    trip.places = toList(trip.places);
+    if (trip.startDate instanceof Date || typeof trip.startDate === 'number') {
+        const d = new Date(trip.startDate);
+        trip.startDate = isNaN(d) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    } else if (typeof trip.startDate !== 'string') {
+        trip.startDate = '';
+    }
+    if (trip.expenses !== undefined && !Array.isArray(trip.expenses)) trip.expenses = toList(trip.expenses);
+    return trip;
+}
+
 export let trips = safeParseStorage('myTrips', []);
+if (!Array.isArray(trips)) trips = [];
+trips = trips.filter(t => t && typeof t === 'object').map(normalizeTrip);
 
 export let wishlistCollections = safeParseStorage('myWishlistCollections', [
     { id: 'master', name: '🌟 Master Wishlist', isMaster: true }
@@ -287,7 +319,9 @@ export function setWishlistMinimized(val) { wishlistMinimized = val; }
 export function setActiveWishlistFilter(f) { activeWishlistFilter = f; }
 export function setActiveWishlistId(id) { activeWishlistId = id; }
 
-export function setTrips(newTrips) { trips = newTrips; }
+export function setTrips(newTrips) {
+    trips = (Array.isArray(newTrips) ? newTrips : []).filter(t => t && typeof t === 'object').map(normalizeTrip);
+}
 export function setWishlistCollections(cols) { wishlistCollections = cols; }
 export function setWishlistPins(pins) { wishlistPins = pins; }
 

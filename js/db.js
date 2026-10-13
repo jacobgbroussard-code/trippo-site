@@ -375,8 +375,8 @@ export async function manualSync() {
 }
 
 /** Sidebar "Sign-in trouble? Show log" */
-export function toggleAuthLog() {
-    const el = document.getElementById('auth-log-view');
+export function toggleAuthLog(elementId = 'auth-log-view') {
+    const el = document.getElementById(elementId);
     if (!el) return;
     const show = el.style.display === 'none';
     el.textContent = getAuthLog().slice().reverse().join('\n') || 'No sign-in attempts recorded on this device yet.';
