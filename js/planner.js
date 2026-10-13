@@ -195,9 +195,11 @@ export function renderPlanner() {
             }
         }
 
+        // Each stop + its distance divider is one draggable row, so Sortable indices map 1:1 to trip.stops
         list.innerHTML += `
+            <div class="stop-row">
             <div class="stop-card ${stop.locked ? 'is-locked' : ''}">
-                <div class="drag-handle" title="${stop.locked ? 'Stop locked in place' : 'Drag to reorder'}">≡</div>
+                <div class="drag-handle" title="Drag to reorder (or long-press the card)">≡</div>
                 ${nodeBadgeHTML}
                 <div style="flex-grow:1; min-width:0; cursor:pointer;" onclick="openDailyNotes(${index}, '${notesDateParam}')">
                     <h3 style="margin: 0 0 2px 0; font-size: 16px; font-weight: 800; display:flex; align-items:center; gap:6px; overflow:hidden;">
@@ -217,7 +219,8 @@ export function renderPlanner() {
                     <span class="sleek-stepper-label">${stop.nights === 1 ? 'night' : 'nights'}</span>
                 </div>
             </div>
-            ${distDividerHTML}`;
+            ${distDividerHTML}
+            </div>`;
         totalNights += nights;
     });
 
@@ -242,14 +245,44 @@ export function renderPlanner() {
     if (window.plannerSortable) window.plannerSortable.destroy();
     if (typeof Sortable !== 'undefined') {
         window.plannerSortable = Sortable.create(list, {
-            handle: '.drag-handle',
-            animation: 160,
-            delay: 150,
+            draggable: '.stop-row',
+            // Whole card is draggable: long-press on touch, instant from the ≡ handle (see listener below).
+            // Moving the finger before the long-press fires cancels the drag, so normal scrolling still works.
+            delay: 260,
             delayOnTouchOnly: true,
+            touchStartThreshold: 8,
+            // Buttons inside the card keep working as taps and never start a drag
+            filter: 'button, .sleek-nights-stepper',
+            preventOnFilter: false,
+            // Fallback (non-HTML5) dragging behaves consistently on iOS/Android and follows the thumb
+            forceFallback: true,
+            fallbackOnBody: true,
+            fallbackTolerance: 4,
+            // Auto-scroll the sheet when dragging near its top/bottom edge
+            scroll: true,
+            bubbleScroll: true,
+            scrollSensitivity: 90,
+            scrollSpeed: 16,
+            animation: 180,
+            easing: 'cubic-bezier(0.2, 0, 0, 1)',
+            ghostClass: 'stop-row-ghost',
+            chosenClass: 'stop-row-chosen',
+            fallbackClass: 'stop-row-dragging',
+            onChoose: () => triggerHaptic('light'),
+            onStart: () => {
+                document.body.classList.add('is-reordering-stops');
+                triggerHaptic('medium');
+            },
             onEnd: function (evt) {
+                document.body.classList.remove('is-reordering-stops');
+                const oldIndex = evt.oldDraggableIndex ?? evt.oldIndex;
+                const newIndex = evt.newDraggableIndex ?? evt.newIndex;
+                if (oldIndex === newIndex) return;
+                triggerHaptic('light');
+
                 const originalStops = [...trip.stops];
-                const movedStop = trip.stops.splice(evt.oldIndex, 1)[0];
-                trip.stops.splice(evt.newIndex, 0, movedStop);
+                const movedStop = trip.stops.splice(oldIndex, 1)[0];
+                trip.stops.splice(newIndex, 0, movedStop);
 
                 if (Array.isArray(trip.places)) {
                     trip.places.forEach(p => {
@@ -264,6 +297,19 @@ export function renderPlanner() {
                 renderPlanner();
             }
         });
+
+        // The ≡ handle drags immediately; the rest of the card needs a long-press. Capture phase runs
+        // before Sortable's own pointerdown/touchstart listener on the same list, so it sees the new delay.
+        if (!list.dataset.dragDelayHook) {
+            list.dataset.dragDelayHook = '1';
+            const setDelay = (e) => {
+                const s = window.plannerSortable;
+                if (s) s.option('delay', e.target.closest('.drag-handle') ? 0 : 260);
+            };
+            list.addEventListener('pointerdown', setDelay, { capture: true });
+            list.addEventListener('touchstart', setDelay, { capture: true, passive: true });
+            list.addEventListener('mousedown', setDelay, { capture: true });
+        }
     }
     // Dynamically personalize Find Tours & Activities action card
     const actLink = document.getElementById('planner-activities-link');
