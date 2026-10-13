@@ -1,5 +1,5 @@
 Add-Type -AssemblyName System.Drawing
-$src = "C:\Users\Jacob\.gemini\antigravity-ide\brain\2e5f8455-2bd0-4c5a-8577-f678d97d0ff1\trippo_bot_icon_1791240330288.jpg"
+$src = "c:\Users\Jacob\Desktop\trippo-site\bot-controls\bot-icon-source.jpg"
 $destPng = "c:\Users\Jacob\Desktop\trippo-site\bot-controls\bot-icon.png"
 $destIco = "c:\Users\Jacob\Desktop\trippo-site\bot-controls\bot-icon.ico"
 

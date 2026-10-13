@@ -1,6 +1,9 @@
 @echo off
 title Trippo Live Auto-Deploy Watcher
 cd /d "%~dp0"
+rem Use system Node if installed, else Antigravity's bundled Node
+set "NODE=node"
+where node >nul 2>&1 || set NODE="C:\Users\Jacob\AppData\Roaming\Antigravity\bin\agy-node.cmd"
 echo ========================================================
 echo   Trippo Travel Planner - Live Auto-Deploy Active
 echo ========================================================
@@ -11,5 +14,5 @@ echo.
 echo (Keep this window open while editing)
 echo ========================================================
 echo.
-"C:\Users\Jacob\AppData\Roaming\Antigravity\bin\agy-node.cmd" watch-deploy.js
+call %NODE% watch-deploy.js
 pause

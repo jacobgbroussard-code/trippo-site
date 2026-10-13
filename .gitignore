@@ -24,3 +24,6 @@ tests/debug-test-tg.js
 tests/launch-bridge.ps1
 tests/test-spawn.ps1
 tests/test-wmi-spawn.ps1
+
+# Test screenshots (shared by Claude Code & Antigravity)
+tests/artifacts/

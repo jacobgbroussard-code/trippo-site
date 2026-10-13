@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trippo-dev",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "where node >nul 2>&1 && node dev-server.js || C:\\Users\\Jacob\\AppData\\Roaming\\Antigravity\\bin\\agy-node.cmd dev-server.js"],
+      "port": 8080
+    }
+  ]
+}

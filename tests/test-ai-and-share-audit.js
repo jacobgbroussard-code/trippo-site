@@ -4,7 +4,8 @@ const fs = require('fs');
 
 const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const USER_DATA_DIR = path.join(__dirname, 'scratch_chrome_audit_test');
-const ARTIFACT_DIR = 'C:\\Users\\Jacob\\.gemini\\antigravity-ide\\brain\\2e5f8455-2bd0-4c5a-8577-f678d97d0ff1';
+const ARTIFACT_DIR = path.join(__dirname, 'artifacts');
+fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
 
 async function testAuditAIAndSharing() {
     console.log('🚀 Starting Audit: AI Trip Assistant & Streamlined Sharing Options...');

@@ -83,7 +83,8 @@ async function testHotelBrowser() {
         const shotBuffer = Buffer.from(shot.data, 'base64');
         const shotPath = path.join(__dirname, 'feature-hotel-insights.png');
         fs.writeFileSync(shotPath, shotBuffer);
-        const artPath = "C:\\Users\\Jacob\\.gemini\\antigravity-ide\\brain\\2e5f8455-2bd0-4c5a-8577-f678d97d0ff1\\feature-hotel-insights.png";
+        const artPath = require('path').join(__dirname, 'artifacts', 'feature-hotel-insights.png');
+        fs.mkdirSync(require('path').dirname(artPath), { recursive: true });
         fs.writeFileSync(artPath, shotBuffer);
         console.log('📸 Hotel screenshot saved to:', shotPath);
 

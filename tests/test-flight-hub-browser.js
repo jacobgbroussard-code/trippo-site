@@ -191,7 +191,8 @@ async function testFlightHubBrowser() {
         console.log(`  📸 Screenshot saved to: ${shotPath}`);
 
         // Also copy screenshot to artifacts
-        const artPath = "C:\\Users\\Jacob\\.gemini\\antigravity-ide\\brain\\2e5f8455-2bd0-4c5a-8577-f678d97d0ff1\\feature-flight-hub.png";
+        const artPath = require('path').join(__dirname, 'artifacts', 'feature-flight-hub.png');
+        fs.mkdirSync(require('path').dirname(artPath), { recursive: true });
         fs.copyFileSync(shotPath, artPath);
         console.log(`  📸 Artifact copy saved to: ${artPath}`);
 

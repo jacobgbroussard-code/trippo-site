@@ -4,7 +4,8 @@ const fs = require('fs');
 
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const USER_DATA = path.join(__dirname, 'scratch_chrome_test_copilot');
-const ARTIFACTS_DIR = "C:\\Users\\Jacob\\.gemini\\antigravity-ide\\brain\\2e5f8455-2bd0-4c5a-8577-f678d97d0ff1";
+const ARTIFACTS_DIR = path.join(__dirname, 'artifacts');
+fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
 
 async function testAICopilot() {
     console.log('--- Testing In-App AI Travel Copilot ---');

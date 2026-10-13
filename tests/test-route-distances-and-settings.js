@@ -4,7 +4,8 @@ const fs = require('fs');
 
 const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const USER_DATA_DIR = path.join(__dirname, 'scratch_chrome_route_distances');
-const ARTIFACT_DIR = 'C:\\Users\\Jacob\\.gemini\\antigravity-ide\\brain\\2e5f8455-2bd0-4c5a-8577-f678d97d0ff1';
+const ARTIFACT_DIR = path.join(__dirname, 'artifacts');
+fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
 
 async function testRouteDistancesAndSettings() {
     console.log('🚀 Starting Test: Route Distances, Settings Modal & Sleek Stepper...');
