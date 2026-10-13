@@ -269,7 +269,9 @@ export function renderPlanner() {
     const actLink = document.getElementById('planner-activities-link');
     if (actLink) {
         if (trip.stops && trip.stops.length > 0) {
-            const destCity = trip.stops[0].name;
+            // Use the longest stay (not the departure/origin stop) as the featured destination
+            const featuredStop = trip.stops.reduce((best, s) => ((s.nights || 0) > (best.nights || 0) ? s : best), trip.stops[0]);
+            const destCity = featuredStop.name;
             actLink.href = `https://www.getyourguide.com/s/?q=${encodeURIComponent(destCity)}`;
             const actTitle = actLink.querySelector('.action-title');
             if (actTitle) {
