@@ -5,3 +5,12 @@ compatibility_date = "2024-04-01"
 # Cloudflare Workers AI Binding
 [ai]
 binding = "AI"
+
+# Per-visitor rate limit (see RATE_LIMITER in src/index.js): 20 AI requests per minute per IP.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 60

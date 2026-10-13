@@ -4,18 +4,51 @@
  * worker/src/index.js
  */
 
+// Only the Trippo site (and local dev) may use this worker, so other sites can't spend the
+// Gemini quota. Scripts can fake an Origin header, which is what the per-IP rate limit is for.
+const ALLOWED_ORIGINS = new Set(["https://trippo.top", "https://www.trippo.top"]);
+const LOCAL_DEV_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const MAX_BODY_BYTES = 64 * 1024;
+const MAX_PROMPT_CHARS = 2000;
+const MAX_MESSAGE_CHARS = 4000;
+const MAX_MESSAGES = 8; // the chat handler only ever uses the last 8
+
+function isAllowedOrigin(origin) {
+  return ALLOWED_ORIGINS.has(origin) || LOCAL_DEV_ORIGIN.test(origin);
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const origin = request.headers.get("Origin") || "";
     const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? origin : "https://trippo.top",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
       "Access-Control-Max-Age": "86400",
       "Content-Type": "application/json",
+      "Vary": "Origin",
     };
+    const reject = (status, error) =>
+      new Response(JSON.stringify({ success: false, error }), { status, headers: corsHeaders });
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
+    }
+
+    if (request.method === "POST") {
+      if (!isAllowedOrigin(origin)) {
+        return reject(403, "This AI service only works from trippo.top.");
+      }
+      // RATE_LIMITER is configured in wrangler.toml (per visitor IP).
+      if (env.RATE_LIMITER) {
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        const { success } = await env.RATE_LIMITER.limit({ key: ip });
+        if (!success) return reject(429, "Too many AI requests. Please wait a minute and try again.");
+      }
+      const contentLength = Number(request.headers.get("Content-Length") || 0);
+      if (contentLength > MAX_BODY_BYTES) {
+        return reject(413, "Request is too large.");
+      }
     }
 
     const url = new URL(request.url);
@@ -36,9 +69,20 @@ export default {
       try {
         let requestBody;
         try {
-          requestBody = await request.json();
+          const rawBody = await request.text(); // Content-Length can be absent (chunked)
+          if (rawBody.length > MAX_BODY_BYTES) return reject(413, "Request is too large.");
+          requestBody = JSON.parse(rawBody);
         } catch (e) {
           return new Response(JSON.stringify({ success: false, error: "Invalid JSON in request body." }), { status: 400, headers: corsHeaders });
+        }
+        if (typeof requestBody?.prompt === "string") {
+          requestBody.prompt = requestBody.prompt.slice(0, MAX_PROMPT_CHARS);
+        }
+        if (Array.isArray(requestBody?.messages)) {
+          requestBody.messages = requestBody.messages.slice(-MAX_MESSAGES).map((m) => ({
+            role: m?.role === "assistant" ? "assistant" : "user",
+            content: String(m?.content ?? "").slice(0, MAX_MESSAGE_CHARS),
+          }));
         }
 
         const mode = requestBody?.mode || "plan";
