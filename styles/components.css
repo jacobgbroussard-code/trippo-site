@@ -4226,3 +4226,74 @@ body.dark-mode .ai-typing-indicator {
         height: min(86vh, calc(100dvh - 48px)) !important;
     }
 }
+
+
+/* --- Universal back button (shown on every tab except Trips) --- */
+#universal-back-btn {
+    display: none;
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    z-index: 1500;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 0 4px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+#universal-back-btn:active { transform: scale(0.92); }
+body.dark-mode #universal-back-btn {
+    background: rgba(15, 23, 42, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+body.has-back #universal-back-btn { display: flex; }
+/* Make room for it in the page headers and in-view back buttons */
+body.has-back .view .header-title { padding-left: 64px; }
+body.has-back .map-sub-back { left: calc(62px + env(safe-area-inset-left, 0px)) !important; }
+body.has-back #places-trip-detail-list > .back-btn { margin-left: 44px; margin-top: env(safe-area-inset-top, 0px); line-height: 40px; }
+
+/* --- Route tab trip switcher --- */
+.planner-trip-picker {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+}
+#planner-trip-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: 'Outfit', -apple-system, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    padding: 2px 22px 2px 0;
+    max-width: 62vw;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+#planner-trip-select:focus-visible { outline: 2px solid var(--primary); border-radius: 6px; }
+#planner-trip-select option { font-size: 16px; color: #111; }
+.planner-trip-caret {
+    position: absolute;
+    right: 4px;
+    pointer-events: none;
+    font-size: 14px;
+    color: var(--primary);
+}
+body.has-back .map-controls-row { max-width: calc(100% - 90px); }
+body.has-back .leaflet-top.leaflet-left { margin-top: calc(50px + env(safe-area-inset-top, 0px)); }

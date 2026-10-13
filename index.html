@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.4.7</title>
+    <title>Trippo Travel Planner v2.4.8</title>
 
     <!-- Travelpayouts Tracking Script -->
     <script nowprocket data-noptimize="1" data-cfasync="false" data-wpfc-render="false" seraph-accel-crit="1" data-no-defer="1" data-cmp-ab="2">
@@ -24,11 +24,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.7">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.7">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.7">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.7">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.7">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.8">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.8">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.8">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.8">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.8">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,8 +40,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.7">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.7">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.8">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.8">
 
     <!-- Leaflet, Sortable & Supabase Libraries -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -347,7 +347,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.7</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.8</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -383,7 +383,10 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                 <div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <h2 id="planner-trip-title" style="margin: 0; font-size: 20px; display:inline-block; cursor:pointer;" onclick="openEditTripModal()" title="Click to edit trip details">Trip Route</h2>
+                        <div class="planner-trip-picker" title="Switch trip">
+                            <select id="planner-trip-select" aria-label="Choose trip" onchange="openTrip(this.value)"></select>
+                            <span class="planner-trip-caret" aria-hidden="true">▾</span>
+                        </div>
                         <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates">✏️</button>
                         <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Plan with Friends Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> 👥 Plan with Friends</span>
                         <button id="planner-ios-share-btn" class="ios-share-action-btn" onclick="openShareTripModal()" title="Share trip, co-plan live, or export" aria-label="Share Trip">
@@ -444,7 +447,7 @@
 
         <div id="places-city-view" style="display: none; flex-direction: column; height: 100%;">
             <div id="places-map" class="map-container">
-                <button class="map-btn" onclick="showPlacesMasterList()" style="position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); z-index: 1000; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
+                <button class="map-btn map-sub-back" onclick="showPlacesMasterList()" style="position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); z-index: 1000; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
                     <span style="font-size: 18px; margin-top: -2px;">‹</span> Back
                 </button>
                 <div class="map-controls-row">
@@ -542,7 +545,7 @@
 
         <div id="wishlist-detail-view" style="display: none; height: 100%; flex-direction: column;">
             <div id="wishlist-map" class="map-container" style="cursor: crosshair;">
-                <button class="map-btn" onclick="showWishlistDirectory()" style="position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); z-index: 1000; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
+                <button class="map-btn map-sub-back" onclick="showWishlistDirectory()" style="position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); z-index: 1000; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
                     <span style="font-size: 18px; margin-top: -2px;">‹</span> Back
                 </button>
                 <div class="map-controls-row">
@@ -591,6 +594,8 @@
     </div>
 
     <!-- BOTTOM APP NAVIGATION BAR -->
+    <button id="universal-back-btn" onclick="goBack()" aria-label="Back to previous page" title="Back">‹</button>
+
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-home" onclick="switchTab('home')">
             <span class="nav-icon">
@@ -1766,6 +1771,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.7"></script>
+    <script type="module" src="js/app.js?v=2.4.8"></script>
 </body>
 </html>

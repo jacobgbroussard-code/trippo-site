@@ -95,8 +95,13 @@ export function getDistanceBetweenStops(stop1, stop2, unit = 'km') {
 export function renderPlanner() {
     const trip = getActiveTrip();
     if (!trip) return;
-    const titleEl = document.getElementById('planner-trip-title');
-    if (titleEl) titleEl.innerText = trip.name;
+    const tripSelect = document.getElementById('planner-trip-select');
+    if (tripSelect) {
+        tripSelect.innerHTML = trips.map(t =>
+            `<option value="${escapeHTML(String(t.id))}">${escapeHTML(t.name || 'Untitled Trip')}</option>`
+        ).join('');
+        tripSelect.value = String(trip.id);
+    }
 
     const hasDate = Boolean(trip.startDate && trip.startDate.trim());
     const dateChip = document.getElementById('planner-date-chip');

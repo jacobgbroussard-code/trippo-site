@@ -444,6 +444,9 @@ export function getShortestRoutePath(lat1, lon1, lat2, lon2) {
     }
 }
 
+// Stops from older or partial data can lack coordinates; Leaflet throws on those.
+const hasCoords = s => !!s && Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)) && s.lat !== null && s.lon !== null && !(s.lat === 0 && s.lon === 0);
+
 export function drawPlannerMapRoute() {
     if (!plannerMap) return;
     pMarkers.forEach(m => plannerMap.removeLayer(m));
@@ -457,7 +460,7 @@ export function drawPlannerMapRoute() {
 
     const bounds = L.latLngBounds();
     stops.forEach(stop => {
-        if (stop.lat === 0 && stop.lon === 0) return;
+        if (!hasCoords(stop)) return;
         const marker = L.circleMarker([stop.lat, stop.lon], {
             radius: 8,
             fillColor: "#124b43",
@@ -471,7 +474,7 @@ export function drawPlannerMapRoute() {
     });
 
     for (let i = 0; i < stops.length - 1; i++) {
-        if ((stops[i].lat === 0 && stops[i].lon === 0) || (stops[i + 1].lat === 0 && stops[i + 1].lon === 0)) continue;
+        if (!hasCoords(stops[i]) || !hasCoords(stops[i + 1])) continue;
 
         const routeInfo = getShortestRoutePath(stops[i].lat, stops[i].lon, stops[i + 1].lat, stops[i + 1].lon);
 

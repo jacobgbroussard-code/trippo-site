@@ -304,8 +304,24 @@ export function promptDeleteTripById(tripId) {
 }
 
 /* --- TAB SWITCHING --- */
-export function switchTab(tabId) {
+// In-app history of visited tabs so the universal back button returns to the previous page.
+const tabHistory = [];
+let currentTab = 'home';
+
+export function goBack() {
+    let prev = tabHistory.pop();
+    while (prev === currentTab) prev = tabHistory.pop();
+    switchTab(prev || 'home', { fromBack: true });
+}
+
+export function switchTab(tabId, opts = {}) {
     triggerHaptic('light');
+    if (!opts.fromBack && tabId !== currentTab) {
+        tabHistory.push(currentTab);
+        if (tabHistory.length > 30) tabHistory.shift();
+    }
+    currentTab = tabId;
+    document.body.classList.toggle('has-back', tabId !== 'home');
     document.querySelectorAll('.view').forEach(v => {
         v.classList.remove('active');
     });
@@ -560,7 +576,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.7",
+        trippoVersion: "2.4.8",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -606,7 +622,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.7",
+        version: "2.4.8",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
