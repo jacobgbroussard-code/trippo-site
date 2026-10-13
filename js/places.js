@@ -59,9 +59,9 @@ export function renderPlacesMasterList() {
     }
 
     listEl.innerHTML = trips.map(trip => `
-        <div class="trip-card" onclick="openPlacesForTrip('${trip.id}')">
+        <div class="trip-card" onclick="openPlacesForTrip('${escapeJS(String(trip.id))}')">
             <div class="trip-card-content">
-                <h3>☀ ${trip.name}</h3>
+                <h3>☀ ${escapeHTML(trip.name)}</h3>
                 <p>${trip.stops ? trip.stops.length : 0} Cities • ${trip.places ? trip.places.length : 0} Saved Places</p>
             </div>
             <div style="color: #b7c7c3; font-size:22px;">›</div>
@@ -171,7 +171,7 @@ export function openPlacesCityView(stopIndex) {
         if (trip.stops.length > 1) {
             citySelect.style.display = 'inline-block';
             citySelect.innerHTML = trip.stops.map((s, idx) => `
-                <option value="${idx}" ${idx === stopIndex ? 'selected' : ''}>📍 ${s.name}</option>
+                <option value="${idx}" ${idx === stopIndex ? 'selected' : ''}>📍 ${escapeHTML(s.name)}</option>
             `).join('');
         } else {
             citySelect.style.display = 'none';

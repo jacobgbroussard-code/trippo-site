@@ -638,7 +638,7 @@ export async function drawPlacesMapRoute(dayPlaces) {
         return;
     }
 
-    const validPlaces = dayPlaces.filter(p => !isNaN(p.lat) && !isNaN(p.lon) && !(p.lat === 0 && p.lon === 0));
+    const validPlaces = dayPlaces.filter(hasCoords);
     const bounds = L.latLngBounds();
     validPlaces.forEach((p, index) => {
         const isStart = index === 0;

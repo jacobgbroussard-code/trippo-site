@@ -15,7 +15,8 @@ import {
     triggerHaptic,
     escapeHTML,
     escapeJS,
-    parseLocalDate
+    parseLocalDate,
+    normalizeTrip,
 } from './state.js';
 
 import { getSupabase, currentUser } from './db.js';
@@ -102,7 +103,7 @@ export function openShareTripModal(tripId) {
             titleEl.innerHTML = `
                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
                     <select id="share-modal-trip-select" class="form-control" style="font-weight:800; font-size:15px; padding:6px 10px; border-radius:10px; cursor:pointer;" onchange="openShareTripModal(this.value)">
-                        ${trips.map(t => `<option value="${t.id}" ${t.id === trip.id ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('')}
+                        ${trips.map(t => `<option value="${escapeHTML(String(t.id))}" ${t.id === trip.id ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('')}
                     </select>
                 </div>
             `;
@@ -356,6 +357,7 @@ function handleIncomingCollabDelta(payload) {
     localTrip.expenses = payload.tripData.expenses || localTrip.expenses;
     localTrip.budgetTravelers = payload.tripData.budgetTravelers || localTrip.budgetTravelers;
     localTrip.lastSyncedAt = Date.now();
+    normalizeTrip(localTrip);
 
     // Persist to local storage silently (without rebroadcasting)
     try {
@@ -510,7 +512,7 @@ export function confirmImportTrip(asPrivateCopy = false) {
     };
 
     // Add to trips list
-    trips.push(importedTrip);
+    trips.push(normalizeTrip(importedTrip));
     saveTrips();
 
     if (isCollab) {

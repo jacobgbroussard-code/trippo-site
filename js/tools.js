@@ -417,7 +417,7 @@ export function openBudgetModal() {
     toggleSidebar(false);
     const selectEl = document.getElementById('budget-trip-select');
     if (selectEl) {
-        selectEl.innerHTML = trips.map(t => `<option value="${t.id}" ${t.id === activeTripId ? 'selected' : ''}>${t.name}</option>`).join('');
+        selectEl.innerHTML = trips.map(t => `<option value="${escapeHTML(String(t.id))}" ${t.id === activeTripId ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('');
     }
 
     const trip = getBudgetActiveTrip();
@@ -597,7 +597,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.10",
+        trippoVersion: "2.4.11",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -643,7 +643,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.10",
+        version: "2.4.11",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

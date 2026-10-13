@@ -243,7 +243,32 @@ export function normalizeTrip(trip) {
         trip.startDate = '';
     }
     if (trip.expenses !== undefined && !Array.isArray(trip.expenses)) trip.expenses = toList(trip.expenses);
+    // Trips also arrive from share links and friends' live edits, so numeric fields can't be
+    // trusted to be numbers; templates print them unescaped.
+    trip.stops.forEach(s => {
+        if (!s || typeof s !== 'object') return;
+        s.nights = toNumber(s.nights, 1);
+        s.lat = toNumber(s.lat, undefined);
+        s.lon = toNumber(s.lon, undefined);
+    });
+    trip.places.forEach(p => {
+        if (!p || typeof p !== 'object') return;
+        p.lat = toNumber(p.lat, undefined);
+        p.lon = toNumber(p.lon, undefined);
+        p.cityIndex = toNumber(p.cityIndex, 0);
+        p.dayIndex = toNumber(p.dayIndex, 0);
+    });
+    (Array.isArray(trip.expenses) ? trip.expenses : []).forEach(e => {
+        if (e && typeof e === 'object') e.amount = toNumber(e.amount, 0);
+    });
+    if (trip.budgetTravelers !== undefined) trip.budgetTravelers = toNumber(trip.budgetTravelers, 2);
     return trip;
+}
+
+function toNumber(value, fallback) {
+    if (value === null || value === undefined || value === '') return fallback;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
 }
 
 export let trips = safeParseStorage('myTrips', []);
