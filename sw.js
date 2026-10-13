@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.4.6';
+const CACHE_NAME = 'trippo-cache-v2.4.7';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -113,7 +113,9 @@ self.addEventListener('fetch', (event) => {
     // stale modules on the first launch after a deploy.
     if (url.origin === self.location.origin) {
         event.respondWith(
-            fetch(event.request)
+            // cache: 'no-cache' revalidates with the server (cheap 304s). GitHub Pages sends
+            // max-age=600, so without it the browser HTTP cache serves pre-deploy modules for 10 min.
+            fetch(event.request, { cache: 'no-cache' })
                 .then((networkResponse) => {
                     if (networkResponse && networkResponse.status === 200) {
                         const responseToCache = networkResponse.clone();
