@@ -18,7 +18,7 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.4.2';
+const CURRENT_VERSION = '2.4.3';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -29,12 +29,19 @@ if (storedVersion !== CURRENT_VERSION) {
             });
         });
     }
-// Dynamically inject Google Maps API if user has provided a key
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.update());
+        });
+    }
+}
+
+// Dynamically inject Google Maps API if user has provided a key (runs on every load)
 (function loadGoogleMapsSdk() {
-    const gmapsKey = localStorage.getItem('trippo_google_maps_key');
+    const gmapsKey = state.safeGetStorage('trippo_google_maps_key', '');
     if (gmapsKey) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${gmapsKey}&libraries=places&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(gmapsKey)}&libraries=places&loading=async`;
         script.async = true;
         document.head.appendChild(script);
         console.log('[Trippo] Google Maps SDK injecting using user-provided key.');
@@ -42,13 +49,6 @@ if (storedVersion !== CURRENT_VERSION) {
         console.warn('[Trippo] No Google Maps API key found. Using fallback OSM search engine.');
     }
 })();
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => {
-            regs.forEach(r => r.update());
-        });
-    }
-}
 
 // Expose all public module APIs to window for zero-breakage HTML onclick handlers
 Object.assign(window, {

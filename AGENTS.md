@@ -31,8 +31,9 @@ Node comes from a system install if present, otherwise Antigravity's bundled
 The version string appears in several places and they must match, or users get stale cached files:
 - `js/app.js` → `CURRENT_VERSION`
 - `sw.js` → `CACHE_NAME = 'trippo-cache-vX.Y.Z'`
-- `index.html` → every `?v=X.Y.Z` query string
-Bump all of them together for any user-visible change. If you add a new JS/CSS/image file the app
+- `index.html` → `<title>`, the "My Trips vX.Y.Z" header badge, and every `?v=X.Y.Z` query string
+- `js/tools.js` → `trippoVersion` (share export) and `version` (full backup)
+Bump all of them together (`tests/test-transpacific-and-locking.js` checks they match) for any user-visible change. If you add a new JS/CSS/image file the app
 needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 
 ## Rules

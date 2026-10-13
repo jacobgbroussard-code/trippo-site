@@ -83,10 +83,14 @@ export function updateMapProvider() {
     } else if (provider === 'esri-natgeo') {
         url = 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}';
         opts.attribution = 'Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC';
+        // Esri retired this basemap: past z12 most of the world returns a gray
+        // "Map data not yet available" tile, so upscale z12 tiles instead
+        opts.maxNativeZoom = 12;
     } else if (provider === 'opentopo') {
         url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
         opts.attribution = 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)';
-        opts.maxZoom = 17;
+        // OpenTopoMap only renders to z17; upscale beyond that instead of capping the map's zoom
+        opts.maxNativeZoom = 17;
     } else if (provider === 'osm') {
         url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
         opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';

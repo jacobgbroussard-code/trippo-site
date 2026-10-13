@@ -130,14 +130,13 @@ async function runComprehensiveVerification() {
                 }
             });
 
+            // Google SDK is optional: injected only when the user saved a key in Settings
+            const userKey = localStorage.getItem('trippo_google_maps_key');
             return {
                 scriptLoaded: !!googleScript,
-                correctKey: googleScript ? googleScript.src.includes('AIzaSyBMvlLs5sfzrIpQlgmzw1YqTcScgIyzLDg') : false,
+                scriptMatchesKeySetting: userKey ? !!(googleScript && googleScript.src.includes(encodeURIComponent(userKey))) : !googleScript,
                 pacZIndex10000: zIndex === '10000',
-                allInputsHavePacClass: !!(cInput?.classList.contains('pac-target-input') &&
-                                          pInput?.classList.contains('pac-target-input') &&
-                                          hInput?.classList.contains('pac-target-input') &&
-                                          wInput?.classList.contains('pac-target-input')),
+                allInputsUsable: [cInput, pInput, hInput, wInput].every(el => el && !el.disabled && !el.classList.contains('gm-err-autocomplete')),
                 enterKeyProtectedCount: defaultPreventedCount,
                 obsoleteContainersHidden: (
                     (!document.getElementById('city-search-results') || window.getComputedStyle(document.getElementById('city-search-results')).display === 'none') &&
@@ -147,9 +146,9 @@ async function runComprehensiveVerification() {
                 )
             };
         })()`);
-        assert('Google script tag loaded with valid key', gplaces.scriptLoaded && gplaces.correctKey, gplaces);
+        assert('Google SDK injected only when a key is saved in Settings', gplaces.scriptMatchesKeySetting, gplaces);
         assert('.pac-container z-index is 10000 !important', gplaces.pacZIndex10000, gplaces);
-        assert('Autocomplete attached to all 4 search inputs', gplaces.allInputsHavePacClass, gplaces);
+        assert('All 4 search inputs usable (OSM fallback armed)', gplaces.allInputsUsable, gplaces);
         assert('Enter key safety catch active on all 4 inputs', gplaces.enterKeyProtectedCount === 4, gplaces);
         assert('Deprecated Nominatim containers hidden', gplaces.obsoleteContainersHidden, gplaces);
 
@@ -210,38 +209,30 @@ async function runComprehensiveVerification() {
             // Trip.com removed from sidebar
             const hasTripComInSidebar = drawer.innerText.includes('Trip.com');
 
-            // Settings & Data accordion
-            const settingsGroup = document.getElementById('sidebar-settings-group');
-            const initialHidden = settingsGroup.style.display === 'none' || !settingsGroup.style.display;
-
-            // Expand
-            toggleSidebarSettings();
-            const expandedVisible = settingsGroup.style.display === 'block';
-
-            // Check items inside accordion
-            const hasExport = settingsGroup.innerText.includes('Export All Data');
-            const hasRestore = settingsGroup.innerText.includes('Restore All Data');
-            const hasRefresh = settingsGroup.innerText.includes('Check for Updates');
-
-            // Collapse
-            toggleSidebarSettings();
-            const collapsedHidden = settingsGroup.style.display === 'none';
-
+            // Settings & data tools live in the Settings modal (opened from the sidebar)
+            const settingsItem = drawer.querySelector('[onclick*="openSettingsModal"]');
             toggleSidebar(false);
+            openSettingsModal();
+            const modal = document.getElementById('settings-modal');
+            const modalOpen = !!modal && getComputedStyle(modal).display !== 'none';
+            const text = modal ? modal.innerText : '';
+            closeModal('settings-modal');
+            const modalClosed = !!modal && getComputedStyle(modal).display === 'none';
 
             return {
                 drawerOpen,
                 noTripComInSidebar: !hasTripComInSidebar,
-                accordionInitiallyHidden: initialHidden,
-                accordionExpands: expandedVisible,
-                accordionHasItems: hasExport && hasRestore && hasRefresh,
-                accordionCollapses: collapsedHidden
+                sidebarHasSettings: !!settingsItem,
+                modalOpen,
+                modalHasDataTools: text.includes('Export All Data') && text.includes('Restore Backup') && text.includes('Refresh App'),
+                modalHasMapProvider: !!document.getElementById('setting-map-provider'),
+                modalClosed
             };
         })()`);
         assert('Trip.com booking link removed from 3-line sidebar menu', sidebarCheck.noTripComInSidebar, sidebarCheck);
-        assert('Settings & Data is collapsible accordion (hidden initially)', sidebarCheck.accordionInitiallyHidden, sidebarCheck);
-        assert('Settings & Data expands with Export, Restore, and Check for Updates', sidebarCheck.accordionExpands && sidebarCheck.accordionHasItems, sidebarCheck);
-        assert('Settings & Data collapses cleanly on second tap', sidebarCheck.accordionCollapses, sidebarCheck);
+        assert('Sidebar has a Settings entry that opens the Settings modal', sidebarCheck.sidebarHasSettings && sidebarCheck.modalOpen, sidebarCheck);
+        assert('Settings modal has Export, Restore Backup, Refresh App and map provider', sidebarCheck.modalHasDataTools && sidebarCheck.modalHasMapProvider, sidebarCheck);
+        assert('Settings modal closes cleanly', sidebarCheck.modalClosed, sidebarCheck);
 
         // --- CHECK 5: Partner Search Buttons in Modals (Trip.com + Booking.com + Google Flights) ---
         console.log('\n[Check 5] Partner Search Buttons in Modals:');

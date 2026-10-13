@@ -43,13 +43,18 @@ async function runTests() {
     const plannerJs = fs.readFileSync(path.join(__dirname, '../js/planner.js'), 'utf8');
     const compCss = fs.readFileSync(path.join(__dirname, '../styles/components.css'), 'utf8');
 
-    check('v2.3.68 version bump is consistent across all files', () => {
-        assert(indexHtml.includes('Trippo Travel Planner v2.3.68'), 'index.html title mismatch');
-        assert(indexHtml.includes('js/app.js?v=2.3.68'), 'index.html script tag mismatch');
-        assert(indexHtml.includes('v2.3.68</span></span>'), 'index.html sidebar badge mismatch');
-        assert(appJs.includes("CURRENT_VERSION = '2.3.68'"), 'js/app.js CURRENT_VERSION mismatch');
-        assert(toolsJs.includes('version: "2.3.68"'), 'js/tools.js version mismatch');
-        assert(swJs.includes('trippo-cache-v2.3.68'), 'sw.js CACHE_NAME mismatch');
+    // Source of truth is CURRENT_VERSION in js/app.js; every other copy must match it
+    const VERSION = (appJs.match(/CURRENT_VERSION = '([\d.]+)'/) || [])[1];
+    check(`v${VERSION} version bump is consistent across all files`, () => {
+        assert(VERSION, 'js/app.js CURRENT_VERSION not found');
+        assert(indexHtml.includes(`Trippo Travel Planner v${VERSION}`), 'index.html title mismatch');
+        assert(indexHtml.includes(`js/app.js?v=${VERSION}`), 'index.html script tag mismatch');
+        assert(indexHtml.includes(`v${VERSION}</span></span>`), 'index.html header badge mismatch');
+        assert(toolsJs.includes(`version: "${VERSION}"`), 'js/tools.js backup version mismatch');
+        assert(toolsJs.includes(`trippoVersion: "${VERSION}"`), 'js/tools.js share-export version mismatch');
+        assert(swJs.includes(`trippo-cache-v${VERSION}`), 'sw.js CACHE_NAME mismatch');
+        const stale = (indexHtml.match(/\?v=([\d.]+)/g) || []).filter(v => v !== `?v=${VERSION}`);
+        assert(stale.length === 0, `index.html has stale ?v= params: ${[...new Set(stale)].join(', ')}`);
     });
 
     check('maps.js exports getShortestRoutePath', () => {
@@ -192,13 +197,13 @@ async function runTests() {
             window.renderPlanner();
 
             const initialCards = document.querySelectorAll('#itinerary-list .stop-card').length;
-            const initialButtons = document.querySelectorAll('#itinerary-list .stop-lock-btn').length;
+            const initialButtons = document.querySelectorAll('#itinerary-list .stop-inline-lock-btn').length;
 
             // Toggle lock on Tokyo (index 1)
             window.toggleStopLock(null, 1);
             const tokyoLocked = trip.stops[1].locked;
             const tokyoCardHasClass = document.querySelectorAll('#itinerary-list .stop-card')[1]?.classList.contains('is-locked');
-            const tokyoBtnText = document.querySelectorAll('#itinerary-list .stop-lock-btn')[1]?.textContent.trim();
+            const tokyoBtnText = document.querySelectorAll('#itinerary-list .stop-inline-lock-btn')[1]?.textContent.trim();
 
             // Toggle lock all
             window.toggleLockAllStops();

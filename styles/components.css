@@ -2152,6 +2152,43 @@ input.gm-err-autocomplete,
     border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.1));
 }
 
+/* Trippo's own Places (New) dropdown — Google's legacy widget CSS isn't loaded anymore */
+.pac-container.trippo-pac {
+    position: absolute;
+    background: var(--card-bg, #fff);
+    overflow: hidden;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.trippo-pac .pac-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 11px 14px;
+    cursor: pointer;
+    border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--text-muted, #6b7c79);
+}
+.trippo-pac .pac-item:first-child {
+    border-top: none;
+}
+.trippo-pac .pac-item:hover,
+.trippo-pac .pac-item-selected {
+    background: var(--bg-hover, rgba(18, 75, 67, 0.06));
+}
+.trippo-pac .pac-item-query {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text, #1f2d2b);
+}
+.trippo-pac .pac-item-secondary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 body.dark-mode .pac-container {
     background-color: var(--card-bg, #1a2321);
     border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));

@@ -70,7 +70,9 @@ async function testWishlistToTrip() {
                 else resolve(msg.result);
             } else if (msg.method === 'Runtime.consoleAPICalled') {
                 if (msg.params.type === 'error') {
-                    consoleErrors.push(msg.params.args.map(a => a.value || a.description).join(' '));
+                    const text = msg.params.args.map(a => a.value || a.description).join(' ');
+                    // Travelpayouts' tp-em.com script rejects non-trippo.top origins; harmless on 127.0.0.1
+                    if (text !== 'config is not valid') consoleErrors.push(text);
                 }
             } else if (msg.method === 'Runtime.exceptionThrown') {
                 pageErrors.push(msg.params.exceptionDetails);
@@ -81,6 +83,25 @@ async function testWishlistToTrip() {
         await send('Runtime.enable');
 
         await new Promise(r => setTimeout(r, 2000));
+
+        // Start from the default sample data every run. The Chrome profile persists between runs,
+        // so a pin added last time would trigger the app's blocking "already added, add anyway?" confirm().
+        await send('Runtime.evaluate', { expression: 'localStorage.clear(); true', returnByValue: true });
+        await send('Page.reload', { ignoreCache: true });
+        await new Promise(r => setTimeout(r, 2000));
+        // Never let a native dialog hang the CDP session
+        await send('Runtime.evaluate', { expression: 'window.confirm = () => true; window.alert = () => {}; true', returnByValue: true });
+
+        // Wait for the ES modules to finish booting (index.html defines early stubs for switchTab etc.,
+        // so check functions that only exist once wishlist.js has loaded)
+        for (let i = 0; i < 40; i++) {
+            const ready = await send('Runtime.evaluate', {
+                expression: `typeof window.openWishlistDetail === 'function' && Array.isArray(window.wishlistPins)`,
+                returnByValue: true
+            });
+            if (ready.result.value) break;
+            await new Promise(r => setTimeout(r, 250));
+        }
 
         // Test 1: Open Wishlist view and verify "✈ Add to Trip ›" button is present on pin cards
         const step1 = await send('Runtime.evaluate', {
@@ -238,6 +259,7 @@ async function testWishlistToTrip() {
         assert('Zero horizontal overflow on mobile viewport', r5.scrollW <= r5.clientW + 2);
         assert('Zero uncaught exceptions / page errors', pageErrors.length === 0);
         assert('Zero console errors', consoleErrors.length === 0);
+        if (consoleErrors.length) console.log('Console errors:', consoleErrors);
 
         console.log(`\nResults: ${passed}/${total} Checks Passed.`);
         ws.close();

@@ -3,7 +3,7 @@ const path = require('path');
 
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 const onclickMatches = [...indexHtml.matchAll(/onclick=["']([^"']+)["']/g)].map(m => m[1]);
-const calledFns = [...new Set(onclickMatches.map(m => m.split('(')[0].trim()).filter(fn => !fn.startsWith('event.') && !fn.startsWith('window.') && !fn.startsWith('document.')))];
+const calledFns = [...new Set(onclickMatches.map(m => m.split('(')[0].trim()).filter(fn => !fn.startsWith('event.') && !fn.startsWith('window.') && !fn.startsWith('document.') && !fn.startsWith('this.')))];
 
 const jsDir = 'js';
 const jsFiles = fs.readdirSync(jsDir).filter(f => f.endsWith('.js'));

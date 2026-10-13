@@ -78,28 +78,33 @@ async function testGooglePlaces() {
         // Wait 3.5 seconds for external Google Places CDN script and Trippo ES modules to initialize
         await new Promise(r => setTimeout(r, 3500));
 
-        console.log('1. Checking Script Tag in <head>:');
+        // Google is optional: the SDK is injected only when the user saved a key in Settings
+        // (localStorage.trippo_google_maps_key); otherwise the built-in OpenStreetMap search runs.
+        console.log('1. Without a saved key, no Google SDK is loaded (OSM search in charge):');
         const scriptCheck = await evalInBrowser(`(() => {
-            const scripts = Array.from(document.querySelectorAll('head script'));
-            const googleScript = scripts.find(s => s.src && s.src.includes('maps.googleapis.com') && s.src.includes('places'));
-            return {
-                found: !!googleScript,
-                src: googleScript ? googleScript.src : null,
-                hasCorrectKey: googleScript ? googleScript.src.includes('AIzaSyBMvlLs5sfzrIpQlgmzw1YqTcScgIyzLDg') : false
-            };
+            const googleScript = Array.from(document.querySelectorAll('script')).find(s => s.src && s.src.includes('maps.googleapis.com/maps/api/js'));
+            return { hasSavedKey: !!localStorage.getItem('trippo_google_maps_key'), googleScriptFound: !!googleScript };
         })()`);
+        scriptCheck.ok = !scriptCheck.hasSavedKey && !scriptCheck.googleScriptFound;
         console.log('Script check result:', scriptCheck);
 
-        console.log('\n2. Checking Google Maps & Places API runtime presence:');
-        const googleRuntime = await evalInBrowser(`(() => {
-            return {
-                hasGoogle: typeof window.google !== 'undefined',
-                hasMaps: typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined',
-                hasPlaces: typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined' && typeof window.google.maps.places !== 'undefined',
-                hasAutocomplete: typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined' && typeof window.google.maps.places?.Autocomplete === 'function'
-            };
-        })()`);
-        console.log('Google Places runtime:', googleRuntime);
+        // Regression: the SDK loader used to sit inside the "new version" block in app.js,
+        // so it only ran on the first load after an update. It must run on EVERY load.
+        console.log('\n2. With a saved key, the SDK is injected on every page load:');
+        const errorsBeforeKey = pageErrors.length;
+        const loadsWithScript = [];
+        await evalInBrowser(`localStorage.setItem('trippo_google_maps_key', 'TEST_KEY_123'); true`);
+        for (let i = 0; i < 2; i++) {
+            await send('Page.reload', { ignoreCache: true });
+            await new Promise(r => setTimeout(r, 3000));
+            loadsWithScript.push(await evalInBrowser(`!!Array.from(document.querySelectorAll('script')).find(s => s.src && s.src.includes('maps.googleapis.com/maps/api/js') && s.src.includes('TEST_KEY_123'))`));
+        }
+        await evalInBrowser(`localStorage.removeItem('trippo_google_maps_key'); true`);
+        await send('Page.reload', { ignoreCache: true });
+        await new Promise(r => setTimeout(r, 3000));
+        pageErrors.length = errorsBeforeKey; // ignore Google's own errors about the fake key
+        const sdkEveryLoad = { loadsWithScript, ok: loadsWithScript.every(Boolean) };
+        console.log('SDK injection per load:', sdkEveryLoad);
 
         console.log('\n3. Checking .pac-container CSS z-index and styles:');
         const pacCssCheck = await evalInBrowser(`(() => {
@@ -225,9 +230,15 @@ async function testGooglePlaces() {
             console.error('Page Errors Details:', pageErrors);
         }
 
-        const success = scriptCheck.hasCorrectKey &&
+        // OSM fallback search is wired through oninput handlers, so those must still exist
+        const inputs = ['cityInput', 'placeInput', 'hotelInput', 'wishlistInput'].map(k => inputsCheck[k]);
+        const inputsOk = inputs.every(i => i.exists && i.autocompleteAttr === 'off' && !i.noLegacyOninput);
+        console.log('All 4 inputs present with autocomplete=off and OSM search handler:', inputsOk);
+
+        const success = scriptCheck.ok &&
+            sdkEveryLoad.ok &&
             pacCssCheck.isZIndex10000 &&
-            inputsCheck.cityInput.noLegacyOninput &&
+            inputsOk &&
             obsoleteContainers.cityHidden &&
             enterSafetyCheck.allProtected &&
             mapGuardrailsCheck.allLeafletActive &&

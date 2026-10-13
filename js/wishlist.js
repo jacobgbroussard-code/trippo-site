@@ -236,7 +236,6 @@ export function saveDroppedWishlistPin(lat, lon) {
     showNotification(`Dropped and saved ${name}!`);
 }
 
-let wishlistAutocompleteInit = false;
 
 export function openWishlistSearchModal() {
     const modal = document.getElementById('wishlist-search-modal');
@@ -249,18 +248,51 @@ export function openWishlistSearchModal() {
     if (results) results.innerHTML = '';
     const clearBtn = document.getElementById('clear-wishlist-search-input');
     if (clearBtn) clearBtn.style.display = 'none';
-    
-    if (input && !wishlistAutocompleteInit && window.google && window.google.maps && window.google.maps.places) {
-        wishlistAutocompleteInit = true;
-        const ac = new google.maps.places.Autocomplete(input);
-        ac.addListener('place_changed', () => {
-            const place = ac.getPlace();
-            if (!place.geometry) return;
-            selectWishlistLocation(place.name, place.geometry.location.lat(), place.geometry.location.lng());
-        });
-    }
+    // Google suggestions (when a key is saved) are attached once at startup by places-autocomplete.js
 
     setTimeout(() => { if (input) input.focus(); }, 150);
+}
+
+// Built-in OpenStreetMap search (works with or without a Google key)
+export function searchWishlistLocation(query) {
+    clearTimeout(wishlistSearchTimeout);
+    if (wishlistSearchAbortController) {
+        wishlistSearchAbortController.abort();
+        wishlistSearchAbortController = null;
+    }
+    const resultsDiv = document.getElementById('wishlist-search-results');
+    if (!resultsDiv) return;
+
+    if (!query || query.trim().length < 2) {
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+        return;
+    }
+
+    wishlistSearchTimeout = setTimeout(async () => {
+        try {
+            wishlistSearchAbortController = new AbortController();
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`, {
+                signal: wishlistSearchAbortController.signal
+            });
+            const data = await res.json();
+            if (data && data.length > 0) {
+                resultsDiv.innerHTML = data.map(item => {
+                    const rawName = item.name || item.display_name.split(',')[0];
+                    return `
+                    <div class="search-result" onclick="selectWishlistLocation('${escapeJS(rawName)}', ${Number(item.lat)}, ${Number(item.lon)})">
+                        <strong>${escapeHTML(rawName)}</strong><br>
+                        <small style="color:var(--text-muted, #777);">${escapeHTML(item.display_name.substring(0, 60))}...</small>
+                    </div>`;
+                }).join('');
+            } else {
+                resultsDiv.innerHTML = `<div style="padding: 12px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">No places found for "${escapeHTML(query)}"</div>`;
+            }
+            resultsDiv.style.display = 'block';
+        } catch (e) {
+            if (e.name !== 'AbortError') console.error('Wishlist search failed:', e);
+        }
+    }, 300);
 }
 
 
