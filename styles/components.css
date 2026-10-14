@@ -4323,3 +4323,8 @@ body.has-back .leaflet-top.leaflet-left { margin-top: calc(50px + env(safe-area-
     text-align: left;
 }
 button.ai-template-note.ai-key-cta { display: block; padding: 6px 10px; border-radius: 10px; font-size: 11px; }
+
+/* Settings → Map Overlay Buttons can hide these */
+body.hide-map-btn-trains .map-btn-trains,
+body.hide-map-btn-trails .map-btn-trails,
+body.hide-map-btn-alltrails .map-btn-alltrails { display: none !important; }

@@ -20,7 +20,7 @@ import * as collab from './collab.js';
 import * as ai from './ai.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.21';
+const CURRENT_VERSION = '2.4.22';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -225,6 +225,7 @@ function bootstrapApp() {
 
     // Keyboard and screen-reader access for <div onclick> tap targets
     initKeyboardAccess();
+    maps.applyOverlayButtonPrefs();
 
     setTimeout(() => {
         const authChecked = db.checkAuthSession();

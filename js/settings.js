@@ -97,6 +97,12 @@ export function updateSettingsModalUI() {
         }
     }
     
+    const overlayPrefs = window.getOverlayButtonPrefs ? window.getOverlayButtonPrefs() : {};
+    ['trains', 'trails', 'alltrails'].forEach(k => {
+        const box = document.getElementById(`setting-overlay-btn-${k}`);
+        if (box) box.checked = overlayPrefs[k] !== false;
+    });
+
     if (mapboxKeyInput) {
         const storedKey = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
         mapboxKeyInput.value = storedKey;

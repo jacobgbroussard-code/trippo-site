@@ -3,7 +3,7 @@
    js/maps.js
    ========================================================================== */
 
-import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage } from './state.js';
+import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage, safeSetStorage } from './state.js';
 
 export let plannerMap = null;
 export let placesMap = null;
@@ -345,6 +345,44 @@ export function cycleTrainOverlay(target) {
         if (btn) btn.innerText = '🚆 Trains: Off';
         showNotification("Train overlays hidden");
     }
+}
+
+// Settings → Map Engine can hide the overlay buttons. Hiding one also turns that overlay off,
+// so nothing is left on a map without a button to remove it.
+const OVERLAY_BUTTON_DEFAULTS = { trains: true, trails: true, alltrails: true };
+
+export function getOverlayButtonPrefs() {
+    try {
+        return { ...OVERLAY_BUTTON_DEFAULTS, ...JSON.parse(safeGetStorage('trippo_map_overlay_buttons', '{}')) };
+    } catch (e) {
+        return { ...OVERLAY_BUTTON_DEFAULTS };
+    }
+}
+
+export function applyOverlayButtonPrefs() {
+    const prefs = getOverlayButtonPrefs();
+    Object.keys(OVERLAY_BUTTON_DEFAULTS).forEach(k => document.body.classList.toggle(`hide-map-btn-${k}`, !prefs[k]));
+}
+
+export function setOverlayButtonVisible(kind, visible) {
+    const prefs = getOverlayButtonPrefs();
+    prefs[kind] = !!visible;
+    safeSetStorage('trippo_map_overlay_buttons', JSON.stringify(prefs));
+    applyOverlayButtonPrefs();
+    if (visible) return;
+    ['planner', 'wishlist'].forEach(target => {
+        const map = target === 'wishlist' ? wishlistMap : plannerMap;
+        if (!map) return;
+        if (kind === 'trains') {
+            Object.values(trainLayers[target]).forEach(l => { if (l) map.removeLayer(l); });
+            trainOverlayModes[target] = 'off';
+            const btn = document.getElementById(target === 'wishlist' ? 'wishlist-train-btn' : 'planner-train-btn');
+            if (btn) btn.innerText = '🚆 Trains: Off';
+        } else if (kind === 'trails') {
+            const layer = target === 'wishlist' ? wishlistHikingLayer : plannerHikingLayer;
+            if (layer) map.removeLayer(layer);
+        }
+    });
 }
 
 export function toggleTrails(target) {
