@@ -55,6 +55,9 @@ export function openStreetViewModal(lat, lon, title = 'Street View') {
 }
 
 export let baseLayers = { planner: null, places: null, wishlist: null };
+const labelLayers = { planner: null, places: null, wishlist: null };
+// Free key from https://carto.com/basemaps/apikey (public by design, like the Mapbox token).
+const CARTO_KEY = '';
 
 export function updateMapProvider() {
     const provider = safeGetStorage('trippo_map_provider', 'mapbox-light');
@@ -66,15 +69,27 @@ export function updateMapProvider() {
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
     };
 
-    if (provider === 'carto-voyager') {
-        url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    const cartoAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    const esriCanvas = (base, ref) => {
+        url = `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/${base}/MapServer/tile/{z}/{y}/{x}`;
+        labelsUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/${ref}/MapServer/tile/{z}/{y}/{x}`;
+        opts.attribution = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ';
+        opts.maxNativeZoom = 16;
+    };
+    let labelsUrl = null;
+
+    // CARTO basemaps need a key since 2026 (without one every tile is an "API KEY REQUIRED"
+    // image). With no key, use the closest free Esri styles instead.
+    if (provider.startsWith('carto-') && CARTO_KEY) {
+        const style = { 'carto-voyager': 'rastertiles/voyager', 'carto-positron': 'light_all', 'carto-dark': 'dark_all' }[provider] || 'rastertiles/voyager';
+        url = `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`;
+        opts.attribution = cartoAttribution;
+    } else if (provider === 'carto-voyager') {
+        // default Esri street map
     } else if (provider === 'carto-positron') {
-        url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+        esriCanvas('World_Light_Gray_Base', 'World_Light_Gray_Reference');
     } else if (provider === 'carto-dark') {
-        url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-        opts.attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+        esriCanvas('World_Dark_Gray_Base', 'World_Dark_Gray_Reference');
     } else if (provider === 'esri-topo') {
         url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
     } else if (provider === 'esri-satellite') {
@@ -113,6 +128,8 @@ export function updateMapProvider() {
     const replaceLayer = (mapObj, key) => {
         if (!mapObj) return;
         if (baseLayers[key]) mapObj.removeLayer(baseLayers[key]);
+        if (labelLayers[key]) { mapObj.removeLayer(labelLayers[key]); labelLayers[key] = null; }
+        if (labelsUrl) labelLayers[key] = L.tileLayer(labelsUrl, { maxZoom: 19, maxNativeZoom: 16, zIndex: 5 }).addTo(mapObj);
         baseLayers[key] = L.tileLayer(url, opts);
         baseLayers[key].on('tileerror', (error) => {
             if (error.tile && !error.tile.dataset.fallback) {
