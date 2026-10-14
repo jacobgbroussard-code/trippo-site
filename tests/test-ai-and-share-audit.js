@@ -180,7 +180,7 @@ async function testAuditAIAndSharing() {
         await takeScreenshot('streamlined-share-modal-hub.png');
 
         // Check trip switcher if multiple trips exist
-        const tripSwitcherExists = await evalCode(`Boolean(document.getElementById('share-modal-trip-select'))`);
+        const tripSwitcherExists = await evalCode(`Boolean(document.getElementById('share-trip-picker-btn'))`);
         console.log(`  In-modal trip switcher active for multiple trips: ${tripSwitcherExists}`);
 
         // Test Settings Modal -> Share Hub link

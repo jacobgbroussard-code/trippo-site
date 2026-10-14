@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.4.29';
+const CACHE_NAME = 'trippo-cache-v2.4.30';
 const STATIC_ASSETS = [
     './',
     './index.html',

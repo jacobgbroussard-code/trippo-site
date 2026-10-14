@@ -99,17 +99,26 @@ export function openShareTripModal(tripId) {
     const titleEl = document.getElementById('share-modal-trip-name');
     const infoEl = document.getElementById('share-modal-trip-info');
     if (titleEl) {
-        if (trips.length > 1) {
-            titleEl.innerHTML = `
-                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-                    <select id="share-modal-trip-select" class="form-control" style="font-weight:800; font-size:15px; padding:6px 10px; border-radius:10px; cursor:pointer;" onchange="openShareTripModal(this.value)">
-                        ${trips.map(t => `<option value="${escapeHTML(String(t.id))}" ${t.id === trip.id ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('')}
-                    </select>
+        // Trip name doubles as the trip picker (same look as the Daily tab's city picker)
+        const many = trips.length > 1;
+        titleEl.innerHTML = `
+            <div class="city-title-wrap share-trip-picker">
+                <button type="button" id="share-trip-picker-btn" class="city-title-picker${many ? ' has-choices' : ''}" ${many ? '' : 'disabled'} aria-haspopup="listbox" aria-expanded="false" onclick="toggleShareTripMenu(event)">
+                    <span class="city-title-text">${escapeHTML(trip.name)}</span>
+                    <svg class="city-title-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div id="share-trip-menu" class="city-menu" role="listbox" aria-label="Choose trip to share">
+                    ${many ? trips.map(t => {
+                        const nights = (t.stops || []).reduce((sum, s) => sum + (Number(s.nights) || 0), 0);
+                        const stopsN = (t.stops || []).length;
+                        const current = t.id === trip.id;
+                        return `<button type="button" class="city-menu-item${current ? ' current' : ''}" role="option" aria-selected="${current}" onclick="chooseShareTrip('${escapeJS(String(t.id))}')">
+                            <span class="city-menu-text"><span class="city-menu-name">${escapeHTML(t.name)}</span><span class="city-menu-when">${stopsN} stop${stopsN === 1 ? '' : 's'} · ${nights} night${nights === 1 ? '' : 's'}${t.startDate ? ' · ' + escapeHTML(t.startDate) : ''}</span></span>
+                            ${current ? '<svg class="city-menu-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+                        </button>`;
+                    }).join('') : ''}
                 </div>
-            `;
-        } else {
-            titleEl.innerText = trip.name;
-        }
+            </div>`;
     }
     if (infoEl) {
         const totalNights = trip.stops ? trip.stops.reduce((sum, s) => sum + (Number(s.nights) || 0), 0) : 0;
@@ -123,6 +132,34 @@ export function openShareTripModal(tripId) {
 
     modal.style.display = 'flex';
     triggerHaptic('light');
+}
+
+function closeShareTripMenuOnOutside(e) {
+    if (!e.target.closest('.share-trip-picker')) setShareTripMenuOpen(false);
+}
+
+function setShareTripMenuOpen(open) {
+    const menu = document.getElementById('share-trip-menu');
+    const btn = document.getElementById('share-trip-picker-btn');
+    if (!menu || !btn) return;
+    menu.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    document.removeEventListener('pointerdown', closeShareTripMenuOnOutside, true);
+    if (open) document.addEventListener('pointerdown', closeShareTripMenuOnOutside, true);
+}
+
+export function toggleShareTripMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('share-trip-menu');
+    const btn = document.getElementById('share-trip-picker-btn');
+    if (!menu || !btn || btn.disabled) return;
+    setShareTripMenuOpen(!menu.classList.contains('open'));
+}
+
+// Switching trips rebuilds the header, link and QR code for the chosen trip
+export function chooseShareTrip(tripId) {
+    setShareTripMenuOpen(false);
+    if (tripId !== currentShareTripId) openShareTripModal(tripId);
 }
 
 export function selectShareMode(mode) {
