@@ -4378,3 +4378,5 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 .city-menu-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .city-menu-when { font-size: 11.5px; color: var(--text-light, #64748b); margin-top: 1px; }
 .city-menu-check { flex: none; width: 18px; height: 18px; color: var(--primary); }
+
+.empty-day-note { text-align: center; font-size: 13px; color: var(--text-light, #64748b); padding: 18px 12px 6px; }

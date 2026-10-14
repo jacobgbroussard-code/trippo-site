@@ -320,16 +320,8 @@ export function renderCityPlaces() {
     const dayPlaces = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
 
     if (dayPlaces.length === 0) {
-        container.innerHTML = `
-            <div class="ai-empty-day-card">
-                <div class="ai-empty-day-sparkle">✨</div>
-                <div class="ai-empty-day-title">Plan Day ${activePlacesDayIndex + 1} with AI Copilot</div>
-                <div class="ai-empty-day-desc">Get personalized dining recommendations, sightseeing highlights, or a complete timed schedule for this day.</div>
-                <button type="button" class="ai-empty-day-action-btn" onclick="openAICopilot(${activePlacesStopIndex}, ${activePlacesDayIndex})">
-                    <span>🤖 Open AI Travel Copilot</span>
-                </button>
-            </div>
-        `;
+        // Keep the empty day quiet; the ✨ AI Copilot button in the header is the way into Copilot
+        container.innerHTML = `<div class="empty-day-note">No stops planned for Day ${activePlacesDayIndex + 1} yet.</div>`;
         drawPlacesMapRoute([]);
         return;
     }
