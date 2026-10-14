@@ -64,6 +64,10 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
   Because deploy does `git add .`, check `git status` before deploying if you created new files.
 - Don't deploy unless the user asks. Deploying = publishing to the live site.
 - Keep it dependency-free vanilla JS; CDN libraries (Leaflet etc.) are loaded in `index.html`.
+- UI icons are line icons from an inline SVG sprite at the top of `index.html` (Tabler Icons, MIT).
+  Use `icon('name')` from `js/state.js` in JS, or `<svg class="ico"><use href="#i-name"/></svg>` in HTML.
+  Don't add emoji to buttons/badges; to add an icon, append its `<symbol id="i-name">` to the sprite.
+  Emoji are still fine for content: place categories, sample trips, weather, chat text.
 - Don't delete `google493bf46685196747.html` — it keeps Google Search Console ownership verified.
   `robots.txt`, `sitemap.xml` and `og-image.jpg` are also served on purpose.
 - Check mobile layout (iPhone safe areas) for UI changes — most users are on phones.

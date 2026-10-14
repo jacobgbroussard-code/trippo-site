@@ -20,7 +20,7 @@ import * as collab from './collab.js';
 import * as ai from './ai.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.26';
+const CURRENT_VERSION = '2.4.27';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -205,7 +205,7 @@ function bootstrapApp() {
         const icon = document.getElementById('dark-mode-icon');
         const label = document.getElementById('dark-mode-label');
         if (icon) {
-            icon.innerText = state.currentTheme === 'dark' ? '🌙' : '🌴';
+            icon.innerHTML = state.icon(state.currentTheme === 'dark' ? 'moon' : 'bolt', 'ico-only');
         }
         if (label) {
             label.innerText = state.currentTheme === 'dark' ? 'Switch to Hotline Mode' : 'Switch to Light Mode';

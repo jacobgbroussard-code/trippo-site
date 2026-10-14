@@ -108,15 +108,15 @@ function renderSyncBadge(status, detail) {
     const name = escapeHTML(displayNameOf(currentUser));
     const pending = pendingChangeCount();
     if (status === 'syncing') {
-        statusBadge.innerHTML = `🔄 Syncing…`;
+        statusBadge.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-refresh"></use></svg>Syncing…`;
     } else if (status === 'offline') {
-        statusBadge.innerHTML = pending ? `📴 Offline · ${pending} to sync` : `📴 Offline (${name})`;
+        statusBadge.innerHTML = pending ? `<svg class="ico" aria-hidden="true"><use href="#i-cloud-off"></use></svg>Offline · ${pending} to sync` : `<svg class="ico" aria-hidden="true"><use href="#i-cloud-off"></use></svg>Offline (${name})`;
     } else if (status === 'error') {
-        statusBadge.innerHTML = `⚠️ Sync paused`;
+        statusBadge.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-alert-triangle"></use></svg>Sync paused`;
         logAuth(`Sync error: ${detail || 'unknown'}`);
         statusBadge.title = `Changes are safe on this device. ${detail || ''}`;
     } else {
-        statusBadge.innerHTML = `☁️ Synced (${name})`;
+        statusBadge.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Synced (${name})`;
         statusBadge.title = '';
     }
 }
@@ -135,7 +135,7 @@ export function updateAuthUI(user, { offline = false } = {}) {
         try {
             localStorage.setItem(LAST_USER_KEY, JSON.stringify({ id: user.id, email: user.email, user_metadata: { full_name: user.user_metadata?.full_name, name: user.user_metadata?.name } }));
         } catch (e) {}
-        if (statusBadge) statusBadge.innerHTML = offline ? `📴 Offline (${escapeHTML(displayName)})` : `☁️ Synced (${escapeHTML(displayName)})`;
+        if (statusBadge) statusBadge.innerHTML = offline ? `<svg class="ico" aria-hidden="true"><use href="#i-cloud-off"></use></svg>Offline (${escapeHTML(displayName)})` : `<svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Synced (${escapeHTML(displayName)})`;
         if (inView) inView.style.display = 'block';
         if (outView) outView.style.display = 'none';
         if (userEmailEl) userEmailEl.innerText = user.email;
@@ -150,7 +150,7 @@ export function updateAuthUI(user, { offline = false } = {}) {
         if (outView) outView.style.display = 'none';
         if (userEmailEl) userEmailEl.innerText = user.email || displayName;
     } else {
-        if (statusBadge) statusBadge.innerHTML = `☁️ Cloud Sync`;
+        if (statusBadge) statusBadge.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync`;
         if (inView) inView.style.display = 'none';
         if (outView) outView.style.display = 'block';
     }

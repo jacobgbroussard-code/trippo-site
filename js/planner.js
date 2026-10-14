@@ -15,7 +15,7 @@ import {
     escapeJS,
     triggerHaptic,
     normalizeTrip,
-    formatTempF, isReducedMotion,
+    formatTempF, isReducedMotion, icon,
 } from './state.js';
 
 import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords } from './maps.js';
@@ -111,11 +111,11 @@ export function renderPlanner() {
     if (dateChip && dateChipText) {
         if (hasDate) {
             const sDate = parseLocalDate(trip.startDate);
-            dateChipText.innerText = `📅 Departs ${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            dateChipText.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-calendar-event"></use></svg>Departs ${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
             dateChip.classList.remove('tbd');
             dateChip.title = "Departure date set. Click to change or clear.";
         } else {
-            dateChipText.innerText = `🗓️ Dates TBD • Set start date`;
+            dateChipText.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-calendar-question"></use></svg>Dates TBD • Set start date`;
             dateChip.classList.add('tbd');
             dateChip.title = "No departure date set. Click to set a date.";
         }
@@ -125,7 +125,7 @@ export function renderPlanner() {
     if (collabBadge) {
         if (trip.isCollaborative) {
             collabBadge.style.display = 'inline-flex';
-            collabBadge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Plan with Friends`;
+            collabBadge.innerHTML = `<span class="collab-pulse-dot"></span> <svg class="ico" aria-hidden="true"><use href="#i-user-plus"></use></svg>Plan with Friends`;
         } else {
             collabBadge.style.display = 'none';
         }
@@ -193,7 +193,7 @@ export function renderPlanner() {
                 distDividerHTML = `
                     <div class="route-distance-divider">
                         <button type="button" class="route-distance-badge" onclick="focusSegmentOnMap(event, ${index}, ${index + 1})" title="Tap to zoom map to this segment">
-                            <span class="route-distance-icon">🔍</span>
+                            <span class="route-distance-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-search"></use></svg></span>
                             <span>${distDisplay}</span>
                         </button>
                     </div>`;
@@ -212,7 +212,7 @@ export function renderPlanner() {
                     <h3 style="margin: 0 0 2px 0; font-size: 16px; font-weight: 800; display:flex; align-items:center; gap:6px; overflow:hidden;">
                         <span class="stop-flag">${flagIcon}</span>
                         <span style="overflow:hidden; text-align:left; text-overflow:ellipsis; white-space:nowrap; color:var(--text);">${escapeHTML(stop.name)}</span>
-                        <button type="button" onclick="toggleStopLock(event, ${index})" class="stop-inline-lock-btn ${stop.locked ? 'locked' : ''}" title="${stop.locked ? 'Stop locked in place (Click to unlock)' : 'Lock stop to prevent auto-reordering'}">${stop.locked ? '🔒' : '🔓'}</button>
+                        <button type="button" onclick="toggleStopLock(event, ${index})" class="stop-inline-lock-btn ${stop.locked ? 'locked' : ''}" title="${stop.locked ? 'Stop locked in place (Click to unlock)' : 'Lock stop to prevent auto-reordering'}">${stop.locked ? icon('lock', 'ico-only') : icon('lock-open', 'ico-only')}</button>
                     </h3>
                     <p style="margin: 0; font-size: 13px; color: #728481; font-weight: 500;">${dateSubtitle}</p>
                     <div id="stop-weather-${index}" class="stop-weather-chip" style="display:none;"></div>
@@ -245,7 +245,7 @@ export function renderPlanner() {
     const allLocked = trip.stops.length > 0 && trip.stops.every(s => s.locked);
     const lockAllBtn = document.getElementById('toggle-lock-all-btn');
     if (lockAllBtn) {
-        lockAllBtn.innerHTML = allLocked ? '🔓 Unlock All' : '🔒 Lock All';
+        lockAllBtn.innerHTML = allLocked ? '<svg class="ico" aria-hidden="true"><use href="#i-lock-open"></use></svg>Unlock All' : '<svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Lock All';
         lockAllBtn.title = allLocked ? 'Unlock all stops to allow re-ordering' : 'Lock all stops to prevent auto-reordering';
     }
 

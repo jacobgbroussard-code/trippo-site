@@ -28,7 +28,8 @@ import {
     activePlacesTripId,
     activePlacesStopIndex,
     activePlacesDayIndex,
-    activeTripId
+    activeTripId,
+    icon
 } from './state.js';
 
 import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers, hasCoords, applyDefaultMapView } from './maps.js';
@@ -45,7 +46,7 @@ export function showWishlistDirectory() {
     if (wishlistView) wishlistView.classList.remove('has-detail-open');
     if (detailView) detailView.classList.remove('map-expanded');
     const btn = document.getElementById('wishlist-fullscreen-btn');
-    if (btn) { btn.innerHTML = '⛶ Full Map'; btn.classList.remove('active-mode'); }
+    if (btn) { btn.innerHTML = `${icon('window-maximize')}Full Map`; btn.classList.remove('active-mode'); }
     const dirView = document.getElementById('wishlist-directory-view');
     if (dirView) dirView.style.display = 'block';
     if (detailView) detailView.style.display = 'none';
@@ -61,7 +62,7 @@ export function renderWishlistCollections() {
         const safeColId = escapeJS(col.id);
         const safeColName = escapeHTML(col.name);
         const deleteBtn = col.isMaster ? '' : `
-            <button onclick="promptDeleteWishlistCollection('${safeColId}', event)" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--accent);" title="Delete List">🗑️</button>
+            <button onclick="promptDeleteWishlistCollection('${safeColId}', event)" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--accent);" title="Delete List"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
         `;
 
         return `
@@ -430,14 +431,14 @@ export function renderWishlistPins(autoFit = true) {
                 </select>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${safeName}</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:3px;">
-                    <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#1a73e8; text-decoration:none;">📸 Photos ›</a>
-                    <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#2b7c62; text-decoration:none;">🥾 Trails ›</a>
+                    <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#1a73e8; text-decoration:none;"><svg class="ico" aria-hidden="true"><use href="#i-camera"></use></svg>Photos ›</a>
+                    <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px; font-weight:700; color:#2b7c62; text-decoration:none;"><svg class="ico" aria-hidden="true"><use href="#i-mountain"></use></svg>Trails ›</a>
                     <button type="button" onclick="openAddWishlistPinToTripModal('${safeId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; color:var(--primary); cursor:pointer;" title="Add this place to a trip itinerary">✈ Add to Trip ›</button>
                 </div>
             </div>
             <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
                 <textarea class="form-control" style="height: 65px; font-size: 13px; background: var(--bg);" placeholder="Add personal notes..." oninput="updateWishlistInlineNote('${safeId}', this.value)">${safeNotes}</textarea>
-                <button onclick="deleteWishlistPin('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent); height: fit-content;" title="Remove Pin">🗑</button>
+                <button onclick="deleteWishlistPin('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; color:var(--accent); height: fit-content;" title="Remove Pin"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
             </div>
         </div>`;
     }).join('');
@@ -487,7 +488,7 @@ export function renderWishlistPins(autoFit = true) {
                     <div style="display:flex; gap:6px; align-items:center;">
                         <a href="${gMapsSearchUrl}" target="_blank" rel="noopener noreferrer" style="color:#1a73e8; font-weight:700; font-size:11px; text-decoration:none;">Photos</a>
                         <a href="${allTrailsUrl}" target="_blank" rel="noopener noreferrer" style="color:#2b7c62; font-weight:700; font-size:11px; text-decoration:none;">Trails</a>
-                        <button type="button" onclick="openAddWishlistPinToTripModal('${safeId}')" style="background:var(--primary-light); color:var(--primary); border:none; padding:3px 7px; border-radius:6px; font-size:10px; font-weight:700; cursor:pointer;">✈ To Trip</button>
+                        <button type="button" onclick="openAddWishlistPinToTripModal('${safeId}')" style="background:var(--primary-light); color:var(--primary); border:none; padding:3px 7px; border-radius:6px; font-size:10px; font-weight:700; cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg>To Trip</button>
                     </div>
                 </div>
             </div>

@@ -23,6 +23,7 @@ import {
     triggerHaptic,
     loadPartnerTracking,
     formatTime,
+    icon,
 } from './state.js';
 
 import { openPlacesCityView } from './places.js';
@@ -104,14 +105,14 @@ export function renderBookingsList() {
             lodgingCardHTML = `
             <div class="confirmed-card" onclick="openLodgingModal(${index})">
                 <div class="confirmed-header">
-                    <span>🏨 CONFIRMED STAY</span>
+                    <span><svg class="ico" aria-hidden="true"><use href="#i-bed"></use></svg>CONFIRMED STAY</span>
                     <span>${safeLConf ? '#' + safeLConf : 'Details ›'}</span>
                 </div>
                 <div class="confirmed-title">${safeLName}</div>
                 ${safeLAddr ? `<div class="confirmed-sub">📍 ${safeLAddr}</div>` : ''}
-                <div class="confirmed-sub" style="margin-top:4px;">🕒 Check-in: ${safeLCheckIn}</div>
+                <div class="confirmed-sub" style="margin-top:4px;"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg>Check-in: ${safeLCheckIn}</div>
                 ${safeLNotes ? `<div class="confirmed-notes">"${safeLNotes}"</div>` : ''}
-                <button type="button" onclick="event.stopPropagation(); jumpToDailyFromStay(${index})" style="background:var(--card-bg); border:1.5px solid var(--primary); color:var(--primary); font-size:12px; font-weight:700; padding:6px 12px; border-radius:10px; cursor:pointer; margin-top:10px;">🗺️ View on Daily Map</button>
+                <button type="button" onclick="event.stopPropagation(); jumpToDailyFromStay(${index})" style="background:var(--card-bg); border:1.5px solid var(--primary); color:var(--primary); font-size:12px; font-weight:700; padding:6px 12px; border-radius:10px; cursor:pointer; margin-top:10px;"><svg class="ico" aria-hidden="true"><use href="#i-map-2"></use></svg>View on Daily Map</button>
             </div>`;
         } else {
             lodgingCardHTML = `<button class="dashed-add-btn" style="margin-bottom: 14px;" onclick="openLodgingModal(${index})">+ Add Confirmed Stay & Notes</button>`;
@@ -136,7 +137,7 @@ export function renderBookingsList() {
                 <span class="hotel-partner-label">Compare Rates</span>
                 <div class="hotel-partner-chips">
                     <a href="${hotelInfo.hotellookUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip featured" title="Compare 50+ providers including Booking.com & Agoda">
-                        🏨 Hotellook Deals ›
+                        <svg class="ico" aria-hidden="true"><use href="#i-bed"></use></svg>Hotellook Deals ›
                     </a>
                     <a href="${hotelInfo.bookingUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" title="Search Booking.com">
                         Booking.com
@@ -159,7 +160,7 @@ export function renderBookingsList() {
             <p style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">No destinations added yet</p>
             <p style="font-size: 13px; margin-bottom: 16px;">Add destinations in the Planner or search accommodations directly below:</p>
             <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
-                <a href="${defaultHotelInfo.hotellookUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip featured" style="padding:8px 14px; font-size:12px;">🏨 Hotellook (50+ Sites) ›</a>
+                <a href="${defaultHotelInfo.hotellookUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip featured" style="padding:8px 14px; font-size:12px;"><svg class="ico" aria-hidden="true"><use href="#i-bed"></use></svg>Hotellook (50+ Sites) ›</a>
                 <a href="${defaultHotelInfo.bookingUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" style="padding:8px 14px; font-size:12px;">Booking.com</a>
                 <a href="${defaultHotelInfo.tripUrl}" target="_blank" rel="noopener noreferrer" class="hotel-partner-chip" style="padding:8px 14px; font-size:12px;">Trip.com</a>
             </div>
@@ -419,8 +420,8 @@ export function renderTransitList() {
                 <span style="font-size:11px; color:#728481;">${isTripRound ? 'Round-Trip Itinerary enabled' : 'Single segments searched as One-Way'}</span>
             </div>
             <div style="display:flex; gap:6px;">
-                <button type="button" class="type-pill ${!isTripRound ? 'active' : ''}" onclick="setTripFlightType(false)">➡️ One-Way Legs</button>
-                <button type="button" class="type-pill ${isTripRound ? 'active' : ''}" onclick="setTripFlightType(true)">🔁 Round-Trip</button>
+                <button type="button" class="type-pill ${!isTripRound ? 'active' : ''}" onclick="setTripFlightType(false)"><svg class="ico" aria-hidden="true"><use href="#i-arrow-right"></use></svg>One-Way Legs</button>
+                <button type="button" class="type-pill ${isTripRound ? 'active' : ''}" onclick="setTripFlightType(true)"><svg class="ico" aria-hidden="true"><use href="#i-repeat"></use></svg>Round-Trip</button>
             </div>
         </div>`;
     }
@@ -472,7 +473,7 @@ export function renderTransitList() {
 
         let bookingHTML = '';
         if (stopA.transit && stopA.transit.method) {
-            const emojis = { plane: '✈️', train: '🚆', bus: '🚌', car: '🚗' };
+            const methodIcons = { plane: 'plane-departure', train: 'train', bus: 'bus', car: 'car' };
             const tr = stopA.transit;
             const safeMethod = escapeHTML((tr.method || 'transit').toUpperCase());
             const safeBookingNum = tr.bookingNumber ? escapeHTML(tr.bookingNumber) : '';
@@ -486,11 +487,11 @@ export function renderTransitList() {
             bookingHTML = `
                 <div class="transit-ticket" onclick="openTransitBookingModal(${i})">
                     <div class="ticket-header">
-                        <span>${emojis[tr.method] || '🎟'} ${safeMethod} CONFIRMED</span>
+                        <span>${icon(methodIcons[tr.method] || 'ticket')}${safeMethod} CONFIRMED</span>
                         <span>${safeBookingNum ? '#' + safeBookingNum : 'Details ›'}</span>
                     </div>
                     <div class="ticket-station">${safeDepStation} ➔ ${safeArrStation}</div>
-                    <div class="ticket-time">🕒 ${safeDepTime} - ${safeArrTime} • ${safeDate}${safeRetDate}</div>
+                    <div class="ticket-time"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg>${safeDepTime} - ${safeArrTime} • ${safeDate}${safeRetDate}</div>
                 </div>`;
         } else {
             bookingHTML = `<button class="dashed-add-btn" style="margin-bottom: 14px;" onclick="openTransitBookingModal(${i})">+ Add Booking & Tickets</button>`;
@@ -500,7 +501,7 @@ export function renderTransitList() {
         <div style="background: var(--card-bg); border-radius: 18px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                 <h4 style="margin: 0; font-size: 18px; font-weight:700;">${safeStopAName} ${isRound ? '⇄' : '→'} ${safeStopBName}</h4>
-                <span style="font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:8px;">${isRound ? '🔁 Round-Trip' : '➡️ One-Way'}</span>
+                <span style="font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:8px;">${isRound ? '<svg class="ico" aria-hidden="true"><use href="#i-repeat"></use></svg>Round-Trip' : '<svg class="ico" aria-hidden="true"><use href="#i-arrow-right"></use></svg>One-Way'}</span>
             </div>
             <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 14px;">
                 ${isRound ? `Outbound: ${departureDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} • Return: ${returnDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}` : `Departure Date: ${departureDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}
@@ -511,17 +512,17 @@ export function renderTransitList() {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <div style="font-size:11px; color:#8fa09c; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Fares & Schedules</div>
                 <button type="button" onclick="toggleSegmentFlightType(${i})" style="background:none; border:none; color:var(--primary); font-size:11px; font-weight:700; cursor:pointer; padding:0;">
-                    ${isRound ? 'Switch to One-Way search ➔' : '🔁 Switch to Round-Trip search'}
+                    ${isRound ? 'Switch to One-Way search ➔' : '<svg class="ico" aria-hidden="true"><use href="#i-repeat"></use></svg>Switch to Round-Trip search'}
                 </button>
             </div>
             <button class="partner-btn partner-trip-flight" onclick="window.open('${tripFlightUrl}', '_blank')">
-                ✈️ Trip.com Flights (${isRound ? 'Round-Trip' : 'One-Way'}) <span>Search Deals ›</span>
+                <svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Trip.com Flights (${isRound ? 'Round-Trip' : 'One-Way'}) <span>Search Deals ›</span>
             </button>
             <button class="partner-btn partner-trip-train" onclick="window.open('https://us.trip.com/trains/', '_blank')">
-                🚆 Trip.com Trains <span>View Schedules ›</span>
+                <svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg>Trip.com Trains <span>View Schedules ›</span>
             </button>
             <button class="partner-btn partner-google-flight" onclick="window.open('${googleFlightUrl}', '_blank')">
-                ✈ Google Flights (${isRound ? 'Round-Trip' : 'One-Way'}) <span>Check Deals ›</span>
+                <svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Google Flights (${isRound ? 'Round-Trip' : 'One-Way'}) <span>Check Deals ›</span>
             </button>
         </div>`;
     }
@@ -533,9 +534,9 @@ export function renderTransitList() {
             <p style="font-size: 13px; margin-bottom: 20px;">Add at least 2 destinations in the Planner to schedule transit routes.</p>
             <div style="max-width: 360px; margin: 0 auto; text-align: left;">
                 <div style="font-size:11px; color:#8fa09c; margin-bottom:8px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Partner Schedules & Flights</div>
-                <button class="partner-btn partner-trip-flight" onclick="window.open('https://us.trip.com/flights/?triptype=ow', '_blank')">✈️ Trip.com Flights (One-Way) <span>Search Deals ›</span></button>
-                <button class="partner-btn partner-trip-train" onclick="window.open('https://us.trip.com/trains/', '_blank')">🚆 Trip.com Trains <span>View Schedules ›</span></button>
-                <button class="partner-btn partner-google-flight" onclick="window.open('https://www.google.com/travel/flights?q=one%20way%20flights', '_blank')">✈ Google Flights (One-Way) <span>Check Deals ›</span></button>
+                <button class="partner-btn partner-trip-flight" onclick="window.open('https://us.trip.com/flights/?triptype=ow', '_blank')"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Trip.com Flights (One-Way) <span>Search Deals ›</span></button>
+                <button class="partner-btn partner-trip-train" onclick="window.open('https://us.trip.com/trains/', '_blank')"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg>Trip.com Trains <span>View Schedules ›</span></button>
+                <button class="partner-btn partner-google-flight" onclick="window.open('https://www.google.com/travel/flights?q=one%20way%20flights', '_blank')"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Google Flights (One-Way) <span>Check Deals ›</span></button>
             </div>
         </div>`;
     }

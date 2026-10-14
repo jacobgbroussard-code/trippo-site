@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.26">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.26">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.26">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.26">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.26">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.27">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.27">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.27">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.27">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.27">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.26">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.26">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.27">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.27">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -172,12 +172,88 @@
     </script>
 </head>
 <body>
+<!-- Line icons: Tabler Icons 3.31.0 (MIT, https://tabler.io/icons). Use via icon() in js/state.js or <svg class="ico"><use href="#i-NAME"/></svg> -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+<symbol id="i-current-location" viewBox="0 0 24 24"><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0 -16 0"/><path d="M12 2l0 2"/><path d="M12 20l0 2"/><path d="M20 12l2 0"/><path d="M2 12l2 0"/></symbol>
+<symbol id="i-window-maximize" viewBox="0 0 24 24"><path d="M3 16m0 1a1 1 0 0 1 1 -1h3a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1z"/><path d="M4 12v-6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-6"/><path d="M12 8h4v4"/><path d="M16 8l-5 5"/></symbol>
+<symbol id="i-stack-2" viewBox="0 0 24 24"><path d="M12 4l-8 4l8 4l8 -4l-8 -4"/><path d="M4 12l8 4l8 -4"/><path d="M4 16l8 4l8 -4"/></symbol>
+<symbol id="i-mountain" viewBox="0 0 24 24"><path d="M3 20h18l-6.921 -14.612a2.3 2.3 0 0 0 -4.158 0l-6.921 14.612z"/><path d="M7.5 11l2 2.5l2.5 -2.5l2 3l2.5 -2"/></symbol>
+<symbol id="i-train" viewBox="0 0 24 24"><path d="M21 13c0 -3.87 -3.37 -7 -10 -7h-8"/><path d="M3 15h16a2 2 0 0 0 2 -2"/><path d="M3 6v5h17.5"/><path d="M3 11v4"/><path d="M8 11v-5"/><path d="M13 11v-4.5"/><path d="M3 19h18"/></symbol>
+<symbol id="i-trees" viewBox="0 0 24 24"><path d="M16 5l3 3l-2 1l4 4l-3 1l4 4h-9"/><path d="M15 21l0 -3"/><path d="M8 13l-2 -2"/><path d="M8 12l2 -2"/><path d="M8 21v-13"/><path d="M5.824 16a3 3 0 0 1 -2.743 -3.69a3 3 0 0 1 .304 -4.833a3 3 0 0 1 4.615 -3.707a3 3 0 0 1 4.614 3.707a3 3 0 0 1 .305 4.833a3 3 0 0 1 -2.919 3.695h-4z"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"/><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/><path d="M8 11v-4a4 4 0 1 1 8 0v4"/></symbol>
+<symbol id="i-lock-open" viewBox="0 0 24 24"><path d="M5 11m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"/><path d="M12 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M8 11v-5a4 4 0 0 1 8 0"/></symbol>
+<symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M16 19h6"/><path d="M19 16v6"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></symbol>
+<symbol id="i-map-2" viewBox="0 0 24 24"><path d="M12 18.5l-3 -1.5l-6 3v-13l6 -3l6 3l6 -3v7.5"/><path d="M9 4v13"/><path d="M15 7v5.5"/><path d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879z"/><path d="M19 18v.01"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 7v5l3 3"/></symbol>
+<symbol id="i-plane-departure" viewBox="0 0 24 24"><path d="M14.639 10.258l4.83 -1.294a2 2 0 1 1 1.035 3.863l-14.489 3.883l-4.45 -5.02l2.897 -.776l2.45 1.414l2.897 -.776l-3.743 -6.244l2.898 -.777l5.675 5.727z"/><path d="M3 21h18"/></symbol>
+<symbol id="i-calendar-question" viewBox="0 0 24 24"><path d="M15 21h-9a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/><path d="M19 22v.01"/><path d="M19 19a2.003 2.003 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M8.7 10.7l6.6 -3.4"/><path d="M8.7 13.3l6.6 3.4"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/><path d="M13.5 6.5l4 4"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7l16 0"/><path d="M10 11l0 6"/><path d="M14 11l0 6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/></symbol>
+<symbol id="i-bed" viewBox="0 0 24 24"><path d="M7 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M22 17v-3h-20"/><path d="M2 8v9"/><path d="M12 14h10v-2a3 3 0 0 0 -3 -3h-7v5z"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></symbol>
+<symbol id="i-repeat" viewBox="0 0 24 24"><path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/><path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3 -3l3 -3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></symbol>
+<symbol id="i-folder-down" viewBox="0 0 24 24"><path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5"/><path d="M19 16v6"/><path d="M22 19l-3 3l-3 -3"/></symbol>
+<symbol id="i-file-export" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M11.5 21h-4.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v5m-5 6h7m-3 -3l3 3l-3 3"/></symbol>
+<symbol id="i-cloud-check" viewBox="0 0 24 24"><path d="M11 18.004h-4.343c-2.572 -.004 -4.657 -2.011 -4.657 -4.487c0 -2.475 2.085 -4.482 4.657 -4.482c.393 -1.762 1.794 -3.2 3.675 -3.773c1.88 -.572 3.956 -.193 5.444 1c1.488 1.19 2.162 3.007 1.77 4.769h.99c1.388 0 2.585 .82 3.138 2.007"/><path d="M15 19l2 2l4 -4"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13"/><path d="M9 4v13"/><path d="M15 7v13"/></symbol>
+<symbol id="i-adjustments-horizontal" viewBox="0 0 24 24"><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 6l8 0"/><path d="M16 6l4 0"/><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 12l2 0"/><path d="M10 12l10 0"/><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 18l11 0"/><path d="M19 18l1 0"/></symbol>
+<symbol id="i-discount" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><circle cx="9.5" cy="9.5" r=".5" fill="currentColor"/><circle cx="14.5" cy="14.5" r=".5" fill="currentColor"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/></symbol>
+<symbol id="i-world-search" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 0 -9 9"/><path d="M3.6 9h16.8"/><path d="M3.6 15h7.9"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a16.984 16.984 0 0 1 2.574 8.62"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M20.2 20.2l1.8 1.8"/></symbol>
+<symbol id="i-list-details" viewBox="0 0 24 24"><path d="M13 5h8"/><path d="M13 9h5"/><path d="M13 15h8"/><path d="M13 19h5"/><path d="M3 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M3 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></symbol>
+<symbol id="i-tool" viewBox="0 0 24 24"><path d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><path d="M3 7m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M12 12l0 .01"/><path d="M3 13a20 20 0 0 0 18 0"/></symbol>
+<symbol id="i-coins" viewBox="0 0 24 24"><path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3z"/><path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4"/><path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598z"/><path d="M3 6v10c0 .888 .772 1.45 2 2"/><path d="M3 11c0 .888 .772 1.45 2 2"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"/><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"/><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z"/></symbol>
+<symbol id="i-calendar-event" viewBox="0 0 24 24"><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3l0 4"/><path d="M8 3l0 4"/><path d="M4 11l16 0"/><path d="M8 15h2v2h-2z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/></symbol>
+<symbol id="i-device-floppy" viewBox="0 0 24 24"><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M14 4l0 4l-6 0l0 -4"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></symbol>
+<symbol id="i-antenna-bars-5" viewBox="0 0 24 24"><path d="M6 18l0 -3"/><path d="M10 18l0 -6"/><path d="M14 18l0 -9"/><path d="M18 18l0 -12"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></symbol>
+<symbol id="i-world" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></symbol>
+<symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/></symbol>
+<symbol id="i-ruler-2" viewBox="0 0 24 24"><path d="M17 3l4 4l-14 14l-4 -4z"/><path d="M16 7l-1.5 -1.5"/><path d="M13 10l-1.5 -1.5"/><path d="M10 13l-1.5 -1.5"/><path d="M7 16l-1.5 -1.5"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7"/><path d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3"/><path d="M9.7 17l4.6 0"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3"/><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3"/><path d="M15 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><path d="M8 16l2 -6l6 -2l-2 6l-6 2"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 3l0 2"/><path d="M12 19l0 2"/><path d="M3 12l2 0"/><path d="M19 12l2 0"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><path d="M7 9l5 -5l5 5"/><path d="M12 4l0 12"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21l18 0"/><path d="M9 8l1 0"/><path d="M9 12l1 0"/><path d="M9 16l1 0"/><path d="M14 8l1 0"/><path d="M14 12l1 0"/><path d="M14 16l1 0"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16"/></symbol>
+<symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5l0 2"/><path d="M15 11l0 2"/><path d="M15 17l0 2"/><path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/></symbol>
+<symbol id="i-car" viewBox="0 0 24 24"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/></symbol>
+<symbol id="i-bus" viewBox="0 0 24 24"><path d="M6 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M18 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 17h-2v-11a1 1 0 0 1 1 -1h14a5 7 0 0 1 5 7v5h-2m-4 0h-8"/><path d="M16 5l1.5 7l4.5 0"/><path d="M2 10l15 0"/><path d="M7 5l0 5"/><path d="M12 5l0 5"/></symbol>
+<symbol id="i-walk" viewBox="0 0 24 24"><path d="M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 21l3 -4"/><path d="M16 21l-2 -4l-3 -3l1 -6"/><path d="M6 12l2 -3l4 -1l3 3l3 1"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6l6 -6"/></symbol>
+<symbol id="i-external-link" viewBox="0 0 24 24"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></symbol>
+<symbol id="i-route" viewBox="0 0 24 24"><path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z"/><path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"/><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/></symbol>
+<symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M9.58 5.548c.24 -.11 .492 -.207 .752 -.286c1.88 -.572 3.956 -.193 5.444 1c1.488 1.19 2.162 3.007 1.77 4.769h.99c1.913 0 3.464 1.56 3.464 3.486c0 .957 -.383 1.824 -1.003 2.454m-2.997 1.033h-11.343c-2.572 -.004 -4.657 -2.011 -4.657 -4.487c0 -2.475 2.085 -4.482 4.657 -4.482c.13 -.582 .37 -1.128 .7 -1.62"/><path d="M3 3l18 18"/></symbol>
+<symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></symbol>
+</svg>
 
     <!-- SIDEBAR DRAWER & BACKDROP -->
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
     <div id="sidebar-drawer">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h2 style="margin:0; font-size:20px; font-weight:800; color:var(--primary);">🛠️ Trippo Menu</h2>
+            <h2 style="margin:0; font-size:20px; font-weight:800; color:var(--primary);"><svg class="ico" aria-hidden="true"><use href="#i-tool"></use></svg>Trippo Menu</h2>
             <button class="close-modal" onclick="toggleSidebar(false)">✕</button>
         </div>
         
@@ -185,7 +261,7 @@
         <div class="flight-hub-card">
             <div class="flight-hub-header">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:16px;">✈️</span>
+                    <span style="font-size:16px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-plane-departure"></use></svg></span>
                     <div>
                         <div class="flight-hub-title">Explore Everywhere</div>
                         <div class="flight-hub-subtitle">Route Hub & Cheap Flights</div>
@@ -213,14 +289,14 @@
 
             <!-- Flight Hub Segmented Control -->
             <div class="flight-hub-tab-row">
-                <button type="button" class="flight-hub-tab-btn active" id="flighthub-tab-deals" onclick="switchFlightHubTab('deals')">🔥 Cheap Deals</button>
-                <button type="button" class="flight-hub-tab-btn" id="flighthub-tab-tools" onclick="switchFlightHubTab('tools')">🌐 Search Engines</button>
+                <button type="button" class="flight-hub-tab-btn active" id="flighthub-tab-deals" onclick="switchFlightHubTab('deals')"><svg class="ico" aria-hidden="true"><use href="#i-discount"></use></svg>Cheap Deals</button>
+                <button type="button" class="flight-hub-tab-btn" id="flighthub-tab-tools" onclick="switchFlightHubTab('tools')"><svg class="ico" aria-hidden="true"><use href="#i-world-search"></use></svg>Search Engines</button>
             </div>
 
             <!-- Live Cheap Deals Feed -->
             <div id="flight-hub-deals-container" class="flight-hub-deals-wrapper" style="margin-top:0; padding-top:2px; border-top:none;">
                 <div class="flight-hub-deals-header">
-                    <span class="flight-hub-deals-title">🔥 Top Getaways</span>
+                    <span class="flight-hub-deals-title"><svg class="ico" aria-hidden="true"><use href="#i-flame"></use></svg>Top Getaways</span>
                     <span style="font-size:10px; color:var(--text-light); cursor:pointer;" onclick="refreshFlightHubDeals()">↻ Refresh</span>
                 </div>
                 <div id="flight-hub-deals-list" class="flight-hub-deals-list">
@@ -231,7 +307,7 @@
             <!-- Outbound Launcher Links -->
             <div id="flight-hub-launchers-container" class="flight-hub-links" style="display:none; margin-top:4px;">
                 <a id="flighthub-skyscanner" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.skyscanner.com/transport/flights-from/lft/">
-                    <span class="flight-hub-link-icon">🌐</span>
+                    <span class="flight-hub-link-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-world-search"></use></svg></span>
                     <div class="flight-hub-link-info">
                         <div class="flight-hub-link-name">Skyscanner</div>
                         <div class="flight-hub-link-desc">Explore Everywhere country grid</div>
@@ -239,7 +315,7 @@
                     <span class="flight-hub-link-arrow">↗</span>
                 </a>
                 <a id="flighthub-googleflights" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.google.com/travel/flights?q=flights+from+LFT+to+anywhere">
-                    <span class="flight-hub-link-icon">🗺️</span>
+                    <span class="flight-hub-link-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-map"></use></svg></span>
                     <div class="flight-hub-link-info">
                         <div class="flight-hub-link-name">Google Flights</div>
                         <div class="flight-hub-link-desc">Interactive world price map</div>
@@ -247,7 +323,7 @@
                     <span class="flight-hub-link-arrow">↗</span>
                 </a>
                 <a id="flighthub-flightconnections" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.flightconnections.com/flights-from-lft">
-                    <span class="flight-hub-link-icon">🧭</span>
+                    <span class="flight-hub-link-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-compass"></use></svg></span>
                     <div class="flight-hub-link-info">
                         <div class="flight-hub-link-name">FlightConnections</div>
                         <div class="flight-hub-link-desc">Direct routes, airlines & schedules</div>
@@ -255,7 +331,7 @@
                     <span class="flight-hub-link-arrow">↗</span>
                 </a>
                 <a id="flighthub-kayak" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.kayak.com/explore/LFT">
-                    <span class="flight-hub-link-icon">🔍</span>
+                    <span class="flight-hub-link-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-search"></use></svg></span>
                     <div class="flight-hub-link-info">
                         <div class="flight-hub-link-name">Kayak Explore</div>
                         <div class="flight-hub-link-desc">Budget destination grid</div>
@@ -263,7 +339,7 @@
                     <span class="flight-hub-link-arrow">↗</span>
                 </a>
                 <a id="flighthub-aviasales" class="flight-hub-link" target="_blank" rel="noopener noreferrer" href="https://www.aviasales.com/search?marker=581802&origin=LFT&destination=anywhere">
-                    <span class="flight-hub-link-icon">🏷️</span>
+                    <span class="flight-hub-link-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-tag"></use></svg></span>
                     <div class="flight-hub-link-info">
                         <div class="flight-hub-link-name">WayAway / Aviasales</div>
                         <div class="flight-hub-link-desc">Anywhere fare finder</div>
@@ -276,43 +352,43 @@
         <!-- TRIP TOOLS COLLAPSIBLE ACCORDION -->
         <div class="sidebar-item" onclick="toggleSidebarTripTools()" style="justify-content:space-between; cursor:pointer;" title="Tap to expand trip tools">
             <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
-                <span>🛠️</span> Trip Tools
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-tool"></use></svg></span> Trip Tools
             </div>
             <span id="sidebar-trip-tools-arrow" style="font-size:12px; transition:transform 0.2s ease; display:inline-block;">▼</span>
         </div>
         <div id="sidebar-trip-tools-group" style="display:none; padding-left:14px; margin-bottom:12px; border-left:2px solid var(--border-subtle);">
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openAITripSearchModal()">
-                <span>✨</span> AI Trip Generator
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span> AI Trip Generator
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openPackingModal()">
-                <span>🧳</span> Smart Packing Checklist
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-briefcase"></use></svg></span> Smart Packing Checklist
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="printPocketItinerary()">
-                <span>📄</span> Print / PDF Pocket Itinerary
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-printer"></use></svg></span> Print / PDF Pocket Itinerary
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="exportTripToICS()">
-                <span>📅</span> Export to Calendar (.ics)
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-calendar-event"></use></svg></span> Export to Calendar (.ics)
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openBudgetModal()">
-                <span>💰</span> Smart Split Budget Tracker
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-wallet"></use></svg></span> Smart Split Budget Tracker
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openCurrencyModal()">
-                <span>💱</span> Currency & Tipping Guide
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-coins"></use></svg></span> Currency & Tipping Guide
             </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openEsimModal()">
-                <span>📶</span> Travel eSIM Data Pass
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-antenna-bars-5"></use></svg></span> Travel eSIM Data Pass
             </div>
         </div>
 
 
 
         <div class="sidebar-item" onclick="toggleDarkMode()">
-            <span id="dark-mode-icon">🌙</span> <span id="dark-mode-label">Toggle Dark Mode</span>
+            <span id="dark-mode-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-moon"></use></svg></span> <span id="dark-mode-label">Toggle Dark Mode</span>
         </div>
 
         <div class="sidebar-item" onclick="openSettingsModal()" style="justify-content:space-between; cursor:pointer;" title="App settings & preferences">
             <div style="display:flex; align-items:center; gap:10px; font-weight:700; color:var(--primary);">
-                <span>⚙️</span> App Settings & Preferences
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-settings"></use></svg></span> App Settings & Preferences
             </div>
             <span style="font-size:13px; color:var(--text-light); font-weight:700;">></span>
         </div>
@@ -320,11 +396,11 @@
         <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;">
 
         <!-- CLOUD AUTHENTICATION IN SIDEBAR -->
-        <h3 class="sidebar-section-title">☁️ Cloud Sync & Account</h3>
+        <h3 class="sidebar-section-title"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync & Account</h3>
         
         <div id="sidebar-auth-logged-in" style="display:none;">
             <p style="font-size:13px; margin-bottom:10px; color:var(--text);">Signed in as:<br><strong id="sidebar-user-email" style="color:var(--primary);"></strong></p>
-            <button class="save-btn" style="background:#2b7c62; margin-top:0; margin-bottom:8px; padding:12px; font-size:13px;" onclick="manualSync()">🔄 Sync Cloud Now</button>
+            <button class="save-btn" style="background:#2b7c62; margin-top:0; margin-bottom:8px; padding:12px; font-size:13px;" onclick="manualSync()"><svg class="ico" aria-hidden="true"><use href="#i-refresh"></use></svg>Sync Cloud Now</button>
             <button class="optimize-btn" style="margin:0; width:100%; padding:10px; font-size:13px;" onclick="handleSignOut()">Sign Out</button>
             <button onclick="toggleAuthLog('auth-log-view-in')" style="width:100%; background:none; border:none; color:var(--text-light); font-size:11px; font-weight:600; margin-top:8px; cursor:pointer;">Show sync log</button>
             <pre id="auth-log-view-in" style="display:none; white-space:pre-wrap; word-break:break-word; font-size:10px; line-height:1.4; background:var(--bg-hover, rgba(0,0,0,0.04)); border:1px solid var(--border-subtle); border-radius:8px; padding:8px; margin:6px 0 0 0; max-height:180px; overflow:auto; user-select:text; -webkit-user-select:text;"></pre>
@@ -369,9 +445,9 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.26</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.27</span></span>
             </div>
-            <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
+            <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
         <div style="padding: 0 20px; display: flex; flex-direction: column; align-items: center;">
             <img src="fad.png" alt="Travel Globe Graphic" class="home-hero-graphic" onerror="this.style.display='none'" />
@@ -390,10 +466,15 @@
     <div id="planner-view" class="view">
         <div id="planner-map" class="map-container">
             <div class="map-controls-row">
-                <button class="map-btn" id="planner-gps-btn" onclick="toggleUserLocation('planner')">🎯 My Location</button>
-                <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner', 'map')">⛶ Full Map</button>
-                <button class="map-btn map-btn-trails" onclick="toggleTrails('planner')">🥾 Map Trails</button>
-                <button class="map-btn map-btn-trains" id="planner-train-btn" onclick="cycleTrainOverlay('planner')">🚆 Trains: Off</button>
+                <button class="map-btn" id="planner-gps-btn" onclick="toggleUserLocation('planner')"><svg class="ico" aria-hidden="true"><use href="#i-current-location"></use></svg>My Location</button>
+                <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner', 'map')"><svg class="ico" aria-hidden="true"><use href="#i-window-maximize"></use></svg>Full Map</button>
+            <div class="map-layers-wrap" id="planner-layers-wrap">
+                <button class="map-btn" id="planner-layers-btn" aria-haspopup="true" aria-expanded="false" onclick="toggleLayersMenu('planner', event)"><svg class="ico" aria-hidden="true"><use href="#i-stack-2"></use></svg>Layers</button>
+                <div class="map-layers-menu" id="planner-layers-menu">
+                    <button type="button" class="layers-item map-btn-trails" onclick="toggleTrails('planner')"><svg class="ico" aria-hidden="true"><use href="#i-mountain"></use></svg><span class="layers-label">Hiking trails</span><span class="layers-state" id="planner-trails-state">Off</span></button>
+                    <button type="button" class="layers-item map-btn-trains" id="planner-train-btn" onclick="cycleTrainOverlay('planner')"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg><span class="layers-label">Trains</span><span class="layers-state" id="planner-train-state">Off</span></button>
+                </div>
+            </div>
             </div>
         </div>
         <div class="sheet">
@@ -409,8 +490,8 @@
                             <select id="planner-trip-select" aria-label="Choose trip" onchange="openTrip(this.value)"></select>
                             <span class="planner-trip-caret" aria-hidden="true">▾</span>
                         </div>
-                        <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates">✏️</button>
-                        <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Plan with Friends Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> 👥 Plan with Friends</span>
+                        <button onclick="openEditTripModal()" style="background:none; border:none; padding:2px 4px; font-size:14px; cursor:pointer; opacity:0.75;" title="Edit trip name or dates"><svg class="ico ico-only" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+                        <span id="planner-collab-badge" class="collab-badge" onclick="openShareTripModal()" style="display:none;" title="Plan with Friends Active • Tap to invite more friends"><span class="collab-pulse-dot"></span> <svg class="ico" aria-hidden="true"><use href="#i-user-plus"></use></svg>Plan with Friends</span>
                         <button id="planner-ios-share-btn" class="ios-share-action-btn" onclick="openShareTripModal()" title="Share trip, co-plan live, or export" aria-label="Share Trip">
                             <svg class="ios-share-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
@@ -422,7 +503,7 @@
                     </div>
                     <div style="margin-top: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <button id="planner-date-chip" onclick="openEditTripModal()" class="planner-date-chip" title="Click to set or change trip departure date">
-                            <span id="planner-date-chip-text">📅 Set Start Date</span>
+                            <span id="planner-date-chip-text"><svg class="ico" aria-hidden="true"><use href="#i-calendar-event"></use></svg>Set Start Date</span>
                         </button>
                         <input type="file" id="import-file-input" accept=".ics,.json" style="display:none" onchange="handleFileImport(event)">
                     </div>
@@ -436,14 +517,14 @@
             </div>
             
             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                <button class="optimize-btn" onclick="optimizeTripRoute()" style="flex: 1; margin-bottom: 0;" title="Optimize route order of unlocked stops">✨ Auto-Optimize Stop Order</button>
-                <button id="toggle-lock-all-btn" class="lock-all-toggle-btn" onclick="toggleLockAllStops()" title="Lock or unlock all stops in itinerary">🔒 Lock All</button>
+                <button class="optimize-btn" onclick="optimizeTripRoute()" style="flex: 1; margin-bottom: 0;" title="Optimize route order of unlocked stops"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Auto-Optimize Stop Order</button>
+                <button id="toggle-lock-all-btn" class="lock-all-toggle-btn" onclick="toggleLockAllStops()" title="Lock or unlock all stops in itinerary"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Lock All</button>
             </div>
             
             <div id="itinerary-list"></div>
             
             <a href="https://www.getyourguide.com/" id="planner-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
-                <span class="action-icon">🎟️</span>
+                <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-ticket"></use></svg></span>
                 <div class="action-content">
                     <div class="action-title">Find Tours & Activities</div>
                     <div class="action-subtitle">Day trips, museum tickets & local excursions</div>
@@ -473,8 +554,8 @@
                     <span style="font-size: 18px; margin-top: -2px;">‹</span> Back
                 </button>
                 <div class="map-controls-row">
-                    <button class="map-btn" id="places-gps-btn" onclick="toggleUserLocation('places')">🎯 My Location</button>
-                    <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places', 'map')">⛶ Full Map</button>
+                    <button class="map-btn" id="places-gps-btn" onclick="toggleUserLocation('places')"><svg class="ico" aria-hidden="true"><use href="#i-current-location"></use></svg>My Location</button>
+                    <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places', 'map')"><svg class="ico" aria-hidden="true"><use href="#i-window-maximize"></use></svg>Full Map</button>
                 </div>
             </div>
             <div class="sheet">
@@ -493,7 +574,7 @@
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button type="button" class="ai-copilot-btn" onclick="openAICopilot()" title="Open AI Travel Copilot for recommendations & day plans">
-                            <span>✨ AI Copilot</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>AI Copilot</span>
                         </button>
                         <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Stop</button>
                     </div>
@@ -502,13 +583,13 @@
                 <div id="places-day-tabs" style="display: flex; overflow-x: auto; gap: 8px; margin: 12px 0 16px 0; padding-bottom: 6px; scrollbar-width: none;"></div>
                 
                 <p style="text-align:center; font-size:11px; color:#8fa39f; margin: 10px 0 6px 0; font-weight:600;">Drag your hotel to the top to lock it as the starting point. Tap any line on the map for walking directions.</p>
-                <button class="optimize-btn" onclick="optimizeCityRoute()">✨ Auto-Optimize from Base</button>
+                <button class="optimize-btn" onclick="optimizeCityRoute()"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Auto-Optimize from Base</button>
                 <div id="saved-places-container"></div>
                 
                 <button onclick="openPlaceSearchModal()" class="dashed-add-btn" style="margin-top: 10px;">+ Add Stop</button>
                 
                 <a href="https://www.getyourguide.com/" id="places-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
-                    <span class="action-icon">🎟️</span>
+                    <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-ticket"></use></svg></span>
                     <div class="action-content">
                         <div class="action-title">Find Local Tours & Tickets</div>
                         <div class="action-subtitle">Top sightseeing, skip-the-line passes & hidden gems</div>
@@ -527,7 +608,7 @@
             <div id="bookings-list-container"></div>
             
             <a href="https://www.discovercars.com/?a_aid=581802" id="bookings-car-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
-                <span class="action-icon">🚗</span>
+                <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-car"></use></svg></span>
                 <div class="action-content">
                     <div class="action-title">Compare Rental Cars (DiscoverCars)</div>
                     <div class="action-subtitle">Free cancellation, trusted local suppliers & best rates</div>
@@ -545,7 +626,7 @@
             <div id="transit-list-container"></div>
             
             <a href="https://www.omio.com/?cmp=581802" id="transit-train-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
-                <span class="action-icon">🚆</span>
+                <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-train"></use></svg></span>
                 <div class="action-content">
                     <div class="action-title">Book Regional Trains & Buses (Omio)</div>
                     <div class="action-subtitle">Compare train, bus and ferry tickets across Europe & USA</div>
@@ -574,11 +655,16 @@
                     <span style="font-size: 18px; margin-top: -2px;">‹</span> Back
                 </button>
                 <div class="map-controls-row">
-                    <button class="map-btn" id="wishlist-gps-btn" onclick="toggleUserLocation('wishlist')">🎯 My Location</button>
-                    <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist', 'map')">⛶ Full Map</button>
-                    <button class="map-btn map-btn-trails" onclick="toggleTrails('wishlist')">🥾 Map Trails</button>
-                    <button class="map-btn map-btn-trains" id="wishlist-train-btn" onclick="cycleTrainOverlay('wishlist')">🚆 Trains: Off</button>
-                    <button class="map-btn map-btn-alltrails" onclick="openAllTrailsNearCenter()">🌲 AllTrails</button>
+                    <button class="map-btn" id="wishlist-gps-btn" onclick="toggleUserLocation('wishlist')"><svg class="ico" aria-hidden="true"><use href="#i-current-location"></use></svg>My Location</button>
+                    <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist', 'map')"><svg class="ico" aria-hidden="true"><use href="#i-window-maximize"></use></svg>Full Map</button>
+                <div class="map-layers-wrap has-alltrails" id="wishlist-layers-wrap">
+                    <button class="map-btn" id="wishlist-layers-btn" aria-haspopup="true" aria-expanded="false" onclick="toggleLayersMenu('wishlist', event)"><svg class="ico" aria-hidden="true"><use href="#i-stack-2"></use></svg>Layers</button>
+                    <div class="map-layers-menu" id="wishlist-layers-menu">
+                        <button type="button" class="layers-item map-btn-trails" onclick="toggleTrails('wishlist')"><svg class="ico" aria-hidden="true"><use href="#i-mountain"></use></svg><span class="layers-label">Hiking trails</span><span class="layers-state" id="wishlist-trails-state">Off</span></button>
+                        <button type="button" class="layers-item map-btn-trains" id="wishlist-train-btn" onclick="cycleTrainOverlay('wishlist')"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg><span class="layers-label">Trains</span><span class="layers-state" id="wishlist-train-state">Off</span></button>
+                        <button type="button" class="layers-item map-btn-alltrails" onclick="openAllTrailsNearCenter()"><svg class="ico" aria-hidden="true"><use href="#i-trees"></use></svg><span class="layers-label">Open AllTrails</span><svg class="ico layers-ext" aria-hidden="true"><use href="#i-external-link"></use></svg></button>
+                    </div>
+                </div>
                 </div>
             </div>
             
@@ -595,8 +681,8 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <div>
                         <h2 id="active-wishlist-heading" style="margin: 0; font-size: 20px; display:inline-block;">Master Wishlist</h2>
-                        <button onclick="document.getElementById('wishlist-kml-input').click()" class="micro-action-btn" style="margin-left:10px;">📥 Import KML</button>
-                        <button onclick="exportWishlistKML()" class="micro-action-btn" style="margin-left:6px;">📤 Export KML</button>
+                        <button onclick="document.getElementById('wishlist-kml-input').click()" class="micro-action-btn" style="margin-left:10px;"><svg class="ico" aria-hidden="true"><use href="#i-folder-down"></use></svg>Import KML</button>
+                        <button onclick="exportWishlistKML()" class="micro-action-btn" style="margin-left:6px;"><svg class="ico" aria-hidden="true"><use href="#i-file-export"></use></svg>Export KML</button>
 
                         <input type="file" id="wishlist-kml-input" accept=".kml,.json" style="display:none" onchange="handleWishlistFileImport(event)">
                     </div>
@@ -664,7 +750,7 @@
     <div id="budget-modal" class="modal" onclick="handleModalBackdropClick(event, 'budget-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('budget-modal')">✕</button>
-            <h2 style="margin: 0 0 16px 0; font-size: 20px;">💰 Smart Split Budget Tracker</h2>
+            <h2 style="margin: 0 0 16px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-wallet"></use></svg>Smart Split Budget Tracker</h2>
             
             <div class="form-row" style="margin-bottom: 14px;">
                 <div class="form-group">
@@ -698,8 +784,8 @@
                 </div>
                 <div class="form-group">
                     <select id="expense-split-type" class="form-control" style="font-weight:700;">
-                        <option value="split">👥 Split Evenly</option>
-                        <option value="individual">👤 Personal / Individual</option>
+                        <option value="split">Split Evenly</option>
+                        <option value="individual">Personal / Individual</option>
                     </select>
                 </div>
             </div>
@@ -714,7 +800,7 @@
     <div id="currency-modal" class="modal" onclick="handleModalBackdropClick(event, 'currency-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('currency-modal')">✕</button>
-            <h2 style="margin: 0 0 4px 0; font-size: 20px;">💱 Currency & Tipping Guide</h2>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-coins"></use></svg>Currency & Tipping Guide</h2>
             <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Instant rate conversions and local tipping customs</p>
 
             <div class="form-row" style="margin-bottom: 12px;">
@@ -758,7 +844,7 @@
             </div>
 
             <!-- Tipping Customs Cheat Sheet -->
-            <h3 style="font-size: 13px; text-transform:uppercase; letter-spacing:0.5px; margin: 0 0 8px 0; color:var(--text-light);">💡 World Tipping Customs</h3>
+            <h3 style="font-size: 13px; text-transform:uppercase; letter-spacing:0.5px; margin: 0 0 8px 0; color:var(--text-light);"><svg class="ico" aria-hidden="true"><use href="#i-bulb"></use></svg>World Tipping Customs</h3>
             <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
                 <div style="padding:8px 12px; background:var(--bg); border:1px solid var(--border-subtle); border-radius:10px;">
                     <strong>🇯🇵 Japan / South Korea:</strong> No tipping. Good service is standard; leaving cash can be considered rude.
@@ -792,12 +878,12 @@
     <div id="esim-modal" class="modal" onclick="handleModalBackdropClick(event, 'esim-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('esim-modal')">✕</button>
-            <h2 style="margin: 0 0 4px 0; font-size: 20px;">📶 Travel eSIM Mobile Data</h2>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-antenna-bars-5"></use></svg>Travel eSIM Mobile Data</h2>
             <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Instant digital high-speed mobile data without physical SIM cards or expensive roaming charges.</p>
 
             <div style="background:var(--primary-light); padding:14px; border-radius:14px; margin-bottom:16px; border:1px solid var(--border-subtle);">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                    <span style="font-size:18px;">✨</span>
+                    <span style="font-size:18px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
                     <strong style="font-size:13px; color:var(--primary);">How It Works:</strong>
                 </div>
                 <div style="font-size:12px; color:var(--text); line-height:1.4;">
@@ -807,7 +893,7 @@
 
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <a href="https://www.airalo.com/?marker=581802" target="_blank" rel="noopener noreferrer" class="flight-hub-link" style="padding:12px; border-radius:12px;">
-                    <span style="font-size:20px;">🌐</span>
+                    <span style="font-size:20px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-world-search"></use></svg></span>
                     <div style="flex:1;">
                         <div style="font-size:13px; font-weight:700;">Airalo Global eSIM</div>
                         <div style="font-size:11px; color:var(--text-light);">Local, regional & global plans in 200+ countries from $4.50</div>
@@ -815,7 +901,7 @@
                     <span style="font-size:12px; font-weight:700; color:var(--primary);">Get eSIM ↗</span>
                 </a>
                 <a href="https://yesim.app/?marker=581802" target="_blank" rel="noopener noreferrer" class="flight-hub-link" style="padding:12px; border-radius:12px;">
-                    <span style="font-size:20px;">🚀</span>
+                    <span style="font-size:20px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-rocket"></use></svg></span>
                     <div style="flex:1;">
                         <div style="font-size:13px; font-weight:700;">Yesim Unlimited Data</div>
                         <div style="font-size:11px; color:var(--text-light);">Unlimited daily plans & pay-as-you-go international data</div>
@@ -830,7 +916,7 @@
     <div id="packing-modal" class="modal" onclick="handleModalBackdropClick(event, 'packing-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('packing-modal')">✕</button>
-            <h2 style="margin: 0 0 4px 0; font-size: 20px;">🧳 Smart Packing Checklist</h2>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-briefcase"></use></svg>Smart Packing Checklist</h2>
             <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-light);"><span id="packing-modal-trip-name">Trip</span></p>
 
             <div class="packing-progress-container">
@@ -920,7 +1006,7 @@
                 <div id="hotel-streetview-preview" style="display: none; margin-top: 10px; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--border-subtle); position: relative; background: var(--card-bg);">
                     <img id="hotel-streetview-img" alt="Hotel Street View" style="width: 100%; height: 150px; object-fit: cover; display: block;" onerror="this.parentElement.style.display='none'">
                     <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0, 0, 0, 0.7); color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; backdrop-filter: blur(4px);">
-                        👁 Hotel Street View
+                        <svg class="ico" aria-hidden="true"><use href="#i-eye"></use></svg>Hotel Street View
                     </div>
                     <button type="button" onclick="openStreetViewModal(document.getElementById('hotel-lat-input').value, document.getElementById('hotel-lon-input').value, document.getElementById('hotel-name-input').value || 'Hotel')" style="position: absolute; bottom: 8px; right: 10px; background: white; color: var(--primary); border: none; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 3px 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">Full View ↗</button>
                 </div>
@@ -930,8 +1016,8 @@
                 <label>Hotel Link / Booking URL</label>
                 <input type="url" id="hotel-url-input" class="form-control" placeholder="https://trip.com/... or https://booking.com/...">
                 <div style="display:flex; gap:8px; margin-top:8px;">
-                    <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#287dfa; justify-content:center;" onclick="searchHotelOnTripCom()">🔍 Search Trip.com</button>
-                    <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#003580; justify-content:center;" onclick="searchHotelOnBookingCom()">🔍 Search Booking.com</button>
+                    <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#287dfa; justify-content:center;" onclick="searchHotelOnTripCom()"><svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>Search Trip.com</button>
+                    <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#003580; justify-content:center;" onclick="searchHotelOnBookingCom()"><svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>Search Booking.com</button>
                 </div>
             </div>
 
@@ -945,7 +1031,7 @@
 
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="save-btn" style="flex:1; margin-top:0;" onclick="saveLodgingBooking()">Save Stay Info</button>
-                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteLodgingBooking()">🗑</button>
+                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteLodgingBooking()"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
             </div>
         </div>
     </div>
@@ -965,7 +1051,7 @@
             </div>
             <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="new-trip-roundtrip" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-                <label for="new-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);">🔁 Round-Trip Itinerary</label>
+                <label for="new-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-repeat"></use></svg>Round-Trip Itinerary</label>
             </div>
             <button class="save-btn" onclick="saveNewTrip()">Create Itinerary</button>
         </div>
@@ -989,7 +1075,7 @@
             </div>
             <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="edit-trip-roundtrip" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-                <label for="edit-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);">🔁 Round-Trip Itinerary</label>
+                <label for="edit-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-repeat"></use></svg>Round-Trip Itinerary</label>
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="save-btn" onclick="saveEditedTrip()" style="flex:1;">Save Changes</button>
@@ -1027,7 +1113,7 @@
                 <div id="share-mode-copy-card" class="share-mode-card selected" onclick="selectShareMode('copy')">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="share-mode-icon">📋</span>
+                            <span class="share-mode-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-copy"></use></svg></span>
                             <div>
                                 <div class="share-mode-title">Send a Copy</div>
                                 <div class="share-mode-subtitle">Standalone duplicate</div>
@@ -1042,7 +1128,7 @@
                 <div id="share-mode-collab-card" class="share-mode-card" onclick="selectShareMode('collab')">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="share-mode-icon">⚡</span>
+                            <span class="share-mode-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-bolt"></use></svg></span>
                             <div>
                                 <div class="share-mode-title">Plan with Friends</div>
                                 <div class="share-mode-subtitle">Live real-time sync</div>
@@ -1067,7 +1153,7 @@
                 </div>
                 <div style="display:flex; gap:8px;">
                     <input type="text" id="share-link-input" readonly class="form-control" style="font-size:12px; font-family:monospace; background:var(--input-bg, #f8fcfb); cursor:text; flex:1;" onclick="this.select()">
-                    <button type="button" class="btn-secondary" onclick="shareViaNative()" title="Share via device app" style="padding:10px 14px; font-size:14px;">📤</button>
+                    <button type="button" class="btn-secondary" onclick="shareViaNative()" title="Share via device app" style="padding:10px 14px; font-size:14px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-share"></use></svg></button>
                 </div>
             </div>
 
@@ -1080,7 +1166,7 @@
 
             <div style="display:flex; gap:10px; margin-top:14px;">
                 <button type="button" id="share-action-copy-btn" class="save-btn" style="flex:1; margin:0;" onclick="copyShareLink()">
-                    <span>📋</span> Copy Itinerary Link
+                    <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-copy"></use></svg></span> Copy Itinerary Link
                 </button>
             </div>
 
@@ -1091,28 +1177,28 @@
                 </div>
                 <div class="share-export-grid">
                     <button type="button" class="share-export-tile" onclick="exportTripICS()" title="Add dates & stays to Apple or Google Calendar">
-                        <span class="share-export-icon">📅</span>
+                        <span class="share-export-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-calendar-event"></use></svg></span>
                         <div>
                             <div class="share-export-title">Add to Calendar</div>
                             <div class="share-export-sub">Apple & Google (.ics)</div>
                         </div>
                     </button>
                     <button type="button" class="share-export-tile" onclick="confirmExportSharedTrip()" title="Download offline trip backup file">
-                        <span class="share-export-icon">💾</span>
+                        <span class="share-export-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-device-floppy"></use></svg></span>
                         <div>
                             <div class="share-export-title">Offline Backup</div>
                             <div class="share-export-sub">Download .json file</div>
                         </div>
                     </button>
                     <button type="button" class="share-export-tile" onclick="closeModal('share-trip-modal'); printPocketItinerary();" title="Print or save PDF pocket itinerary">
-                        <span class="share-export-icon">📄</span>
+                        <span class="share-export-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-printer"></use></svg></span>
                         <div>
                             <div class="share-export-title">Print / PDF Guide</div>
                             <div class="share-export-sub">Pocket itinerary format</div>
                         </div>
                     </button>
                     <button type="button" class="share-export-tile" onclick="document.getElementById('import-file-input').click()" title="Import trip from .ics or .json file">
-                        <span class="share-export-icon">📥</span>
+                        <span class="share-export-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-folder-down"></use></svg></span>
                         <div>
                             <div class="share-export-title">Import File</div>
                             <div class="share-export-sub">Restore .ics or .json</div>
@@ -1132,14 +1218,14 @@
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 480px;">
             <button class="close-modal" onclick="cancelImportTrip()">✕</button>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="font-size:24px;">🗺️</span>
+                <span style="font-size:24px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-map"></use></svg></span>
                 <h2 style="margin: 0; font-size: 20px;">You've Been Invited!</h2>
             </div>
 
             <div style="background:var(--card-bg, #ffffff); border:1px solid var(--border-subtle); border-radius:14px; padding:16px; margin: 12px 0;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;">
                     <h3 id="import-modal-trip-name" style="margin:0; font-size:18px; color:var(--text);">Trip Name</h3>
-                    <div id="import-modal-badge" class="import-badge copy"><span>📋</span> Standalone Copy</div>
+                    <div id="import-modal-badge" class="import-badge copy"><span><svg class="ico ico-only" aria-hidden="true"><use href="#i-copy"></use></svg></span> Standalone Copy</div>
                 </div>
                 <div id="import-modal-desc" style="font-size:13px; color:var(--text-muted, #71837f); line-height:1.5;">
                     Description of copy vs collab
@@ -1149,7 +1235,7 @@
 
             <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px;">
                 <button type="button" id="import-modal-confirm-btn" class="save-btn" style="margin:0;" onclick="confirmImportTrip(false)">
-                    <span>✨</span> Add to My Trips
+                    <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span> Add to My Trips
                 </button>
                 <button type="button" class="btn-secondary" style="margin:0; text-align:center;" onclick="cancelImportTrip()">
                     Decline & Close
@@ -1247,7 +1333,7 @@
     <div id="add-wishlist-to-trip-modal" class="modal" onclick="handleModalBackdropClick(event, 'add-wishlist-to-trip-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('add-wishlist-to-trip-modal')">✕</button>
-            <h2 style="margin: 0 0 4px 0; font-size: 20px;">✈️ Add to Trip Itinerary</h2>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Add to Trip Itinerary</h2>
             <p style="color: #71837f; font-size: 13px; margin: 0 0 16px 0;">Add <strong id="add-pin-to-trip-name" style="color:var(--primary);"></strong> to a trip stop</p>
             
             <input type="hidden" id="add-pin-to-trip-pin-id">
@@ -1311,23 +1397,23 @@
             <div class="form-group" id="edit-poi-transit-mode-group">
                 <label>Commute from Previous Stop</label>
                 <select id="edit-poi-transit-mode" class="form-control">
-                    <option value="auto">⚡ Auto (Distance Based)</option>
-                    <option value="walking">🚶 Walking</option>
-                    <option value="driving">🚗 Driving</option>
-                    <option value="transit">🚆 Transit / Subway</option>
+                    <option value="auto">Auto (Distance Based)</option>
+                    <option value="walking">Walking</option>
+                    <option value="driving">Driving</option>
+                    <option value="transit">Transit / Subway</option>
                 </select>
             </div>
             <div id="place-streetview-preview" style="display: none; margin-bottom: 14px; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--border-subtle); position: relative; background: var(--card-bg);">
                 <img id="place-streetview-img" alt="Place Street View" style="width: 100%; height: 150px; object-fit: cover; display: block;" onerror="this.parentElement.style.display='none'">
                 <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0, 0, 0, 0.7); color: white; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; backdrop-filter: blur(4px);">
-                    👁 Street View Preview
+                    <svg class="ico" aria-hidden="true"><use href="#i-eye"></use></svg>Street View Preview
                 </div>
                 <button type="button" id="place-streetview-full-btn" style="position: absolute; bottom: 8px; right: 10px; background: white; color: var(--primary); border: none; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 3px 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">Full View ↗</button>
             </div>
             <div class="form-group"><label>Personal Notes</label><textarea id="edit-poi-notes" class="form-control"></textarea></div>
             <div style="display:flex; gap:10px; margin-top:16px;">
                 <button class="save-btn" style="flex:1; margin-top:0;" onclick="savePlaceEdits()">Save Details</button>
-                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deletePlaceFromEdit()">🗑</button>
+                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deletePlaceFromEdit()"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
             </div>
         </div>
     </div>
@@ -1337,7 +1423,7 @@
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 580px;">
             <button class="close-modal" onclick="closeModal('streetview-modal')">✕</button>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                <span style="font-size:20px;">👁</span>
+                <span style="font-size:20px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-eye"></use></svg></span>
                 <h2 id="streetview-modal-title" style="margin:0; font-size:18px; color:var(--primary); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Street View Preview</h2>
             </div>
             <div style="border-radius:16px; overflow:hidden; border:1.5px solid var(--border-subtle); position:relative; background:#111; min-height:200px;">
@@ -1375,10 +1461,10 @@
                 <div class="form-group">
                     <label>Method</label>
                     <select id="transit-method" class="form-control">
-                        <option value="plane">✈ Plane</option>
-                        <option value="train">🚆 Train</option>
-                        <option value="bus">🚌 Bus</option>
-                        <option value="car">🚗 Car</option>
+                        <option value="plane">Plane</option>
+                        <option value="train">Train</option>
+                        <option value="bus">Bus</option>
+                        <option value="car">Car</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1425,8 +1511,8 @@
                 <div class="form-group" style="flex: 1;">
                     <label>Flight Search Mode</label>
                     <select id="transit-flight-type" class="form-control" onchange="toggleTransitReturnDateField()">
-                        <option value="ow" selected>➡️ One-Way</option>
-                        <option value="rt">🔁 Round-Trip</option>
+                        <option value="ow" selected>One-Way</option>
+                        <option value="rt">Round-Trip</option>
                     </select>
                 </div>
                 <div class="form-group" id="transit-return-group" style="flex: 1; display: none;">
@@ -1438,14 +1524,14 @@
             <div style="margin-top: 10px; margin-bottom: 12px;">
                 <div style="font-size:11px; color:#8fa09c; margin-bottom:6px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Search Fares Online</div>
                 <div style="display:flex; gap:8px;">
-                    <button type="button" class="partner-btn" style="padding:8px 12px; font-size:12px; margin:0; flex:1; color:#0f294d; justify-content:center;" onclick="searchTransitOnTripCom()">✈️ Trip.com</button>
-                    <button type="button" class="partner-btn" style="padding:8px 12px; font-size:12px; margin:0; flex:1; color:#1a73e8; justify-content:center;" onclick="searchTransitOnGoogleFlights()">✈ Google Flights</button>
+                    <button type="button" class="partner-btn" style="padding:8px 12px; font-size:12px; margin:0; flex:1; color:#0f294d; justify-content:center;" onclick="searchTransitOnTripCom()"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Trip.com</button>
+                    <button type="button" class="partner-btn" style="padding:8px 12px; font-size:12px; margin:0; flex:1; color:#1a73e8; justify-content:center;" onclick="searchTransitOnGoogleFlights()"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Google Flights</button>
                 </div>
             </div>
 
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="save-btn" style="flex:1; margin-top:0;" onclick="saveTransitBooking()">Save Transit Details</button>
-                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteTransitBooking()">🗑</button>
+                <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteTransitBooking()"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
             </div>
         </div>
     </div>
@@ -1455,13 +1541,13 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('settings-modal')">✕</button>
             <h2 style="margin: 0 0 4px 0; font-size: 20px; font-weight: 800; display:flex; align-items:center; gap:8px;">
-                <span>⚙️</span> App Settings
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-settings"></use></svg></span> App Settings
             </h2>
             <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Manage your distance units, travel preferences, and data backups</p>
 
             <!-- Distance & Route Units -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">📏 Distance & Route Units</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-ruler-2"></use></svg>Distance & Route Units</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px; flex-wrap:wrap;">
                     <div>
                         <div style="font-size:14px; font-weight:700; color:var(--text);">Distance Unit</div>
@@ -1486,7 +1572,7 @@
 
             <!-- Travel & Currency Preferences -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">🌍 Travel Preferences</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-world"></use></svg>Travel Preferences</div>
                 <div class="form-row" style="margin-bottom:12px;">
                     <div class="form-group" style="flex:1;">
                         <label style="font-size:11px; font-weight:700;">Home / Default Airport</label>
@@ -1512,14 +1598,14 @@
                         <div style="font-size:11px; color:var(--text-light);">Switch between Dark and Light mode</div>
                     </div>
                     <button type="button" class="micro-action-btn" onclick="toggleDarkMode(); updateSettingsModalUI();" id="settings-theme-toggle-btn" style="padding:6px 12px; font-size:12px;">
-                        🌙 Toggle Dark Mode
+                        <svg class="ico" aria-hidden="true"><use href="#i-moon"></use></svg>Toggle Dark Mode
                     </button>
                 </div>
             </div>
 
             <!-- Map Settings -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">🗺 Map Engine</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-map"></use></svg>Map Engine</div>
                 <div class="form-group" style="margin-bottom:12px;">
                     <label style="font-size:11px; font-weight:700;">Map Provider</label>
                     <select id="setting-map-provider" class="form-control" style="font-weight:700; font-size:13px; padding:8px 12px;" onchange="saveMapProviderSetting(this.value)">
@@ -1549,10 +1635,10 @@
                         <option value="world">Whole world</option>
                     </select>
                 </div>
-                <div style="font-size:11px; font-weight:700; margin-bottom:6px;">Map Overlay Buttons</div>
+                <div style="font-size:11px; font-weight:700; margin-bottom:6px;">Layers Menu</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div>
-                        <div style="font-size:14px; font-weight:700; color:var(--text);">🚆 Trains</div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg>Trains</div>
                         <div style="font-size:11px; color:var(--text-light);">Railway lines and speed overlay</div>
                     </div>
                     <label class="switch">
@@ -1562,7 +1648,7 @@
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div>
-                        <div style="font-size:14px; font-weight:700; color:var(--text);">🥾 Map Trails</div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-mountain"></use></svg>Map Trails</div>
                         <div style="font-size:11px; color:var(--text-light);">Hiking trail overlay</div>
                     </div>
                     <label class="switch">
@@ -1572,7 +1658,7 @@
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div>
-                        <div style="font-size:14px; font-weight:700; color:var(--text);">🌲 AllTrails</div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-trees"></use></svg>AllTrails</div>
                         <div style="font-size:11px; color:var(--text-light);">Open AllTrails for the area on the Wishlist map</div>
                     </div>
                     <label class="switch">
@@ -1586,9 +1672,9 @@
                     </div>
                     <div id="mapbox-input-wrapper" style="position: relative; display:flex; flex-direction:column; gap:8px;">
                         <input type="password" id="mapbox-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="pk.ey...">
-                        <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveMapboxApiKey()">💾 Save Token</button>
+                        <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveMapboxApiKey()"><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Save Token</button>
                         <div id="mapbox-lock-overlay" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; border-radius: 8px; z-index: 10; display: none;">
-                            <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockMapboxKey()">🔒 Click to Edit Token</button>
+                            <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockMapboxKey()"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Click to Edit Token</button>
                         </div>
                     </div>
                 </div>
@@ -1596,7 +1682,7 @@
 
             <!-- Display & Motion -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">🎛 Display &amp; Motion</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-adjustments-horizontal"></use></svg>Display &amp; Motion</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
                     <div>
                         <div style="font-size:14px; font-weight:700; color:var(--text);">Temperature</div>
@@ -1641,62 +1727,62 @@
 
             <!-- Location Services API Key -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">📍 Location Services API</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>Location Services API</div>
                 <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
                     Provide your own Google Maps API Key to enable Places Autocomplete and Street View.
                 </div>
                 <div id="gmaps-input-wrapper" style="position: relative; display:flex; flex-direction:column; gap:8px;">
                     <input type="password" id="gmaps-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Google Maps API Key">
-                    <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGoogleMapsApiKey()">💾 Save Key</button>
+                    <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGoogleMapsApiKey()"><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Save Key</button>
                     <div id="gmaps-lock-overlay" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; border-radius: 8px; z-index: 10; display: none;">
-                        <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockGoogleMapsKey()">🔓 Click to Edit Key</button>
+                        <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockGoogleMapsKey()"><svg class="ico" aria-hidden="true"><use href="#i-lock-open"></use></svg>Click to Edit Key</button>
                     </div>
                 </div>
             </div>
 
             <!-- AI Settings & API Key -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">✨ AI Settings & API Key</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>AI Settings & API Key</div>
                 <div style="font-size:13px; color:var(--text-light); margin-bottom:12px;">
                     The AI trip planner and Copilot run on your own free Google Gemini key. It stays on this device and is only sent to Google. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--primary);">Get a free key here</a> (sign in, then "Create API key").
                 </div>
                 <div id="gemini-input-wrapper" style="position: relative; display:flex; flex-direction:column; gap:8px;">
                     <input type="password" id="gemini-api-key-input" autocomplete="new-password" data-1p-ignore="true" data-lpignore="true" class="form-control" style="padding:10px 12px; font-size:13px; width: 100%; box-sizing: border-box;" placeholder="Paste Gemini API Key">
-                    <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGeminiApiKey()">💾 Save Key</button>
+                    <button class="save-btn" style="padding:10px; font-size:13px; width: 100%; margin: 0; background: var(--primary);" onclick="saveGeminiApiKey()"><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Save Key</button>
                     <div id="gemini-lock-overlay" style="position: absolute; inset: 0; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; border-radius: 8px; z-index: 10; display: none;">
-                        <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockGeminiKey()">🔒 Click to Edit Key</button>
+                        <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockGeminiKey()"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>Click to Edit Key</button>
                     </div>
                 </div>
             </div>
 
             <!-- Data Management, Backup & Export -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">💾 Data & Backups</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Data & Backups</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="exportAppDataJSON()">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span>📤</span>
+                            <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-file-export"></use></svg></span>
                             <div style="font-size:13px; font-weight:700;">Export All Data (.json)</div>
                         </div>
                         <span>Download Backup ›</span>
                     </button>
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="document.getElementById('import-app-json-input').click()">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span>📥</span>
+                            <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-folder-down"></use></svg></span>
                             <div style="font-size:13px; font-weight:700;">Restore Backup (.json)</div>
                         </div>
                         <span>Restore Data ›</span>
                     </button>
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="closeModal('settings-modal'); openShareTripModal();">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span>🔗</span>
+                            <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-link"></use></svg></span>
                             <div style="font-size:13px; font-weight:700;">Share & Export Active Trip Hub</div>
                         </div>
                         <span>Open Share Hub ›</span>
                     </button>
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="forceAppRefresh()">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span>🔄</span>
+                            <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-refresh"></use></svg></span>
                             <div style="font-size:13px; font-weight:700;">Check Updates / Clear Cache</div>
                         </div>
                         <span>Refresh App ›</span>
@@ -1711,7 +1797,7 @@
     <!-- AI Loading Overlay (Spinner & Shimmer) -->
     <div id="ai-loading-overlay" class="ai-loading-overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Generating AI Itinerary">
         <div class="ai-loading-card">
-            <div class="ai-pulse-orb">⚡</div>
+            <div class="ai-pulse-orb"><svg class="ico ico-only" aria-hidden="true"><use href="#i-bolt"></use></svg></div>
             <div class="ai-loading-title">Generating Itinerary...</div>
             <div id="ai-loading-query-text" class="ai-loading-query"></div>
             
@@ -1723,7 +1809,7 @@
             </div>
 
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
-                ✨ AI trip planner · powered by Google Gemini
+                <svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>AI trip planner · powered by Google Gemini
             </div>
 
             <div style="margin-top: 16px;">
@@ -1739,7 +1825,7 @@
             
             <div style="margin-bottom: 16px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 22px;">✨</span>
+                    <span style="font-size: 22px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
                     <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: var(--text);">AI Trip Generator</h2>
                 </div>
                 <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.45;">
@@ -1751,7 +1837,7 @@
             <div class="ai-generator-widget" style="margin-bottom: 0;">
                 <form id="ai-trip-form" onsubmit="event.preventDefault(); submitAITripSearch();" class="ai-search-form">
                     <div class="ai-search-bar">
-                        <span class="ai-search-icon">✨</span>
+                        <span class="ai-search-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
                         <input 
                             type="text" 
                             id="ai-trip-input" 
@@ -1761,14 +1847,14 @@
                         />
                         <button type="submit" id="ai-generate-btn" class="ai-generate-btn" title="Generate Itinerary with AI">
                             <span class="btn-text">Generate</span>
-                            <span class="btn-icon">⚡</span>
+                            <span class="btn-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-bolt"></use></svg></span>
                         </button>
                     </div>
                 </form>
 
                 <!-- Offline Alert Banner -->
                 <div id="ai-offline-banner" class="ai-offline-banner" style="display:none;">
-                    <span>📡</span>
+                    <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-world-search"></use></svg></span>
                     <span>AI generation requires internet. Saved trips are available offline.</span>
                 </div>
 
@@ -1791,7 +1877,7 @@
             
             <div style="margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span style="font-size: 20px;">✨</span>
+                    <span style="font-size: 20px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>
                     <h2 id="ai-modal-title" style="margin: 0; font-size: 20px; font-weight: 800; color: var(--text);"></h2>
                 </div>
                 <div id="ai-modal-destination" style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px;"></div>
@@ -1806,7 +1892,7 @@
             <div style="display: flex; gap: 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
                 <button type="button" class="cancel-btn" onclick="closeModal('ai-trip-modal')" style="flex: 1; margin: 0;">Dismiss</button>
                 <button type="button" class="save-btn" onclick="saveAIGeneratedTrip()" style="flex: 2; margin: 0;">
-                    <span>💾 Save to My Trips</span>
+                    <span><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Save to My Trips</span>
                 </button>
             </div>
         </div>
@@ -1818,7 +1904,7 @@
             <!-- Header -->
             <div class="ai-copilot-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="ai-copilot-avatar">🤖</div>
+                    <div class="ai-copilot-avatar"><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></div>
                     <div>
                         <div style="display:flex; align-items:center; gap:6px;">
                             <h2 style="margin:0; font-size:16px; font-weight:800; color:var(--text);">AI Travel Copilot</h2>
@@ -1828,7 +1914,7 @@
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <button type="button" class="micro-action-btn" onclick="clearAIChatHistory()" title="Reset Chat Conversation" style="padding:4px 8px; font-size:11px;">🔄 New</button>
+                    <button type="button" class="micro-action-btn" onclick="clearAIChatHistory()" title="Reset Chat Conversation" style="padding:4px 8px; font-size:11px;"><svg class="ico" aria-hidden="true"><use href="#i-refresh"></use></svg>New</button>
                     <button class="close-modal" onclick="closeModal('ai-copilot-modal')" style="position:static; margin:0;">✕</button>
                 </div>
             </div>
@@ -1856,8 +1942,8 @@
             <div id="ai-copilot-chips-bar" class="ai-copilot-chips-bar">
                 <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('🍜 What are the best restaurants and food spots for this day?')">🍜 Top Dining</button>
                 <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('🏛️ Recommend top cultural sights and must-see attractions for this day')">🏛️ Must-See Sights</button>
-                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('✨ Suggest 3 hidden gems and unique local experiences here')">✨ Hidden Gems</button>
-                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('📋 Plan a complete morning, afternoon, and evening itinerary for this day')">📋 Full Day Plan</button>
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('✨ Suggest 3 hidden gems and unique local experiences here')"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Hidden Gems</button>
+                <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('📋 Plan a complete morning, afternoon, and evening itinerary for this day')"><svg class="ico" aria-hidden="true"><use href="#i-list-details"></use></svg>Full Day Plan</button>
                 <button type="button" class="ai-chat-chip" onclick="sendAICopilotChip('☕ Best coffee shops or dessert places nearby')">☕ Cafes & Desserts</button>
             </div>
 
@@ -1873,7 +1959,7 @@
                     />
                     <button type="submit" id="ai-copilot-send-btn" class="ai-chat-send-btn" title="Send message to AI Copilot">
                         <span>Send</span>
-                        <span>⚡</span>
+                        <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-bolt"></use></svg></span>
                     </button>
                 </div>
             </form>
@@ -1883,6 +1969,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.26"></script>
+    <script type="module" src="js/app.js?v=2.4.27"></script>
 </body>
 </html>

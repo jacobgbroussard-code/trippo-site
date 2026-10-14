@@ -31,6 +31,7 @@ import {
     calculateTransitEstimate,
     openDirectionsLink,
     getTempUnit,
+    icon,
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
@@ -100,7 +101,7 @@ export function showPlacesMasterList() {
     if (placesView) placesView.classList.remove('has-city-open');
     if (cityView) cityView.classList.remove('map-expanded');
     const btn = document.getElementById('places-fullscreen-btn');
-    if (btn) { btn.innerHTML = '⛶ Full Map'; btn.classList.remove('active-mode'); }
+    if (btn) { btn.innerHTML = `${icon('window-maximize')}Full Map`; btn.classList.remove('active-mode'); }
     renderPlacesMasterList();
 }
 
@@ -328,7 +329,7 @@ export function renderCityPlaces() {
 
     container.innerHTML = dayPlaces.map((p, index) => {
         const isStart = index === 0;
-        const badge = isStart ? `<span class="place-category-badge" style="background:var(--accent); color:white;">📍 Starting Base</span>` : `<span class="place-category-badge">${p.category}</span>`;
+        const badge = isStart ? `<span class="place-category-badge" style="background:var(--accent); color:white;"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg>Starting Base</span>` : `<span class="place-category-badge">${p.category}</span>`;
 
         let connectorHTML = '';
         if (index > 0) {
@@ -344,9 +345,9 @@ export function renderCityPlaces() {
                     <div class="timeline-dash-line"></div>
                     <div class="transit-pill">
                         <div class="transit-mode-switcher">
-                            <button type="button" class="mode-icon-btn ${currentMode === 'walking' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'walking')" title="Walking directions">🚶</button>
-                            <button type="button" class="mode-icon-btn ${currentMode === 'driving' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'driving')" title="Driving directions">🚗</button>
-                            <button type="button" class="mode-icon-btn ${currentMode === 'transit' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'transit')" title="Transit / Subway directions">🚆</button>
+                            <button type="button" class="mode-icon-btn ${currentMode === 'walking' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'walking')" title="Walking directions"><svg class="ico ico-only" aria-hidden="true"><use href="#i-walk"></use></svg></button>
+                            <button type="button" class="mode-icon-btn ${currentMode === 'driving' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'driving')" title="Driving directions"><svg class="ico ico-only" aria-hidden="true"><use href="#i-car"></use></svg></button>
+                            <button type="button" class="mode-icon-btn ${currentMode === 'transit' ? 'active' : ''}" onclick="event.stopPropagation(); setPlaceTransitMode('${safePlaceId}', 'transit')" title="Transit / Subway directions"><svg class="ico ico-only" aria-hidden="true"><use href="#i-train"></use></svg></button>
                         </div>
                         <div class="transit-estimate-link" onclick="event.stopPropagation(); openDirectionsLink(${prev.lat}, ${prev.lon}, ${p.lat}, ${p.lon}, '${currentMode}')" title="Open Google Maps in ${currentMode} mode">
                             <span>${transit.text}</span>
@@ -366,7 +367,7 @@ export function renderCityPlaces() {
         const safePlaceId = escapeJS(p.id || p.name);
         const safePlaceName = escapeJS(p.name || '');
         const svButton = (p.lat && p.lon) ? `
-            <button type="button" class="streetview-btn" onclick="event.stopPropagation(); openStreetViewModal(${Number(p.lat)}, ${Number(p.lon)}, '${safePlaceName}')" title="Street View" style="background:none; border:none; padding:4px 8px; font-size:15px; cursor:pointer; color:var(--primary); opacity:0.85;">👁</button>` : '';
+            <button type="button" class="streetview-btn" onclick="event.stopPropagation(); openStreetViewModal(${Number(p.lat)}, ${Number(p.lon)}, '${safePlaceName}')" title="Street View" style="background:none; border:none; padding:4px 8px; font-size:15px; cursor:pointer; color:var(--primary); opacity:0.85;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-eye"></use></svg></button>` : '';
 
         return `
         ${connectorHTML}
@@ -460,7 +461,7 @@ export function openPlaceSearchModal() {
     const toggleBtn = document.getElementById('toggle-wishlist-picker-btn');
     if (toggleBtn) {
         const pinCount = Array.isArray(wishlistPins) ? wishlistPins.length : 0;
-        toggleBtn.innerHTML = `<span>🌟</span> Import from Saved Wishlist (<span>${pinCount}</span>) ▾`;
+        toggleBtn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-heart"></use></svg></span> Import from Saved Wishlist (<span>${pinCount}</span>) ▾`;
         toggleBtn.style.display = pinCount > 0 ? 'inline-flex' : 'none';
     }
 
@@ -476,10 +477,10 @@ export function togglePlaceWishlistPicker() {
     if (isHidden) {
         populatePlaceWishlistPicker();
         picker.style.display = 'block';
-        if (btn) btn.innerHTML = `<span>🌟</span> Hide Wishlist (<span>${Array.isArray(wishlistPins) ? wishlistPins.length : 0}</span>) ▴`;
+        if (btn) btn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-heart"></use></svg></span> Hide Wishlist (<span>${Array.isArray(wishlistPins) ? wishlistPins.length : 0}</span>) ▴`;
     } else {
         picker.style.display = 'none';
-        if (btn) btn.innerHTML = `<span>🌟</span> Import from Saved Wishlist (<span>${Array.isArray(wishlistPins) ? wishlistPins.length : 0}</span>) ▾`;
+        if (btn) btn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-heart"></use></svg></span> Import from Saved Wishlist (<span>${Array.isArray(wishlistPins) ? wishlistPins.length : 0}</span>) ▾`;
     }
 }
 
@@ -542,7 +543,7 @@ export function selectWishlistPinForPlace(pinId) {
     const picker = document.getElementById('place-wishlist-picker');
     if (picker) picker.style.display = 'none';
     const btn = document.getElementById('toggle-wishlist-picker-btn');
-    if (btn) btn.innerHTML = `<span>🌟</span> Import from Saved Wishlist (<span>${wishlistPins.length}</span>) ▾`;
+    if (btn) btn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-heart"></use></svg></span> Import from Saved Wishlist (<span>${wishlistPins.length}</span>) ▾`;
 
     showNotification(`Selected "${pin.name}" from wishlist!`);
 }

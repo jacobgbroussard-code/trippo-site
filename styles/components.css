@@ -4380,3 +4380,37 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 .city-menu-check { flex: none; width: 18px; height: 18px; color: var(--primary); }
 
 .empty-day-note { text-align: center; font-size: 13px; color: var(--text-light, #64748b); padding: 18px 12px 6px; }
+
+/* Line icons (inline sprite in index.html) */
+.ico { width: 1.2em; height: 1.2em; flex: none; vertical-align: -0.22em; margin-right: 0.4em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ico.ico-only { margin-right: 0; }
+
+/* Map buttons: clean icon + label pills */
+.map-btn { height: 34px; padding: 0 13px; font-weight: 650; font-size: 12.5px; border: 1px solid rgba(15, 23, 42, 0.08); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.06); }
+.map-btn .ico { margin-right: 0; width: 17px; height: 17px; opacity: 0.85; }
+.map-btn:hover { transform: none; }
+.map-btn.layers-active { color: var(--primary); border-color: currentColor; }
+
+/* Layers menu */
+.map-layers-wrap { position: relative; pointer-events: auto; }
+.map-layers-menu {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 1100; min-width: 210px; padding: 6px;
+    background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.08);
+    opacity: 0; transform: translateY(-6px) scale(0.98); transform-origin: top right; visibility: hidden; pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
+}
+.map-layers-menu.open { opacity: 1; transform: none; visibility: visible; pointer-events: auto; transition: opacity 0.16s ease, transform 0.16s ease; }
+.layers-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; margin: 0; border: 0; border-radius: 11px;
+    background: none; color: var(--text); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.layers-item:hover, .layers-item:focus-visible { background: var(--bg); outline: none; }
+.layers-item .ico { margin-right: 0; width: 19px; height: 19px; color: var(--text-light, #64748b); }
+.layers-label { flex: 1; }
+.layers-state { font-size: 12px; font-weight: 700; color: var(--text-light, #64748b); padding: 3px 9px; border-radius: 999px; background: var(--bg); }
+.layers-state.on { background: var(--primary); color: #fff; }
+.layers-item .layers-ext { width: 15px; height: 15px; }
+body.hide-map-btn-trains.hide-map-btn-trails .map-layers-wrap:not(.has-alltrails),
+body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-wrap.has-alltrails { display: none; }

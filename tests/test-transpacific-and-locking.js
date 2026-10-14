@@ -204,7 +204,7 @@ async function runTests() {
             window.toggleStopLock(null, 1);
             const tokyoLocked = trip.stops[1].locked;
             const tokyoCardHasClass = document.querySelectorAll('#itinerary-list .stop-card')[1]?.classList.contains('is-locked');
-            const tokyoBtnText = document.querySelectorAll('#itinerary-list .stop-inline-lock-btn')[1]?.textContent.trim();
+            const tokyoBtnText = document.querySelectorAll('#itinerary-list .stop-inline-lock-btn')[1]?.innerHTML || '';
 
             // Toggle lock all
             window.toggleLockAllStops();
@@ -235,7 +235,7 @@ async function runTests() {
         check('Toggling stop lock updates state, CSS class, and icon', () => {
             assert(lockingUITest.tokyoLocked === true, 'Tokyo stop should be locked');
             assert(lockingUITest.tokyoCardHasClass === true, 'Card should have .is-locked class');
-            assert(lockingUITest.tokyoBtnText.includes('🔒'), 'Lock button should show lock icon');
+            assert(lockingUITest.tokyoBtnText.includes('#i-lock"'), 'Lock button should show lock icon');
         });
 
         check('Toggle Lock All switches all stops and updates header button text', () => {

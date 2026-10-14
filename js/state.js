@@ -71,13 +71,13 @@ export function toggleDarkMode() { // renamed internally but exported as toggleD
 
     safeSetStorage('trippoTheme', currentTheme);
     
-    const icon = document.getElementById('dark-mode-icon');
+    const iconEl = document.getElementById('dark-mode-icon');
     const label = document.getElementById('dark-mode-label');
     
-    if (icon) {
-        if (currentTheme === 'light') icon.innerText = '☀️';
-        else if (currentTheme === 'dark') icon.innerText = '🌙';
-        else icon.innerText = '🌴';
+    if (iconEl) {
+        if (currentTheme === 'light') iconEl.innerHTML = icon('sun', 'ico-only');
+        else if (currentTheme === 'dark') iconEl.innerHTML = icon('moon', 'ico-only');
+        else iconEl.innerHTML = icon('bolt', 'ico-only');
     }
     
     if (label) {
@@ -390,6 +390,11 @@ export function saveWishlist() {
 }
 
 // --- HAPTIC FEEDBACK (Mobile-Native Feel) ---
+// Line icon from the inline sprite at the top of index.html (Tabler Icons, MIT)
+export function icon(name, extraClass = '') {
+    return `<svg class="ico${extraClass ? ' ' + extraClass : ''}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
+}
+
 // --- Display preferences (Settings → Display & Motion) ---
 export function getTempUnit() {
     return safeGetStorage('trippo_temp_unit', 'F') === 'C' ? 'C' : 'F';

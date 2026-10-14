@@ -80,9 +80,9 @@ export function updateSettingsModalUI() {
         const isHotline = document.body.classList.contains('hotline-mode');
         const isDark = document.body.classList.contains('dark-mode');
         
-        if (isHotline) themeBtn.innerHTML = '☀️ Light Mode';
-        else if (isDark) themeBtn.innerHTML = '🌴 Hotline Mode';
-        else themeBtn.innerHTML = '🌙 Dark Mode';
+        if (isHotline) themeBtn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-sun"></use></svg>Light Mode';
+        else if (isDark) themeBtn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-bolt"></use></svg>Hotline Mode';
+        else themeBtn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-moon"></use></svg>Dark Mode';
     }
 
     const providerSelect = document.getElementById('setting-map-provider');

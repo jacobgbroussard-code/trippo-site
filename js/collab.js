@@ -149,12 +149,12 @@ export function selectShareMode(mode) {
     if (mode === 'copy') {
         if (descEl) {
             descEl.innerHTML = `
-                <div style="font-weight:700; color:var(--text); margin-bottom:4px;">📋 Send a Private Copy</div>
+                <div style="font-weight:700; color:var(--text); margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-copy"></use></svg>Send a Private Copy</div>
                 <div>Your friend gets their own complete duplicate. Edits made by either of you stay <b>100% independent and separate</b>.</div>
             `;
         }
         if (actionBtn) {
-            actionBtn.innerHTML = `<span>📋</span> Copy Itinerary Link`;
+            actionBtn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-copy"></use></svg></span> Copy Itinerary Link`;
         }
         if (collabBadge) collabBadge.style.display = 'none';
 
@@ -173,12 +173,12 @@ export function selectShareMode(mode) {
 
         if (descEl) {
             descEl.innerHTML = `
-                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">⚡ Plan with Friends (Real-Time)</div>
+                <div style="font-weight:700; color:var(--primary); margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-user-plus"></use></svg>Plan with Friends (Real-Time)</div>
                 <div>Multiple friends can co-plan together in real time! Adding stops, places, notes, or budget updates <b>syncs live across all devices</b>.</div>
             `;
         }
         if (actionBtn) {
-            actionBtn.innerHTML = `<span>⚡</span> Copy Co-Plan Invite Link`;
+            actionBtn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-copy"></use></svg></span> Copy Co-Plan Invite Link`;
         }
         if (collabBadge) {
             collabBadge.style.display = 'inline-flex';
@@ -383,7 +383,7 @@ function updateCollabBadge(tripId, isConnected) {
     const active = getActiveTrip();
     if (active && active.id === tripId && active.isCollaborative) {
         badge.style.display = 'inline-flex';
-        badge.innerHTML = `<span class="collab-pulse-dot"></span> 👥 Plan with Friends`;
+        badge.innerHTML = `<span class="collab-pulse-dot"></span> <svg class="ico" aria-hidden="true"><use href="#i-user-plus"></use></svg>Plan with Friends`;
     } else {
         badge.style.display = 'none';
     }
@@ -443,25 +443,25 @@ export function openImportTripModal(data, mode) {
     if (mode === 'copy') {
         if (badgeEl) {
             badgeEl.className = 'import-badge copy';
-            badgeEl.innerHTML = `<span>📋</span> Standalone Copy`;
+            badgeEl.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-copy"></use></svg></span> Standalone Copy`;
         }
         if (descEl) {
             descEl.innerHTML = `This will add a <b>private duplicate</b> to your planner. You can customize and edit it completely on your own without affecting the original trip.`;
         }
         if (confirmBtn) {
-            confirmBtn.innerHTML = `<span>✨</span> Add to My Trips`;
+            confirmBtn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-plus"></use></svg></span> Add to My Trips`;
             confirmBtn.className = 'save-btn';
         }
     } else {
         if (badgeEl) {
             badgeEl.className = 'import-badge collab';
-            badgeEl.innerHTML = `<span>⚡</span> Planning with Friends`;
+            badgeEl.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-users"></use></svg></span> Planning with Friends`;
         }
         if (descEl) {
             descEl.innerHTML = `You've been invited to <b>plan this trip together in real time</b>! Changes you or your friends make will sync live across accounts.`;
         }
         if (confirmBtn) {
-            confirmBtn.innerHTML = `<span>🚀</span> Join & Co-Plan Live`;
+            confirmBtn.innerHTML = `<span><svg class="ico ico-only" aria-hidden="true"><use href="#i-rocket"></use></svg></span> Join & Co-Plan Live`;
             confirmBtn.className = 'save-btn highlight';
         }
     }

@@ -956,7 +956,7 @@ function setAILoadingState(isLoading, queryText = '') {
         if (isLoading) {
             btn.innerHTML = `<span class="ai-btn-spinner"></span> <span>Crafting...</span>`;
         } else {
-            btn.innerHTML = `<span class="btn-text">Generate</span> <span class="btn-icon">⚡</span>`;
+            btn.innerHTML = `<span class="btn-text">Generate</span> <span class="btn-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span>`;
         }
     }
 
@@ -1009,18 +1009,18 @@ export function openAITripModal(itinerary) {
             });
         }
         const routeBadge = cityList.length > 1
-            ? `<span class="ai-stat-chip" style="background:var(--primary-light,#e3f1ed); color:var(--primary); font-weight:700;">🗺️ ${cityList.map(c => escapeHTML(c)).join(' → ')}</span>`
+            ? `<span class="ai-stat-chip" style="background:var(--primary-light,#e3f1ed); color:var(--primary); font-weight:700;"><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg>${cityList.map(c => escapeHTML(c)).join(' → ')}</span>`
             : '';
 
         statsEl.innerHTML = `
-            <span class="ai-stat-chip">🗓️ ${totalDays} Day${totalDays !== 1 ? 's' : ''}</span>
-            <span class="ai-stat-chip">📍 ${totalActivities} Activit${totalActivities !== 1 ? 'ies' : 'y'}</span>
+            <span class="ai-stat-chip"><svg class="ico" aria-hidden="true"><use href="#i-calendar-event"></use></svg>${totalDays} Day${totalDays !== 1 ? 's' : ''}</span>
+            <span class="ai-stat-chip"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${totalActivities} Activit${totalActivities !== 1 ? 'ies' : 'y'}</span>
             ${routeBadge}
             ${!itinerary.isTemplate
-                ? '<span class="ai-stat-chip edge">⚡ Gemini AI</span>'
+                ? '<span class="ai-stat-chip edge"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Gemini AI</span>'
                 : itinerary.needsKey
-                    ? '<button type="button" class="ai-stat-chip ai-key-cta" onclick="openAIKeySettings()" title="Real AI planning uses your own free Google Gemini key.">📋 Template plan · ✨ Add your free Gemini key for real AI ›</button>'
-                    : '<span class="ai-stat-chip" title="Gemini could not be reached, so this is a ready-made template plan.">📋 Template plan · live AI unavailable</span>'}
+                    ? '<button type="button" class="ai-stat-chip ai-key-cta" onclick="openAIKeySettings()" title="Real AI planning uses your own free Google Gemini key."><svg class="ico" aria-hidden="true"><use href="#i-list-details"></use></svg>Template plan · ✨ Add your free Gemini key for real AI ›</button>'
+                    : '<span class="ai-stat-chip" title="Gemini could not be reached, so this is a ready-made template plan."><svg class="ico" aria-hidden="true"><use href="#i-list-details"></use></svg>Template plan · live AI unavailable</span>'}
         `;
     }
 
@@ -1445,7 +1445,7 @@ export function renderAICopilotMessages() {
 
                 const addAllBtn = msg.suggestions.length > 1 ? `
                     <button type="button" id="btn_${batchKey}" class="ai-add-all-btn" onclick="addAllPlacesFromAISuggestions('${batchKey}', ${activeCopilotStopIndex}, ${activeCopilotDayIndex})">
-                        <span>✨ Add All (${msg.suggestions.length}) to Day ${activeCopilotDayIndex + 1}</span>
+                        <span><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg>Add All (${msg.suggestions.length}) to Day ${activeCopilotDayIndex + 1}</span>
                     </button>
                 ` : '';
 
@@ -1461,8 +1461,8 @@ export function renderAICopilotMessages() {
                 <div class="ai-msg-row bot">
                     <div class="ai-bubble-bot">
                         ${msg.isTemplate ? (msg.needsKey
-                            ? '<button type="button" class="ai-template-note ai-key-cta" onclick="openAIKeySettings()">📋 Suggested ideas · ✨ Add your free Gemini key for real AI ›</button>'
-                            : '<div class="ai-template-note">📋 Suggested ideas · live AI unavailable</div>') : ''}
+                            ? '<button type="button" class="ai-template-note ai-key-cta" onclick="openAIKeySettings()"><svg class="ico" aria-hidden="true"><use href="#i-list-details"></use></svg>Suggested ideas · ✨ Add your free Gemini key for real AI ›</button>'
+                            : '<div class="ai-template-note"><svg class="ico" aria-hidden="true"><use href="#i-list-details"></use></svg>Suggested ideas · live AI unavailable</div>') : ''}
                         <div>${formattedContent}</div>
                         ${suggestionsHtml}
                     </div>

@@ -3,7 +3,7 @@
    js/maps.js
    ========================================================================== */
 
-import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage, safeSetStorage, isReducedMotion } from './state.js';
+import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage, safeSetStorage, isReducedMotion, icon } from './state.js';
 
 export let plannerMap = null;
 export let placesMap = null;
@@ -340,18 +340,18 @@ export function cycleTrainOverlay(target) {
     if (current === 'off') {
         trainOverlayModes[target] = 'standard';
         map.addLayer(trainLayers[target].standard);
-        if (btn) btn.innerText = '🚆 Trains: Red';
+        setLayerState(target, 'train', 'Standard');
         showNotification("Standard Railway overlay active");
     } else if (current === 'standard') {
         map.removeLayer(trainLayers[target].standard);
         trainOverlayModes[target] = 'maxspeed';
         map.addLayer(trainLayers[target].maxspeed);
-        if (btn) btn.innerText = '🚆 Trains: Speed';
+        setLayerState(target, 'train', 'Speed');
         showNotification("Speed overlay active");
     } else {
         map.removeLayer(trainLayers[target].maxspeed);
         trainOverlayModes[target] = 'off';
-        if (btn) btn.innerText = '🚆 Trains: Off';
+        setLayerState(target, 'train', 'Off');
         showNotification("Train overlays hidden");
     }
 }
@@ -385,11 +385,11 @@ export function setOverlayButtonVisible(kind, visible) {
         if (kind === 'trains') {
             Object.values(trainLayers[target]).forEach(l => { if (l) map.removeLayer(l); });
             trainOverlayModes[target] = 'off';
-            const btn = document.getElementById(target === 'wishlist' ? 'wishlist-train-btn' : 'planner-train-btn');
-            if (btn) btn.innerText = '🚆 Trains: Off';
+            setLayerState(target, 'train', 'Off');
         } else if (kind === 'trails') {
             const layer = target === 'wishlist' ? wishlistHikingLayer : plannerHikingLayer;
             if (layer) map.removeLayer(layer);
+            setLayerState(target, 'trails', 'Off');
         }
     });
 }
@@ -417,6 +417,41 @@ export function applyDefaultMapView(map, context) {
     return false;
 }
 
+// --- Layers menu (trails, trains, AllTrails) on the Route and Wishlist maps ---
+function setLayerState(target, kind, text) {
+    const el = document.getElementById(`${target}-${kind}-state`);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('on', text !== 'Off');
+    const anyOn = ['trails', 'train'].some(k => {
+        const s = document.getElementById(`${target}-${k}-state`);
+        return s && s.classList.contains('on');
+    });
+    document.getElementById(`${target}-layers-btn`)?.classList.toggle('layers-active', anyOn);
+}
+
+function closeLayersOnOutside(e) {
+    if (!e.target.closest('.map-layers-wrap')) closeLayersMenus();
+}
+
+export function closeLayersMenus() {
+    document.querySelectorAll('.map-layers-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.map-layers-wrap > .map-btn').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    document.removeEventListener('pointerdown', closeLayersOnOutside, true);
+}
+
+export function toggleLayersMenu(target, e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById(`${target}-layers-menu`);
+    if (!menu) return;
+    const open = !menu.classList.contains('open');
+    closeLayersMenus();
+    if (!open) return;
+    menu.classList.add('open');
+    document.getElementById(`${target}-layers-btn`)?.setAttribute('aria-expanded', 'true');
+    document.addEventListener('pointerdown', closeLayersOnOutside, true);
+}
+
 export function toggleTrails(target) {
     const map = target === 'wishlist' ? wishlistMap : plannerMap;
     if (!map) return;
@@ -435,9 +470,11 @@ export function toggleTrails(target) {
 
     if (map.hasLayer(layer)) {
         map.removeLayer(layer);
+        setLayerState(target, 'trails', 'Off');
         showNotification("Hiking trails overlay hidden");
     } else {
         map.addLayer(layer);
+        setLayerState(target, 'trails', 'On');
         showNotification("🥾 Waymarked Hiking Trails active");
     }
 }
@@ -675,17 +712,17 @@ export function getSegmentPopupHTML(fromPlace, toPlace, fromIdx, toIdx, currentM
             <button type="button" class="segment-mode-btn mode-walk ${currentMode === 'walking' ? 'active' : ''}" 
                 onclick="window.setPlaceTransitMode('${safePlaceId}', 'walking')" 
                 title="Walking directions">
-                🚶 Walk
+                ${icon('walk')}Walk
             </button>
             <button type="button" class="segment-mode-btn mode-drive ${currentMode === 'driving' ? 'active' : ''}" 
                 onclick="window.setPlaceTransitMode('${safePlaceId}', 'driving')" 
                 title="Driving directions">
-                🚗 Drive
+                ${icon('car')}Drive
             </button>
             <button type="button" class="segment-mode-btn mode-transit ${currentMode === 'transit' ? 'active' : ''}" 
                 onclick="window.setPlaceTransitMode('${safePlaceId}', 'transit')" 
                 title="Transit / Train directions">
-                🚆 Transit
+                ${icon('train')}Transit
             </button>
         </div>
         <div class="map-segment-estimate">
@@ -945,10 +982,10 @@ export function toggleMapMode(target, forceMode = null) {
 
     if (btn) {
         if (isNowMapExpanded) {
-            btn.innerHTML = '📋 Split View';
+            btn.innerHTML = `${icon('list-details')}Split View`;
             btn.classList.add('active-mode');
         } else {
-            btn.innerHTML = '⛶ Full Map';
+            btn.innerHTML = `${icon('window-maximize')}Full Map`;
             btn.classList.remove('active-mode');
         }
     }
@@ -984,7 +1021,7 @@ export function toggleUserLocation(context = 'places') {
         activeGpsContext = null;
         if (btn) {
             btn.classList.remove('active-mode');
-            btn.innerHTML = '🎯 My Location';
+            btn.innerHTML = `${icon('current-location')}My Location`;
         }
         showNotification("📍 Location tracking turned off.");
         return;
@@ -996,7 +1033,7 @@ export function toggleUserLocation(context = 'places') {
     }
 
     if (btn) {
-        btn.innerHTML = '🎯 Locating...';
+        btn.innerHTML = `${icon('current-location')}Locating…`;
     }
 
     const onLocationFound = (pos) => {
@@ -1035,7 +1072,7 @@ export function toggleUserLocation(context = 'places') {
         activeGpsContext = context;
         if (btn) {
             btn.classList.add('active-mode');
-            btn.innerHTML = '🎯 My Location';
+            btn.innerHTML = `${icon('current-location')}My Location`;
         }
     };
 
@@ -1043,7 +1080,7 @@ export function toggleUserLocation(context = 'places') {
         console.warn("GPS Location error:", err);
         if (btn) {
             btn.classList.remove('active-mode');
-            btn.innerHTML = '🎯 My Location';
+            btn.innerHTML = `${icon('current-location')}My Location`;
         }
         activeGpsContext = null;
         if (err.code === 1) {

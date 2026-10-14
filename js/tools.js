@@ -71,24 +71,24 @@ export function renderHome() {
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays > 1) {
-                countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs in ${diffDays} days</span>`;
+                countdownBadge = `<span class="trip-countdown-badge upcoming"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg>Departs in ${diffDays} days</span>`;
             } else if (diffDays === 1) {
-                countdownBadge = `<span class="trip-countdown-badge upcoming">⏳ Departs Tomorrow!</span>`;
+                countdownBadge = `<span class="trip-countdown-badge upcoming"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg>Departs Tomorrow!</span>`;
             } else if (diffDays === 0) {
-                countdownBadge = `<span class="trip-countdown-badge today">🎉 Departs Today!</span>`;
+                countdownBadge = `<span class="trip-countdown-badge today"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Departs Today!</span>`;
             } else if (diffDays < 0 && Math.abs(diffDays) < (totalNights || 1)) {
-                countdownBadge = `<span class="trip-countdown-badge in-progress">📍 Day ${Math.abs(diffDays) + 1} of ${totalNights}</span>`;
+                countdownBadge = `<span class="trip-countdown-badge in-progress"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>Day ${Math.abs(diffDays) + 1} of ${totalNights}</span>`;
             } else if (totalNights > 0 && Math.abs(diffDays) >= totalNights) {
-                countdownBadge = `<span class="trip-countdown-badge completed">✨ Completed</span>`;
+                countdownBadge = `<span class="trip-countdown-badge completed"><svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg>Completed</span>`;
             }
 
             dateDisplay = `${sDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${totalNights} Nights`;
         } else {
-            dateDisplay = `🗓️ Flexible Dates • ${totalNights} Nights`;
-            countdownBadge = `<span class="trip-countdown-badge tbd">🗓️ Dates TBD</span>`;
+            dateDisplay = `<svg class="ico" aria-hidden="true"><use href="#i-calendar-question"></use></svg>Flexible Dates • ${totalNights} Nights`;
+            countdownBadge = `<span class="trip-countdown-badge tbd"><svg class="ico" aria-hidden="true"><use href="#i-calendar-question"></use></svg>Dates TBD</span>`;
         }
 
-        const collabChip = trip.isCollaborative ? `<span class="trip-countdown-badge" style="background:rgba(59,130,246,0.12); color:#2563eb; border:1px solid rgba(59,130,246,0.25);">👥 Plan with Friends</span>` : '';
+        const collabChip = trip.isCollaborative ? `<span class="trip-countdown-badge" style="background:rgba(59,130,246,0.12); color:#2563eb; border:1px solid rgba(59,130,246,0.25);"><svg class="ico" aria-hidden="true"><use href="#i-user-plus"></use></svg>Plan with Friends</span>` : '';
 
         return `
         <div class="trip-card">
@@ -108,8 +108,8 @@ export function renderHome() {
                         <line x1="12" y1="2" x2="12" y2="15"></line>
                     </svg>
                 </button>
-                <button onclick="event.stopPropagation(); openEditTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:7px 9px; font-size:14px; cursor:pointer; color:var(--primary);" title="Edit Trip Details & Dates">✏️</button>
-                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:7px 9px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete or Leave Trip">🗑️</button>
+                <button onclick="event.stopPropagation(); openEditTripModal('${safeTripId}')" style="background:var(--primary-light); border:1px solid var(--border-subtle); border-radius:8px; padding:7px 9px; font-size:14px; cursor:pointer; color:var(--primary);" title="Edit Trip Details & Dates"><svg class="ico ico-only" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+                <button onclick="event.stopPropagation(); promptDeleteTripById('${safeTripId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:7px 9px; font-size:14px; cursor:pointer; color:var(--accent);" title="Delete or Leave Trip"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
                 <div style="color: #b7c7c3; font-size:22px; cursor:pointer;" onclick="openTrip('${safeTripId}')">›</div>
             </div>
         </div>`;
@@ -533,7 +533,7 @@ export function renderBudgetCalculator() {
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
                 <strong style="font-size:15px; color:var(--primary);">$${amt.toFixed(2)}</strong>
-                <button onclick="deleteTripExpense('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; color:var(--accent);">🗑</button>
+                <button onclick="deleteTripExpense('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; color:var(--accent);"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
             </div>
         </div>`;
     }).join('');
@@ -601,7 +601,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.26",
+        trippoVersion: "2.4.27",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -647,7 +647,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.26",
+        version: "2.4.27",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
