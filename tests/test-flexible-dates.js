@@ -6,7 +6,14 @@ const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 const USER_DATA_DIR = path.join(__dirname, 'scratch_chrome_flexible_dates');
 
 async function testFlexibleDates() {
-    console.log('Testing Optional / Flexible Trip Start Dates in Trippo v2.3.71...');
+    console.log('Testing Optional / Flexible Trip Start Dates in Trippo...');
+    // Start from an empty profile: a previous run leaves its "Dream Vacation" trip (with a date
+    // already set) in localStorage, which this test would find instead of the one it creates.
+    for (let i = 0; i < 40; i++) { // wait for a previous run's Chrome to release the port/profile
+        try { await fetch('http://127.0.0.1:9296/json/version'); } catch (e) { break; }
+        await new Promise(r => setTimeout(r, 250));
+    }
+    try { fs.rmSync(USER_DATA_DIR, { recursive: true, force: true }); } catch (e) {}
     const chrome = spawn(CHROME_PATH, [
         '--headless=new',
         '--remote-debugging-port=9296',

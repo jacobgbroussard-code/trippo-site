@@ -35,7 +35,18 @@ function serverUp() {
     });
 }
 
+// Each browser test keeps a Chrome profile in tests/scratch_*; most never clear it, so trips a
+// previous run saved would leak into the next one. Start every script from empty profiles.
+function clearScratchProfiles() {
+    const fs = require('fs');
+    for (const dir of fs.readdirSync(__dirname)) {
+        if (!dir.startsWith('scratch_')) continue;
+        try { fs.rmSync(path.join(__dirname, dir), { recursive: true, force: true }); } catch (e) {}
+    }
+}
+
 function runOnce(name) {
+    clearScratchProfiles();
     const started = Date.now();
     const r = spawnSync(process.execPath, [path.join(__dirname, name + '.js')], {
         cwd: path.join(__dirname, '..'), encoding: 'utf8', timeout: TIMEOUT_MS,
