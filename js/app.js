@@ -20,7 +20,7 @@ import * as collab from './collab.js';
 import * as ai from './ai.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.20';
+const CURRENT_VERSION = '2.4.21';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);

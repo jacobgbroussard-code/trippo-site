@@ -57,7 +57,7 @@ export function openStreetViewModal(lat, lon, title = 'Street View') {
 export let baseLayers = { planner: null, places: null, wishlist: null };
 const labelLayers = { planner: null, places: null, wishlist: null };
 // Free key from https://carto.com/basemaps/apikey (public by design, like the Mapbox token).
-const CARTO_KEY = '';
+const CARTO_KEY = 'cb1_459l_1_1ac1e85c030ff6961b6096e4';
 
 export function updateMapProvider() {
     const provider = safeGetStorage('trippo_map_provider', 'mapbox-light');
