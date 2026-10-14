@@ -51,6 +51,8 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
   Because deploy does `git add .`, check `git status` before deploying if you created new files.
 - Don't deploy unless the user asks. Deploying = publishing to the live site.
 - Keep it dependency-free vanilla JS; CDN libraries (Leaflet etc.) are loaded in `index.html`.
+- Don't delete `google493bf46685196747.html` — it keeps Google Search Console ownership verified.
+  `robots.txt`, `sitemap.xml` and `og-image.jpg` are also served on purpose.
 - Check mobile layout (iPhone safe areas) for UI changes — most users are on phones.
 
 ## Working with two AI tools
