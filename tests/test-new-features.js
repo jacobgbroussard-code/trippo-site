@@ -56,8 +56,8 @@ async function testNewFeatures() {
                     const hasOpenMapBtn = !!document.body.innerText.includes('Open Map ›');
                     const cityVisible = cityView.style.display !== 'none' && cityView.offsetHeight > 0;
                     const placesMapInstance = !!window.placesMap;
-                    const citySelect = document.getElementById('places-city-select');
-                    const citySelectVisible = citySelect && citySelect.style.display !== 'none';
+                    const citySelect = document.getElementById('places-city-picker');
+                    const citySelectVisible = !!citySelect && !citySelect.disabled;
                     return { hasOpenMapBtn, cityVisible, placesMapInstance, citySelectVisible };
                 } catch(err) {
                     return { error: err.message, stack: err.stack };

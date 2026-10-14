@@ -129,6 +129,72 @@ export async function fetchCityWeather(lat, lon) {
     renderPlacesDayTabs();
 }
 
+// --- City picker: the city name opens a small menu of the trip's cities ---
+function renderCityMenu(trip, stopIndex) {
+    const picker = document.getElementById('places-city-picker');
+    const menu = document.getElementById('places-city-menu');
+    if (!picker || !menu) return;
+    setCityMenuOpen(false);
+    const hasChoices = trip.stops.length > 1;
+    picker.classList.toggle('has-choices', hasChoices);
+    picker.disabled = !hasChoices;
+    if (!hasChoices) { menu.innerHTML = ''; return; }
+
+    let d = trip.startDate && trip.startDate.trim() ? parseLocalDate(trip.startDate) : null;
+    const fmt = date => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    menu.innerHTML = trip.stops.map((s, idx) => {
+        const nights = Math.max(1, Number(s.nights) || 1);
+        let when = `${nights} night${nights === 1 ? '' : 's'}`;
+        if (d && !isNaN(d)) {
+            const end = new Date(d);
+            end.setDate(end.getDate() + nights);
+            when = `${fmt(d)} – ${fmt(end)} · ${when}`;
+            d = end;
+        }
+        const current = idx === stopIndex;
+        return `<button type="button" class="city-menu-item${current ? ' current' : ''}" role="option" aria-selected="${current}" onclick="chooseCityFromMenu(${idx})">
+            <span class="city-menu-num">${idx + 1}</span>
+            <span class="city-menu-text"><span class="city-menu-name">${escapeHTML(s.name)}</span><span class="city-menu-when">${escapeHTML(when)}</span></span>
+            ${current ? '<svg class="city-menu-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </button>`;
+    }).join('');
+}
+
+function closeCityMenuOnOutside(e) {
+    if (!e.target.closest('.city-title-wrap')) setCityMenuOpen(false);
+}
+function closeCityMenuOnEscape(e) {
+    if (e.key === 'Escape') { setCityMenuOpen(false); document.getElementById('places-city-picker')?.focus(); }
+}
+
+function setCityMenuOpen(open) {
+    const picker = document.getElementById('places-city-picker');
+    const menu = document.getElementById('places-city-menu');
+    if (!picker || !menu) return;
+    menu.classList.toggle('open', open);
+    picker.setAttribute('aria-expanded', String(open));
+    document.removeEventListener('pointerdown', closeCityMenuOnOutside, true);
+    document.removeEventListener('keydown', closeCityMenuOnEscape);
+    if (open) {
+        document.addEventListener('pointerdown', closeCityMenuOnOutside, true);
+        document.addEventListener('keydown', closeCityMenuOnEscape);
+    }
+}
+
+export function toggleCityMenu(e) {
+    if (e) e.stopPropagation();
+    const picker = document.getElementById('places-city-picker');
+    const menu = document.getElementById('places-city-menu');
+    if (!menu || !picker || picker.disabled) return;
+    triggerHaptic('light');
+    setCityMenuOpen(!menu.classList.contains('open'));
+}
+
+export function chooseCityFromMenu(index) {
+    setCityMenuOpen(false);
+    if (index !== activePlacesStopIndex) openPlacesCityView(index);
+}
+
 export function openPlacesCityView(stopIndex) {
     const trip = trips.find(t => t.id === activePlacesTripId) || getActiveTrip();
     if (!trip) {
@@ -167,16 +233,7 @@ export function openPlacesCityView(stopIndex) {
     if (colCityName) colCityName.innerText = stop.name;
 
     // City selector dropdown if multiple stops
-    // The city name itself is the picker: an invisible <select> sits over the title + chevron
-    const citySelect = document.getElementById('places-city-select');
-    const cityPicker = document.getElementById('places-city-picker');
-    const hasChoices = trip.stops.length > 1;
-    if (cityPicker) cityPicker.classList.toggle('has-choices', hasChoices);
-    if (citySelect && hasChoices) {
-        citySelect.innerHTML = trip.stops.map((s, idx) => `
-            <option value="${idx}" ${idx === stopIndex ? 'selected' : ''}>${escapeHTML(s.name)}</option>
-        `).join('');
-    }
+    renderCityMenu(trip, stopIndex);
 
     initPlacesMap();
     setCityWeather(null);

@@ -4338,15 +4338,43 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 }
 
 /* Daily tab: the city name doubles as the city picker */
-.city-title-picker { position: relative; display: inline-flex; align-items: center; gap: 2px; min-width: 0; flex: 0 1 auto; }
-.city-title-picker h2 { margin: 0; font-size: 20px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.city-title-chevron { display: none; flex: none; width: 20px; height: 20px; color: var(--text-light); }
-.city-title-picker select { display: none; }
+.city-title-wrap { position: relative; min-width: 0; flex: 0 1 auto; }
+.city-title-picker {
+    display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0;
+    background: none; border: 0; padding: 2px 4px 2px 0; margin: 0; font: inherit; color: var(--text);
+    border-radius: 10px; -webkit-tap-highlight-color: transparent;
+}
+.city-title-picker:disabled { cursor: default; opacity: 1; color: var(--text); }
+.city-title-text { font-size: 20px; font-weight: 800; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.city-title-chevron { display: none; flex: none; width: 20px; height: 20px; color: var(--text-light, #64748b); transition: transform 0.2s ease, color 0.2s ease; }
 .city-title-picker.has-choices { cursor: pointer; }
 .city-title-picker.has-choices .city-title-chevron { display: block; }
-.city-title-picker.has-choices select {
-    display: block; position: absolute; inset: 0; width: 100%; height: 100%;
-    opacity: 0; cursor: pointer; font-size: 16px; /* 16px stops iOS zooming in on tap */
-    border: 0; margin: 0; padding: 0; -webkit-appearance: none; appearance: none;
+.city-title-picker[aria-expanded="true"] .city-title-chevron { transform: rotate(180deg); color: var(--primary); }
+.city-title-picker:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.city-menu {
+    position: absolute; top: calc(100% + 8px); left: -6px; z-index: 1200;
+    min-width: 240px; max-width: min(320px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto;
+    padding: 6px; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.08);
+    opacity: 0; transform: translateY(-6px) scale(0.98); transform-origin: top left;
+    pointer-events: none; visibility: hidden;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
 }
-.city-title-picker.has-choices:focus-within .city-title-chevron { color: var(--primary); }
+.city-menu.open { opacity: 1; transform: none; pointer-events: auto; visibility: visible; transition: opacity 0.16s ease, transform 0.16s ease; }
+.city-menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: none; border: 0; border-radius: 11px; padding: 9px 10px; margin: 0;
+    font: inherit; color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.city-menu-item:hover, .city-menu-item:focus-visible { background: var(--bg); outline: none; }
+.city-menu-item.current { background: var(--primary-light); }
+.city-menu-num {
+    flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 11px; font-weight: 800; color: var(--text-light, #64748b); background: var(--bg); border: 1px solid var(--border-subtle);
+}
+.city-menu-item.current .city-menu-num { background: var(--primary); border-color: var(--primary); color: #fff; }
+.city-menu-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.city-menu-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.city-menu-when { font-size: 11.5px; color: var(--text-light, #64748b); margin-top: 1px; }
+.city-menu-check { flex: none; width: 18px; height: 18px; color: var(--primary); }

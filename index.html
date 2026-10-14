@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.24">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.24">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.24">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.24">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.24">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.25">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.25">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.25">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.25">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.25">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.24">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.24">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.25">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.25">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -369,7 +369,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.24</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.25</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -484,16 +484,18 @@
                     <span style="font-size: 12px; color: var(--text-muted, #71837f);">Open List ›</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <div id="places-city-picker" class="city-title-picker">
-                        <h2 id="places-city-title">Places</h2>
-                        <svg class="city-title-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <select id="places-city-select" aria-label="Choose city" onchange="openPlacesCityView(Number(this.value))"></select>
+                    <div class="city-title-wrap">
+                        <button type="button" id="places-city-picker" class="city-title-picker" aria-haspopup="listbox" aria-expanded="false" onclick="toggleCityMenu(event)">
+                            <span id="places-city-title" class="city-title-text">Places</span>
+                            <svg class="city-title-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <div id="places-city-menu" class="city-menu" role="listbox" aria-label="Choose city"></div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <button type="button" class="ai-copilot-btn" onclick="openAICopilot()" title="Open AI Travel Copilot for recommendations & day plans">
                             <span>✨ AI Copilot</span>
                         </button>
-                        <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Place</button>
+                        <button class="create-btn" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;" onclick="openPlaceSearchModal()">+ Add Stop</button>
                     </div>
                 </div>
                 
@@ -503,7 +505,7 @@
                 <button class="optimize-btn" onclick="optimizeCityRoute()">✨ Auto-Optimize from Base</button>
                 <div id="saved-places-container"></div>
                 
-                <button onclick="openPlaceSearchModal()" class="dashed-add-btn" style="margin-top: 10px;">+ Add Place</button>
+                <button onclick="openPlaceSearchModal()" class="dashed-add-btn" style="margin-top: 10px;">+ Add Stop</button>
                 
                 <a href="https://www.getyourguide.com/" id="places-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
                     <span class="action-icon">🎟️</span>
@@ -1173,7 +1175,7 @@
     <div id="place-search-modal" class="modal" onclick="handleModalBackdropClick(event, 'place-search-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('place-search-modal')">✕</button>
-            <h2 style="margin: 0 0 12px 0; font-size: 20px;">Find a Place</h2>
+            <h2 style="margin: 0 0 12px 0; font-size: 20px;">Add a Stop</h2>
             <div class="search-input-wrapper">
                 <input type="text" id="place-search-input" class="form-control" placeholder="Search place (e.g. Museum, Cafe)..." oninput="searchPOI(this.value)" autocomplete="off">
                 <button type="button" class="search-clear-btn" id="clear-place-search-input" onclick="clearSearchField('place-search-input', 'place-search-results')" aria-label="Clear place search">✕</button>
@@ -1881,6 +1883,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.24"></script>
+    <script type="module" src="js/app.js?v=2.4.25"></script>
 </body>
 </html>
