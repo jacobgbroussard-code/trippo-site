@@ -3,6 +3,7 @@
    js/app.js
    ========================================================================== */
 
+import './error-report.js'; // first, so crash reporting is listening as early as possible
 import * as state from './state.js';
 import * as db from './db.js';
 import * as maps from './maps.js';
@@ -18,7 +19,7 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 
-const CURRENT_VERSION = '2.4.15';
+const CURRENT_VERSION = '2.4.16';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
