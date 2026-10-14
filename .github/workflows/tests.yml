@@ -1,0 +1,54 @@
+# Runs the core regression suite (tests/run-all.js) on every push to main and on pull requests.
+# GitHub emails the repo owner when a run fails.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      # Ubuntu's AppArmor blocks Chrome's sandbox for unprivileged users, and the tests launch
+      # Chrome with fixed flags, so point CHROME_PATH at a wrapper that adds --no-sandbox.
+      - name: Chrome wrapper
+        run: |
+          printf '#!/bin/sh\nexec "%s" --no-sandbox "$@"\n' "${{ steps.chrome.outputs.chrome-path }}" > "$RUNNER_TEMP/chrome"
+          chmod +x "$RUNNER_TEMP/chrome"
+          echo "CHROME_PATH=$RUNNER_TEMP/chrome" >> "$GITHUB_ENV"
+
+      - name: Start dev server
+        run: |
+          node dev-server.js > "$RUNNER_TEMP/dev-server.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/ > /dev/null && break; sleep 1; done
+
+      - name: Secret scan (all tracked files)
+        run: node secret-scan.js --all
+
+      - name: Core test suite
+        run: node tests/run-all.js
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: tests/artifacts/
+          if-no-files-found: ignore

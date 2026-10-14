@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const CHROME = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const USER_DATA = path.join(__dirname, 'scratch_chrome_test_copilot');
 const ARTIFACTS_DIR = path.join(__dirname, 'artifacts');
 fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
