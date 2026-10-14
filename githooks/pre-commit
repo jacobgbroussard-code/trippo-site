@@ -1,0 +1,11 @@
+#!/bin/sh
+# Blocks commits containing secrets (see secret-scan.js). Enabled by
+# `git config core.hooksPath githooks`, which deploy-to-github.js sets automatically.
+SCAN="$(git rev-parse --show-toplevel)/secret-scan.js"
+if command -v node >/dev/null 2>&1; then
+    exec node "$SCAN"
+elif [ -x "/c/Program Files/nodejs/node.exe" ]; then
+    exec "/c/Program Files/nodejs/node.exe" "$SCAN"
+else
+    exec "/c/Users/Jacob/AppData/Roaming/Antigravity/bin/agy-node.cmd" "$SCAN"
+fi

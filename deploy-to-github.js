@@ -11,9 +11,21 @@ function run(cmd) {
 
 async function deploy() {
     try {
+        // Make sure the secret-scanning commit hook is active for every tool using this folder.
+        execSync(`"${GIT_EXE}" config core.hooksPath githooks`);
+
         console.log('📦 Staging changes...');
         run(`"${GIT_EXE}" add .`);
-        
+
+        // The repo is public: refuse to deploy if anything staged looks like a secret.
+        try {
+            run(`"${process.execPath}" secret-scan.js`);
+        } catch (e) {
+            console.error('\n❌ Deploy stopped: fix the secret-scan findings above first.');
+            process.exitCode = 1;
+            return;
+        }
+
         const timestamp = new Date().toLocaleString();
         try {
             run(`"${GIT_EXE}" commit -m "Update Trippo site - ${timestamp}"`);
