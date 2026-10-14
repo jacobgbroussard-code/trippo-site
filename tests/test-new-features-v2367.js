@@ -88,7 +88,7 @@ check('tools.js exports printPocketItinerary with complete itinerary sections', 
     assert(toolsJs.includes('window.print()'), 'Must call window.print()');
     assert(toolsJs.includes('Route Overview'), 'Must render Route Overview');
     assert(toolsJs.includes('Accommodations'), 'Must render Accommodations / Lodging');
-    assert(toolsJs.includes('Transit / Arrival'), 'Must render Transit details');
+    assert(toolsJs.includes('Onward travel'), 'Must render Transit details');
     assert(toolsJs.includes('Emergency & Offline Contacts'), 'Must render Emergency & Offline Contacts');
 });
 
