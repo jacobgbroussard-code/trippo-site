@@ -45,6 +45,17 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 - Test: `node tests/test-offline-sync.js` (fake in-memory backend, no account needed).
 - Every new JS module must also be listed in `STATIC_ASSETS` in `sw.js` or offline cold starts break.
 
+## Affiliate links (Travelpayouts, as of Oct 2026)
+- Joined and earning: Aviasales (flight links with `marker=581802`). Also joined but not yet wired
+  in properly: Airalo, Klook, Tiqets, WeGoTrip, Localrent, QEEQ, GetRentacar, Economybookings, Yesim, Saily.
+- **Not joined:** GetYourGuide, DiscoverCars, Omio, Booking.com, Trip.com. Travelpayouts locks them until
+  trippo.top has ~3 months of steady traffic, so links to them currently earn nothing. The DiscoverCars
+  `a_aid=` and Omio `cmp=` parameters in the app are not real tracking.
+- Proper links come from each program's "Generate links" tool in the Travelpayouts dashboard.
+- The `tp-em.com` tracking script only loads on booking/flight screens (`loadPartnerTracking()` in
+  js/state.js) because it gets full page access; keep it that way.
+- The account has no payout method yet; only the owner can add it.
+
 ## Rules
 - **Never commit secrets.** `.env`, `site-credentials-and-services.csv`, `SITE_MANAGEMENT_DIRECTORY.md`,
   the Telegram bot (`telegram-bridge.js`, `bot-controls/`, `scripts/`) are gitignored on purpose.
