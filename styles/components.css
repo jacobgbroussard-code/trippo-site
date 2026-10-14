@@ -4414,3 +4414,4 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 .layers-item .layers-ext { width: 15px; height: 15px; }
 body.hide-map-btn-trains.hide-map-btn-trails .map-layers-wrap:not(.has-alltrails),
 body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-wrap.has-alltrails { display: none; }
+.map-btn.map-btn-icon { width: 34px; padding: 0; justify-content: center; }

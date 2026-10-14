@@ -479,9 +479,10 @@ export function toggleTrails(target) {
     }
 }
 
-export function openAllTrailsNearCenter() {
-    if (!wishlistMap) return;
-    const center = wishlistMap.getCenter();
+export function openAllTrailsNearCenter(target = 'wishlist') {
+    const map = target === 'places' ? placesMap : wishlistMap;
+    if (!map) return;
+    const center = map.getCenter();
     const clampedLatMax = Math.min(85, center.lat + 0.3);
     const clampedLatMin = Math.max(-85, center.lat - 0.3);
     const lngMax = center.lng + 0.3;
@@ -1021,7 +1022,7 @@ export function toggleUserLocation(context = 'places') {
         activeGpsContext = null;
         if (btn) {
             btn.classList.remove('active-mode');
-            btn.innerHTML = `${icon('current-location')}My Location`;
+            btn.innerHTML = icon('current-location') + (btn.classList.contains('map-btn-icon') ? '' : 'My Location');
         }
         showNotification("📍 Location tracking turned off.");
         return;
@@ -1033,7 +1034,7 @@ export function toggleUserLocation(context = 'places') {
     }
 
     if (btn) {
-        btn.innerHTML = `${icon('current-location')}Locating…`;
+        btn.innerHTML = icon('current-location') + (btn.classList.contains('map-btn-icon') ? '' : 'Locating…');
     }
 
     const onLocationFound = (pos) => {
@@ -1072,7 +1073,7 @@ export function toggleUserLocation(context = 'places') {
         activeGpsContext = context;
         if (btn) {
             btn.classList.add('active-mode');
-            btn.innerHTML = `${icon('current-location')}My Location`;
+            btn.innerHTML = icon('current-location') + (btn.classList.contains('map-btn-icon') ? '' : 'My Location');
         }
     };
 
@@ -1080,7 +1081,7 @@ export function toggleUserLocation(context = 'places') {
         console.warn("GPS Location error:", err);
         if (btn) {
             btn.classList.remove('active-mode');
-            btn.innerHTML = `${icon('current-location')}My Location`;
+            btn.innerHTML = icon('current-location') + (btn.classList.contains('map-btn-icon') ? '' : 'My Location');
         }
         activeGpsContext = null;
         if (err.code === 1) {
