@@ -53,7 +53,13 @@ async function testSecurityAndUsabilityV2359() {
 
         await send('Runtime.enable');
         await send('Page.enable');
-        await new Promise(r => setTimeout(r, 2500));
+        // Wait for the app to finish booting (window.trippoReady) instead of a fixed sleep;
+        // a cold cache can take longer than a few seconds.
+        for (let i = 0; i < 80; i++) {
+            const r = await send('Runtime.evaluate', { expression: 'window.trippoReady === true', returnByValue: true }).catch(() => null);
+            if (r && r.result && r.result.value === true) break;
+            await new Promise(r => setTimeout(r, 250));
+        }
 
         async function evalInBrowser(expr) {
             const res = await send('Runtime.evaluate', {

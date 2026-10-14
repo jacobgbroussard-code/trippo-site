@@ -18,8 +18,9 @@ import * as weather from './weather.js';
 import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
+import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.16';
+const CURRENT_VERSION = '2.4.17';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -221,6 +222,9 @@ function bootstrapApp() {
 
     // Initialize Serverless Edge AI Travel Assistant
     ai.initAITripGenerator();
+
+    // Keyboard and screen-reader access for <div onclick> tap targets
+    initKeyboardAccess();
 
     setTimeout(() => {
         const authChecked = db.checkAuthSession();

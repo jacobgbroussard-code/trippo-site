@@ -4305,3 +4305,9 @@ body.has-back .leaflet-top.leaflet-left { margin-top: calc(50px + env(safe-area-
     color: var(--text-muted, #71837f);
     margin-bottom: 6px;
 }
+
+/* Keyboard focus ring for tap targets made focusable by js/keyboard-access.js */
+[role="button"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
