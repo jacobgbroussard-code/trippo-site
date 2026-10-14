@@ -4336,3 +4336,17 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
 }
+
+/* Daily tab: the city name doubles as the city picker */
+.city-title-picker { position: relative; display: inline-flex; align-items: center; gap: 2px; min-width: 0; flex: 0 1 auto; }
+.city-title-picker h2 { margin: 0; font-size: 20px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.city-title-chevron { display: none; flex: none; width: 20px; height: 20px; color: var(--text-light); }
+.city-title-picker select { display: none; }
+.city-title-picker.has-choices { cursor: pointer; }
+.city-title-picker.has-choices .city-title-chevron { display: block; }
+.city-title-picker.has-choices select {
+    display: block; position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; font-size: 16px; /* 16px stops iOS zooming in on tap */
+    border: 0; margin: 0; padding: 0; -webkit-appearance: none; appearance: none;
+}
+.city-title-picker.has-choices:focus-within .city-title-chevron { color: var(--primary); }

@@ -167,16 +167,15 @@ export function openPlacesCityView(stopIndex) {
     if (colCityName) colCityName.innerText = stop.name;
 
     // City selector dropdown if multiple stops
+    // The city name itself is the picker: an invisible <select> sits over the title + chevron
     const citySelect = document.getElementById('places-city-select');
-    if (citySelect) {
-        if (trip.stops.length > 1) {
-            citySelect.style.display = 'inline-block';
-            citySelect.innerHTML = trip.stops.map((s, idx) => `
-                <option value="${idx}" ${idx === stopIndex ? 'selected' : ''}>📍 ${escapeHTML(s.name)}</option>
-            `).join('');
-        } else {
-            citySelect.style.display = 'none';
-        }
+    const cityPicker = document.getElementById('places-city-picker');
+    const hasChoices = trip.stops.length > 1;
+    if (cityPicker) cityPicker.classList.toggle('has-choices', hasChoices);
+    if (citySelect && hasChoices) {
+        citySelect.innerHTML = trip.stops.map((s, idx) => `
+            <option value="${idx}" ${idx === stopIndex ? 'selected' : ''}>${escapeHTML(s.name)}</option>
+        `).join('');
     }
 
     initPlacesMap();
