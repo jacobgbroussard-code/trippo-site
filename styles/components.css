@@ -4311,3 +4311,15 @@ body.has-back .leaflet-top.leaflet-left { margin-top: calc(50px + env(safe-area-
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+
+/* "Add your free Gemini key" prompts on template AI results */
+.ai-key-cta {
+    border: 1px dashed var(--primary);
+    background: transparent;
+    color: var(--primary);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+}
+button.ai-template-note.ai-key-cta { display: block; padding: 6px 10px; border-radius: 10px; font-size: 11px; }

@@ -23,8 +23,15 @@ import {
     formatLocalDate
 } from './state.js';
 
-// Default Cloudflare Worker Edge endpoint (configurable via localStorage)
-export const DEFAULT_WORKER_URL = 'https://trippo-ai-worker.jacobgbroussard.workers.dev/';
+// Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
+// worker, so nobody can run up the owner's quota; a self-hosted worker URL can still be set in
+// localStorage ('trippoCloudflareWorkerUrl') for testing.
+export const DEFAULT_WORKER_URL = '';
+
+// Thrown when there is no Gemini key and no worker configured; callers fall back to templates.
+export class NoAIKeyError extends Error {
+    constructor() { super('No Gemini API key set'); this.name = 'NoAIKeyError'; }
+}
 
 export function getWorkerEndpoint() {
     try {
@@ -807,16 +814,19 @@ export function setAIPrompt(promptText) {
 // --- ASYNCHRONOUS CLOUDFLARE WORKER FETCH ---
 async function fetchItineraryFromCloudflareWorker(promptText) {
     const endpoint = getWorkerEndpoint();
-    console.log(`[AI Assistant] Fetching from Edge AI endpoint: ${endpoint}`);
+    if (!getGeminiApiKey() && !endpoint) {
+        // No key: answer instantly with a template and invite the user to add their own key.
+        return { ...generateIntelligentFallbackItinerary(promptText), isTemplate: true, needsKey: true };
+    }
 
     const durationDays = extractDurationDays(promptText);
     const resolvedContext = resolveTripDestinations(promptText, durationDays);
 
-    // Set 15-second timeout via AbortController for multi-day plans so edge AI has room to respond
+    // Search-grounded multi-day plans can take a while to generate
     aiFetchAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (aiFetchAbortController) aiFetchAbortController.abort();
-    }, 15000);
+    }, 60000);
 
     try {
         if (getGeminiApiKey()) {
@@ -859,13 +869,7 @@ CRITICAL INSTRUCTIONS:
             const userContextPrompt = `Plan a travel itinerary for: "${promptText}"${explicitDuration}${explicitCities}`;
 
             const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true);
-            let parsedItinerary = null;
-            try {
-                parsedItinerary = JSON.parse(rawContent);
-            } catch (e) {
-                let cleanedJson = rawContent.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-                parsedItinerary = JSON.parse(cleanedJson);
-            }
+            const parsedItinerary = parseJsonReply(rawContent);
             clearTimeout(timeoutId);
             return parsedItinerary;
         }
@@ -919,7 +923,8 @@ CRITICAL INSTRUCTIONS:
         console.warn('[AI Assistant] Remote edge worker unavailable or returned error. Generating intelligent travel itinerary...', fetchErr);
         try {
             // Flag it so the result is labelled as a template, not AI output.
-            return { ...generateIntelligentFallbackItinerary(promptText), isTemplate: true };
+            if (fetchErr instanceof GeminiKeyError) showNotification(fetchErr.message, 6000);
+            return { ...generateIntelligentFallbackItinerary(promptText), isTemplate: true, keyProblem: fetchErr instanceof GeminiKeyError };
         } catch (fallbackErr) {
             console.error('[AI Assistant] Fallback generator failed:', fallbackErr);
             throw fetchErr;
@@ -1010,9 +1015,11 @@ export function openAITripModal(itinerary) {
             <span class="ai-stat-chip">🗓️ ${totalDays} Day${totalDays !== 1 ? 's' : ''}</span>
             <span class="ai-stat-chip">📍 ${totalActivities} Activit${totalActivities !== 1 ? 'ies' : 'y'}</span>
             ${routeBadge}
-            ${itinerary.isTemplate
-                ? '<span class="ai-stat-chip" title="The live AI service could not be reached, so this is a ready-made template plan.">📋 Template plan · live AI unavailable</span>'
-                : '<span class="ai-stat-chip edge">⚡ Gemini AI</span>'}
+            ${!itinerary.isTemplate
+                ? '<span class="ai-stat-chip edge">⚡ Gemini AI</span>'
+                : itinerary.needsKey
+                    ? '<button type="button" class="ai-stat-chip ai-key-cta" onclick="openAIKeySettings()" title="Real AI planning uses your own free Google Gemini key.">📋 Template plan · ✨ Add your free Gemini key for real AI ›</button>'
+                    : '<span class="ai-stat-chip" title="Gemini could not be reached, so this is a ready-made template plan.">📋 Template plan · live AI unavailable</span>'}
         `;
     }
 
@@ -1374,8 +1381,10 @@ export async function submitAICopilotInput() {
             role: 'bot',
             content: fallback.reply,
             suggestions: fallback.suggestions,
-            isTemplate: true
+            isTemplate: true,
+            needsKey: err instanceof NoAIKeyError
         });
+        if (err instanceof GeminiKeyError) showNotification(err.message, 6000);
         renderAICopilotMessages();
         triggerHaptic('light');
     }
@@ -1450,7 +1459,9 @@ export function renderAICopilotMessages() {
             html += `
                 <div class="ai-msg-row bot">
                     <div class="ai-bubble-bot">
-                        ${msg.isTemplate ? '<div class="ai-template-note">📋 Suggested ideas · live AI unavailable</div>' : ''}
+                        ${msg.isTemplate ? (msg.needsKey
+                            ? '<button type="button" class="ai-template-note ai-key-cta" onclick="openAIKeySettings()">📋 Suggested ideas · ✨ Add your free Gemini key for real AI ›</button>'
+                            : '<div class="ai-template-note">📋 Suggested ideas · live AI unavailable</div>') : ''}
                         <div>${formattedContent}</div>
                         ${suggestionsHtml}
                     </div>
@@ -1624,10 +1635,11 @@ export function setCopilotTyping(isTyping) {
  */
 async function fetchChatFromWorker(promptText, context) {
     const endpoint = getWorkerEndpoint();
+    if (!getGeminiApiKey() && !endpoint) throw new NoAIKeyError();
     copilotAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (copilotAbortController) copilotAbortController.abort();
-    }, 9000);
+    }, 30000);
 
     try {
         if (getGeminiApiKey()) {
@@ -1674,13 +1686,7 @@ CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
                 conversationMessages.push({ role: "user", content: promptText });
             }
             const rawContent = await callGeminiDirectly(chatSystemPrompt, conversationMessages, true);
-            let parsedChat = null;
-            try {
-                parsedChat = JSON.parse(rawContent);
-            } catch (e) {
-                let cleanedJson = rawContent.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-                parsedChat = JSON.parse(cleanedJson);
-            }
+            const parsedChat = parseJsonReply(rawContent);
             clearTimeout(timeoutId);
             return {
                 reply: parsedChat.reply || "Here are some recommendations for your itinerary:",
@@ -1862,17 +1868,36 @@ export function getGeminiApiKey() {
 
 export function saveGeminiApiKey() {
     const key = document.getElementById('gemini-api-key-input')?.value.trim();
+    // Keys stay on this device only. Older versions copied them into the account's Supabase
+    // metadata, which the project owner can read, so clear any such copy either way.
+    if (window.saveUserGeminiKeyToCloud) window.saveUserGeminiKeyToCloud('');
     if (key) {
         localStorage.setItem('trippoGeminiApiKey', key);
-        if (window.saveUserGeminiKeyToCloud) window.saveUserGeminiKeyToCloud(key);
-        if (window.showNotification) window.showNotification('Gemini API Key saved successfully!');
+        if (window.showNotification) window.showNotification('Gemini key saved on this device. Real AI is on!');
     } else {
         localStorage.removeItem('trippoGeminiApiKey');
-        if (window.saveUserGeminiKeyToCloud) window.saveUserGeminiKeyToCloud('');
         if (window.showNotification) window.showNotification('Gemini API Key removed.');
     }
 }
 window.saveGeminiApiKey = saveGeminiApiKey;
+
+// From an AI result's "add your key" prompt: close the AI screens and jump to the key field.
+export function openAIKeySettings() {
+    document.querySelectorAll('.modal').forEach(m => {
+        if (m.style.display === 'flex' || m.style.display === 'block') m.style.display = 'none';
+    });
+    if (typeof window.openSettingsModal === 'function') window.openSettingsModal();
+    setTimeout(() => {
+        const input = document.getElementById('gemini-api-key-input');
+        if (!input) return;
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!input.value) input.focus({ preventScroll: true });
+    }, 250);
+}
+
+// "gemini-flash-latest" tracks Google's current Flash model, so retirements don't break the app;
+// the pinned model is a fallback in case the alias is unavailable for a key or region.
+const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash'];
 
 async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch) {
     const apiKey = getGeminiApiKey();
@@ -1880,20 +1905,58 @@ async function callGeminiDirectly(systemInstruction, conversationMessages, enabl
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
+    const generationConfig = { temperature: 0.35, topP: 0.9 };
+    // Gemini rejects JSON mode combined with Google Search grounding, so with search on the
+    // prompt asks for JSON and parseJsonReply() extracts it.
+    if (!enableSearch) generationConfig.responseMimeType = 'application/json';
     const payload = {
         systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: contents,
-        generationConfig: { temperature: 0.35, topP: 0.9, responseMimeType: 'application/json' }
+        contents,
+        generationConfig
     };
-    if (enableSearch) { payload.tools = [{ googleSearch: {} }]; }
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: aiFetchAbortController?.signal || copilotAbortController?.signal
-    });
-    if (!res.ok) { const errText = await res.text(); throw new Error('Gemini API Error (' + res.status + '): ' + errText); }
+    if (enableSearch) payload.tools = [{ googleSearch: {} }];
+
+    let res;
+    for (const model of GEMINI_MODELS) {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify(payload),
+            signal: aiFetchAbortController?.signal || copilotAbortController?.signal
+        });
+        if (res.status !== 404) break; // 404 = model not available; try the next one
+    }
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new GeminiKeyError(res.status, errText);
+    }
     const json = await res.json();
-    if (!json.candidates || json.candidates.length === 0) throw new Error('No response candidates returned from Gemini.');
-    return json.candidates[0].content.parts[0].text;
+    const parts = json.candidates?.[0]?.content?.parts;
+    if (!Array.isArray(parts) || parts.length === 0) throw new Error('No response candidates returned from Gemini.');
+    return parts.map(p => p.text || '').join('');
+}
+
+// Gemini errors the user can fix (bad key, quota) get a readable message.
+class GeminiKeyError extends Error {
+    constructor(status, body) {
+        let reason = `Gemini returned an error (${status}).`;
+        if (status === 400 && /API key not valid|API_KEY_INVALID/i.test(body)) reason = 'Your Gemini API key isn’t valid. Check it in Settings → AI.';
+        else if (status === 403) reason = 'Your Gemini API key doesn’t have access to Gemini. Check it in Settings → AI.';
+        else if (status === 429) reason = 'Your Gemini free quota is used up for now. Try again later.';
+        super(reason);
+        this.name = 'GeminiKeyError';
+        this.status = status;
+        this.detail = String(body || '').slice(0, 500);
+    }
+}
+
+// Models sometimes wrap JSON in code fences or add a sentence around it (especially with search
+// grounding); take the outermost {...} block.
+function parseJsonReply(raw) {
+    const text = String(raw || '').trim();
+    try { return JSON.parse(text); } catch (e) {}
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end <= start) throw new Error('AI reply did not contain JSON.');
+    return JSON.parse(text.slice(start, end + 1));
 }

@@ -140,8 +140,9 @@ export function updateAuthUI(user, { offline = false } = {}) {
         if (outView) outView.style.display = 'none';
         if (userEmailEl) userEmailEl.innerText = user.email;
 
-        // Restore Gemini API Key if it exists in metadata
-        if (user.user_metadata?.gemini_api_key) {
+        // Older versions stored the Gemini key in account metadata; restore it once onto this
+        // device (saving a key in Settings now clears that cloud copy).
+        if (user.user_metadata?.gemini_api_key && !localStorage.getItem('trippoGeminiApiKey')) {
             localStorage.setItem('trippoGeminiApiKey', user.user_metadata.gemini_api_key);
             const keyInput = document.getElementById('gemini-api-key-input');
             if (keyInput) keyInput.value = user.user_metadata.gemini_api_key;
