@@ -4297,3 +4297,11 @@ body.has-back #places-trip-detail-list > .back-btn { margin-left: 44px; margin-t
 }
 body.has-back .map-controls-row { max-width: calc(100% - 90px); }
 body.has-back .leaflet-top.leaflet-left { margin-top: calc(50px + env(safe-area-inset-top, 0px)); }
+
+/* Shown on AI Copilot replies that came from the built-in suggestions, not the live AI */
+.ai-template-note {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted, #71837f);
+    margin-bottom: 6px;
+}

@@ -918,7 +918,8 @@ CRITICAL INSTRUCTIONS:
         // seamlessly generate the structured travel itinerary locally so the user never encounters a failure.
         console.warn('[AI Assistant] Remote edge worker unavailable or returned error. Generating intelligent travel itinerary...', fetchErr);
         try {
-            return generateIntelligentFallbackItinerary(promptText);
+            // Flag it so the result is labelled as a template, not AI output.
+            return { ...generateIntelligentFallbackItinerary(promptText), isTemplate: true };
         } catch (fallbackErr) {
             console.error('[AI Assistant] Fallback generator failed:', fallbackErr);
             throw fetchErr;
@@ -1009,7 +1010,9 @@ export function openAITripModal(itinerary) {
             <span class="ai-stat-chip">🗓️ ${totalDays} Day${totalDays !== 1 ? 's' : ''}</span>
             <span class="ai-stat-chip">📍 ${totalActivities} Activit${totalActivities !== 1 ? 'ies' : 'y'}</span>
             ${routeBadge}
-            <span class="ai-stat-chip edge">⚡ Llama 3.1 Edge AI</span>
+            ${itinerary.isTemplate
+                ? '<span class="ai-stat-chip" title="The live AI service could not be reached, so this is a ready-made template plan.">📋 Template plan · live AI unavailable</span>'
+                : '<span class="ai-stat-chip edge">⚡ Gemini AI</span>'}
         `;
     }
 
@@ -1370,7 +1373,8 @@ export async function submitAICopilotInput() {
         copilotChatHistory.push({
             role: 'bot',
             content: fallback.reply,
-            suggestions: fallback.suggestions
+            suggestions: fallback.suggestions,
+            isTemplate: true
         });
         renderAICopilotMessages();
         triggerHaptic('light');
@@ -1446,6 +1450,7 @@ export function renderAICopilotMessages() {
             html += `
                 <div class="ai-msg-row bot">
                     <div class="ai-bubble-bot">
+                        ${msg.isTemplate ? '<div class="ai-template-note">📋 Suggested ideas · live AI unavailable</div>' : ''}
                         <div>${formattedContent}</div>
                         ${suggestionsHtml}
                     </div>
