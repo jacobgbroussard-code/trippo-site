@@ -1895,9 +1895,13 @@ export function openAIKeySettings() {
     }, 250);
 }
 
-// "gemini-flash-latest" tracks Google's current Flash model, so retirements don't break the app;
-// the pinned model is a fallback in case the alias is unavailable for a key or region.
-const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash'];
+// The "-latest" aliases track Google's current models, so retirements don't break the app
+// (pinned names like gemini-1.5/2.5-flash have been retired). Lite is the fallback when the
+// main model is unavailable (404) or overloaded (503).
+const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+// Google Search grounding needs a paid key; free keys get 429 for it. Once that happens,
+// skip search for the rest of the session.
+let geminiSearchUnavailable = false;
 
 async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch) {
     const apiKey = getGeminiApiKey();
@@ -1905,26 +1909,32 @@ async function callGeminiDirectly(systemInstruction, conversationMessages, enabl
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
-    const generationConfig = { temperature: 0.35, topP: 0.9 };
-    // Gemini rejects JSON mode combined with Google Search grounding, so with search on the
-    // prompt asks for JSON and parseJsonReply() extracts it.
-    if (!enableSearch) generationConfig.responseMimeType = 'application/json';
-    const payload = {
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents,
-        generationConfig
-    };
-    if (enableSearch) payload.tools = [{ googleSearch: {} }];
+    const signal = aiFetchAbortController?.signal || copilotAbortController?.signal;
 
-    let res;
-    for (const model of GEMINI_MODELS) {
-        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    const request = (model, withSearch) => {
+        const generationConfig = { temperature: 0.35, topP: 0.9 };
+        // Gemini rejects JSON mode combined with search grounding; with search on, the prompt
+        // asks for JSON and parseJsonReply() extracts it.
+        if (!withSearch) generationConfig.responseMimeType = 'application/json';
+        const payload = { systemInstruction: { parts: [{ text: systemInstruction }] }, contents, generationConfig };
+        if (withSearch) payload.tools = [{ googleSearch: {} }];
+        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify(payload),
-            signal: aiFetchAbortController?.signal || copilotAbortController?.signal
+            signal
         });
-        if (res.status !== 404) break; // 404 = model not available; try the next one
+    };
+
+    let res;
+    for (const model of GEMINI_MODELS) {
+        const useSearch = enableSearch && !geminiSearchUnavailable;
+        res = await request(model, useSearch);
+        if (res.status === 429 && useSearch) {
+            geminiSearchUnavailable = true;
+            res = await request(model, false);
+        }
+        if (res.status !== 404 && res.status !== 503) break;
     }
     if (!res.ok) {
         const errText = await res.text();
@@ -1943,6 +1953,7 @@ class GeminiKeyError extends Error {
         if (status === 400 && /API key not valid|API_KEY_INVALID/i.test(body)) reason = 'Your Gemini API key isn’t valid. Check it in Settings → AI.';
         else if (status === 403) reason = 'Your Gemini API key doesn’t have access to Gemini. Check it in Settings → AI.';
         else if (status === 429) reason = 'Your Gemini free quota is used up for now. Try again later.';
+        else if (status === 503) reason = 'Gemini is busy right now. Try again in a minute.';
         super(reason);
         this.name = 'GeminiKeyError';
         this.status = status;
