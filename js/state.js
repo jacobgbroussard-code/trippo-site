@@ -331,6 +331,89 @@ if (trips.length === 0) {
     safeSetStorage('myTrips', JSON.stringify(trips));
 }
 
+// Sample trip v2: hotels, transit, more daily stops and budget items so every tab has something
+// to show. Only ever ADDS to the built-in sample (never removes or overwrites), once per trip.
+const SAMPLE_TRIP_VERSION = 2;
+const SAMPLE_EXTRAS = {
+    lodging: {
+        s2: { name: 'The Peninsula Shanghai', address: '32 Zhongshan East 1st Rd, Huangpu, Shanghai', checkInTime: '3:00 PM', bookingNumber: 'PEN-48213', url: 'https://www.peninsula.com/en/shanghai', notes: 'River-view room, breakfast included', lat: 31.2427, lon: 121.4893 },
+        s3: { name: 'Waldorf Astoria Beijing', address: '5-15 Jinyu Hutong, Dongcheng, Beijing', checkInTime: '3:00 PM', bookingNumber: 'WA-77105', url: 'https://www.hilton.com/en/hotels/bjswawa-waldorf-astoria-beijing/', notes: 'Walkable to Wangfujing', lat: 39.9147, lon: 116.4128 }
+    },
+    transit: {
+        s1: { method: 'plane', flightType: 'rt', bookingNumber: 'UA-8K2QX', date: '2026-11-01', returnDate: '2026-11-09', depStation: 'Lafayette (LFT)', arrStation: 'Shanghai (PVG)', depTime: '06:10', arrTime: '18:45', notes: 'Connects in Houston. Seats 32A / 32B.' },
+        s2: { method: 'train', flightType: 'ow', bookingNumber: 'G7-30219', date: '2026-11-06', returnDate: '', depStation: 'Shanghai Hongqiao', arrStation: 'Beijing South', depTime: '09:00', arrTime: '13:28', notes: 'G7 high-speed train, seats 05A / 05B' }
+    },
+    // stopId + dayIndex instead of cityIndex, so it still lands right if the stops were reordered
+    places: [
+        { id: 'poi_s1', stopId: 's1', dayIndex: 0, name: 'Vermilionville', category: '● See & Do', address: '300 Fisher Rd, Lafayette, LA', notes: 'Cajun & Creole living history village', lat: 30.2063, lon: -91.9908, time: '10:00' },
+        { id: 'poi_s2', stopId: 's1', dayIndex: 0, name: "Johnson's Boucaniere", category: '🍽 Food & Drink', address: '1111 St John St, Lafayette, LA', notes: 'Boudin and smoked meats before the flight', lat: 30.2283, lon: -92.0234, time: '12:30' },
+        { id: 'poi_5', stopId: 's2', dayIndex: 0, name: 'Nanjing Road Pedestrian Street', category: '🛍 Shopping', address: 'Nanjing Rd, Huangpu, Shanghai', notes: 'Neon at night', lat: 31.2355, lon: 121.4747, time: '16:00' },
+        { id: 'poi_6', stopId: 's2', dayIndex: 0, name: 'Lost Heaven Bund', category: '🍽 Food & Drink', address: "17 Yan'an East Rd, Huangpu, Shanghai", notes: 'Yunnan food, rooftop bar', lat: 31.2349, lon: 121.4877, time: '20:00' },
+        { id: 'poi_7', stopId: 's2', dayIndex: 1, name: 'Nanxiang Steamed Bun Restaurant', category: '🍽 Food & Drink', address: '85 Yuyuan Rd, Huangpu, Shanghai', notes: 'Crab soup dumplings', lat: 31.2276, lon: 121.4918, time: '12:00' },
+        { id: 'poi_8', stopId: 's2', dayIndex: 1, name: 'Tianzifang', category: '🛍 Shopping', address: 'Lane 210 Taikang Rd, Huangpu, Shanghai', notes: 'Alleyway boutiques', lat: 31.2085, lon: 121.4692, time: '15:00' },
+        { id: 'poi_9', stopId: 's2', dayIndex: 1, name: 'Seesaw Coffee', category: '☕ Cafe & Chill', address: '433 Yuyuan Rd, Jing\'an, Shanghai', notes: 'Afternoon break', lat: 31.2235, lon: 121.4437, time: '17:00' },
+        { id: 'poi_10', stopId: 's2', dayIndex: 2, name: 'Shanghai Tower', category: '● See & Do', address: '501 Yincheng Middle Rd, Pudong, Shanghai', notes: 'Observation deck on floor 118', lat: 31.2335, lon: 121.5055, time: '10:00' },
+        { id: 'poi_11', stopId: 's2', dayIndex: 2, name: 'Maglev Train Ride', category: '● See & Do', address: 'Longyang Rd Station, Pudong, Shanghai', notes: 'Hits 300 km/h in about 2 minutes', lat: 31.2033, lon: 121.5582, time: '14:00', transitMode: 'transit' },
+        { id: 'poi_12', stopId: 's2', dayIndex: 3, name: 'Zhujiajiao Water Town', category: '● See & Do', address: 'Qingpu District, Shanghai', notes: 'Canal boat ride', lat: 31.1076, lon: 121.0529, time: '09:30', transitMode: 'driving' },
+        { id: 'poi_13', stopId: 's2', dayIndex: 3, name: 'Jade Buddha Temple', category: '● See & Do', address: '170 Anyuan Rd, Putuo, Shanghai', notes: 'Closes at 4:30 PM', lat: 31.2420, lon: 121.4450, time: '15:00' },
+        { id: 'poi_14', stopId: 's3', dayIndex: 0, name: 'Wangfujing Snack Street', category: '🍽 Food & Drink', address: 'Wangfujing St, Dongcheng, Beijing', notes: 'Street food dinner', lat: 39.9135, lon: 116.4110, time: '19:00' },
+        { id: 'poi_15', stopId: 's3', dayIndex: 1, name: 'Mutianyu Great Wall', category: '● See & Do', address: 'Huairou District, Beijing', notes: 'Cable car up, toboggan down', lat: 40.4319, lon: 116.5704, time: '08:00', transitMode: 'driving' },
+        { id: 'poi_16', stopId: 's3', dayIndex: 1, name: 'Da Dong Roast Duck', category: '🍽 Food & Drink', address: '5 Dongsishitiao, Dongcheng, Beijing', notes: 'Book a table ahead', lat: 39.9330, lon: 116.4366, time: '19:30' },
+        { id: 'poi_17', stopId: 's3', dayIndex: 2, name: 'Summer Palace', category: '● See & Do', address: '19 Xinjiangongmen Rd, Haidian, Beijing', notes: 'Rent a boat on Kunming Lake', lat: 39.9999, lon: 116.2755, time: '09:30' },
+        { id: 'poi_18', stopId: 's3', dayIndex: 2, name: '798 Art District', category: '☕ Cafe & Chill', address: '2 Jiuxianqiao Rd, Chaoyang, Beijing', notes: 'Galleries and cafes', lat: 39.9842, lon: 116.4950, time: '14:30' },
+        { id: 'poi_19', stopId: 's3', dayIndex: 2, name: 'Sanlitun Taikoo Li', category: '🛍 Shopping', address: '19 Sanlitun Rd, Chaoyang, Beijing', notes: 'Last-night shopping', lat: 39.9343, lon: 116.4540, time: '18:00' }
+    ],
+    expenses: [
+        { id: 'exp_3', title: 'Beijing Hotel (3 Nights)', amount: 690.00, splitType: 'split' },
+        { id: 'exp_4', title: 'G7 Train Tickets', amount: 180.00, splitType: 'split' },
+        { id: 'exp_5', title: 'Great Wall Day Trip', amount: 120.00, splitType: 'split' },
+        { id: 'exp_6', title: 'Souvenirs', amount: 85.00, splitType: 'individual' }
+    ]
+};
+
+function upgradeSampleTrip(trip) {
+    if (!trip || trip.id !== 'sample-trip-asia-2026' || (trip.sampleVersion || 1) >= SAMPLE_TRIP_VERSION) return false;
+    const stops = Array.isArray(trip.stops) ? trip.stops : [];
+    stops.forEach(s => {
+        if (!s.lodging && SAMPLE_EXTRAS.lodging[s.id]) s.lodging = { ...SAMPLE_EXTRAS.lodging[s.id] };
+        if (!s.transit && SAMPLE_EXTRAS.transit[s.id]) s.transit = { ...SAMPLE_EXTRAS.transit[s.id] };
+    });
+    if (!Array.isArray(trip.places)) trip.places = [];
+    const havePlaces = new Set(trip.places.map(p => p.id));
+    SAMPLE_EXTRAS.places.forEach(({ stopId, ...p }) => {
+        const cityIndex = stops.findIndex(s => s.id === stopId);
+        if (havePlaces.has(p.id) || cityIndex < 0 || p.dayIndex >= Math.max(1, Number(stops[cityIndex].nights) || 1)) return;
+        trip.places.push({ ...p, cityIndex });
+    });
+    if (!Array.isArray(trip.expenses)) trip.expenses = [];
+    const haveExpenses = new Set(trip.expenses.map(e => e.id));
+    SAMPLE_EXTRAS.expenses.forEach(e => { if (!haveExpenses.has(e.id)) trip.expenses.push({ ...e }); });
+    trip.sampleVersion = SAMPLE_TRIP_VERSION;
+    return true;
+}
+
+if (trips.map(upgradeSampleTrip).some(Boolean)) safeSetStorage('myTrips', JSON.stringify(trips));
+
+// Same idea for the sample wishlist: a few more pins and a second list, once, only if the
+// built-in sample pins are still there.
+if (!safeGetStorage('trippo_sample_wishlist_v2') && wishlistPins.some(p => p.id === '1' || p.id === '2')) {
+    const pinIds = new Set(wishlistPins.map(p => p.id));
+    [
+        { id: 'sw_3', wishlistId: 'master', name: 'Zhangjiajie National Forest Park', lat: 29.3249, lon: 110.4343, category: 'Nature', notes: 'The "Avatar" mountains, plan 2 days' },
+        { id: 'sw_4', wishlistId: 'master', name: "Xi'an Terracotta Army", lat: 34.3841, lon: 109.2785, category: 'Attractions', notes: '4.5 hours by train from Beijing' },
+        { id: 'sw_5', wishlistId: 'master', name: 'Hong Kong', lat: 22.3193, lon: 114.1694, category: 'Cities', notes: 'Victoria Peak at night' },
+        { id: 'sw_6', wishlistId: 'sample-japan', name: 'Fushimi Inari Shrine', lat: 34.9671, lon: 135.7727, category: 'Attractions', notes: 'Go at sunrise to beat the crowds' },
+        { id: 'sw_7', wishlistId: 'sample-japan', name: 'Ichiran Shibuya', lat: 35.6614, lon: 139.7010, category: 'Food', notes: 'Solo ramen booths' },
+        { id: 'sw_8', wishlistId: 'sample-japan', name: 'Lake Kawaguchiko', lat: 35.5170, lon: 138.7517, category: 'Nature', notes: 'Mount Fuji views' }
+    ].forEach(p => { if (!pinIds.has(p.id)) wishlistPins.push(p); });
+    if (Array.isArray(wishlistCollections) && !wishlistCollections.some(c => c.id === 'sample-japan')) {
+        wishlistCollections.push({ id: 'sample-japan', name: 'Japan Ideas' });
+        safeSetStorage('myWishlistCollections', JSON.stringify(wishlistCollections));
+    }
+    safeSetStorage('myWishlist', JSON.stringify(wishlistPins));
+    safeSetStorage('trippo_sample_wishlist_v2', '1');
+}
+
 // Active navigation pointers
 export let activeTripId = trips.length > 0 ? trips[0].id : null;
 export let activePlacesTripId = activeTripId;

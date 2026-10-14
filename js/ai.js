@@ -1034,7 +1034,7 @@ export function openAITripModal(itinerary) {
 
                 const activitiesHtml = activities.map((act) => {
                     const timeBadge = act.time ? `<span class="activity-time-badge">${escapeHTML(formatTime(act.time))}</span>` : '';
-                    const locBadge = act.location ? `<span class="activity-loc-badge">📍 ${escapeHTML(act.location)}</span>` : '';
+                    const locBadge = act.location ? `<span class="activity-loc-badge"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(act.location)}</span>` : '';
 
                     return `
                         <div class="ai-activity-item">
@@ -1432,7 +1432,7 @@ export function renderAICopilotMessages() {
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
                                 <div>
                                     <div class="ai-chat-card-title">${catBadge}${escapeHTML(sug.name)}${timeBadge}</div>
-                                    ${sug.address ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">📍 ${escapeHTML(sug.address)}</div>` : ''}
+                                    ${sug.address ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(sug.address)}</div>` : ''}
                                 </div>
                                 <button type="button" id="btn_${sugId}" class="ai-card-add-btn" onclick="addPlaceFromAISuggestion('${sugId}', ${activeCopilotStopIndex}, ${activeCopilotDayIndex})">
                                     <span>+ Add to Day ${activeCopilotDayIndex + 1}</span>

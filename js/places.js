@@ -380,7 +380,7 @@ export function renderCityPlaces() {
                     ${svButton}
                 </div>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${escapeHTML(p.name)}</h4>
-                <p style="margin: 0; font-size: 12px; color: #728481;">📍 ${escapeHTML(p.address ? p.address.substring(0, 36) : '')}...</p>
+                <p style="margin: 0; font-size: 12px; color: #728481;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(p.address ? p.address.substring(0, 36) : '')}...</p>
             </div>
         </div>`;
     }).join('');

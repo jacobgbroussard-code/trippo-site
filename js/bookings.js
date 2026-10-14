@@ -109,7 +109,7 @@ export function renderBookingsList() {
                     <span>${safeLConf ? '#' + safeLConf : 'Details ›'}</span>
                 </div>
                 <div class="confirmed-title">${safeLName}</div>
-                ${safeLAddr ? `<div class="confirmed-sub">📍 ${safeLAddr}</div>` : ''}
+                ${safeLAddr ? `<div class="confirmed-sub"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${safeLAddr}</div>` : ''}
                 <div class="confirmed-sub" style="margin-top:4px;"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg>Check-in: ${safeLCheckIn}</div>
                 ${safeLNotes ? `<div class="confirmed-notes">"${safeLNotes}"</div>` : ''}
                 <button type="button" onclick="event.stopPropagation(); jumpToDailyFromStay(${index})" style="background:var(--card-bg); border:1.5px solid var(--primary); color:var(--primary); font-size:12px; font-weight:700; padding:6px 12px; border-radius:10px; cursor:pointer; margin-top:10px;"><svg class="ico" aria-hidden="true"><use href="#i-map-2"></use></svg>View on Daily Map</button>
