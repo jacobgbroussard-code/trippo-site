@@ -1,0 +1,41 @@
+# Weekly encrypted backup of all Supabase data (the free plan has no backups).
+# Calls the trippo_backup() function from supabase/cloud-backup.sql with the public anon key; the
+# result is already PGP-encrypted inside the database, so nothing readable ever leaves Supabase.
+# Each backup is kept as a workflow artifact for 90 days. To decrypt, see backup/README.md.
+name: Cloud backup
+
+on:
+  schedule:
+    - cron: '43 6 * * 0' # Sundays, 06:43 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: js/db.js
+          sparse-checkout-cone-mode: false
+
+      - name: Download encrypted backup
+        run: |
+          set -euo pipefail
+          URL=$(grep -oE "SUPABASE_URL = '[^']+'" js/db.js | cut -d"'" -f2)
+          KEY=$(grep -oE "SUPABASE_ANON_KEY = atob\('[^']+'\)" js/db.js | sed -E "s/.*atob\('([^']+)'\).*/\1/" | base64 -d)
+          curl -sS --fail-with-body -X POST "$URL/rest/v1/rpc/trippo_backup" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}' \
+            | jq -r . > trippo-backup.asc
+          grep -q -- '-----BEGIN PGP MESSAGE-----' trippo-backup.asc
+          ls -l trippo-backup.asc
+          echo "STAMP=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trippo-backup-${{ env.STAMP }}
+          path: trippo-backup.asc
+          retention-days: 90

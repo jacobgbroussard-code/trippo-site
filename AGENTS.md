@@ -44,6 +44,8 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
   in the Supabase SQL editor). Code falls back to the legacy columns if it hasn't been run.
 - Test: `node tests/test-offline-sync.js` (fake in-memory backend, no account needed).
 - Every new JS module must also be listed in `STATIC_ASSETS` in `sw.js` or offline cold starts break.
+- Weekly encrypted backups: `.github/workflows/cloud-backup.yml` + `supabase/cloud-backup.sql`; the
+  private key is only on the owner's PC. See `backup/README.md`. Never commit a private key.
 
 ## Affiliate links (Travelpayouts, as of Oct 2026)
 - Joined and earning: Aviasales (flight links with `marker=581802`). Also joined but not yet wired
