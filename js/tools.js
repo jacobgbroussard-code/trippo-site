@@ -25,7 +25,8 @@ import {
     toggleSidebar,
     triggerHaptic,
     escapeHTML,
-    escapeJS
+    escapeJS,
+    loadPartnerTracking
 } from './state.js';
 
 import { initPlannerMap, safeInvalidate, plannerMap } from './maps.js';
@@ -377,6 +378,7 @@ export function switchTab(tabId, opts = {}) {
             renderPlacesMasterList();
         }
     }
+    if (tabId === 'bookings' || tabId === 'transit') loadPartnerTracking();
     if (tabId === 'bookings') renderBookingsView();
     if (tabId === 'transit') renderTransitView();
     if (tabId === 'wishlist') {
@@ -559,6 +561,7 @@ export function openCurrencyModal() {
 export function openEsimModal() {
     toggleSidebar(false);
     const modal = document.getElementById('esim-modal');
+    loadPartnerTracking();
     if (modal) modal.style.display = 'flex';
 }
 
@@ -597,7 +600,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.12",
+        trippoVersion: "2.4.13",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -643,7 +646,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.12",
+        version: "2.4.13",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

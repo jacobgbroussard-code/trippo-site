@@ -153,10 +153,25 @@ export function showNotification(msg, durationMs = 2600) {
 }
 
 // --- MODALS & DRAWER ---
+// Travelpayouts' affiliate tracking script runs with full access to the page (including the
+// stored sign-in session) and can't be integrity-pinned, so it only loads once someone opens a
+// booking or flight screen: Stays, Transit, the sidebar (Flight Hub), hotel or eSIM pop-ups.
+let partnerTrackingLoaded = false;
+export function loadPartnerTracking() {
+    if (partnerTrackingLoaded) return;
+    partnerTrackingLoaded = true;
+    const script = document.createElement('script');
+    script.async = true;
+    script.setAttribute('data-cmp-ab', '2');
+    script.src = 'https://tp-em.com/NTgxODAy.js?t=581802';
+    document.head.appendChild(script);
+}
+
 export function toggleSidebar(open) {
     const drawer = document.getElementById('sidebar-drawer');
     const backdrop = document.getElementById('sidebar-backdrop');
     if (open) {
+        loadPartnerTracking();
         if (drawer) drawer.classList.add('open');
         if (backdrop) backdrop.classList.add('open');
     } else {

@@ -20,7 +20,8 @@ import {
     closeModal,
     escapeHTML,
     escapeJS,
-    triggerHaptic
+    triggerHaptic,
+    loadPartnerTracking
 } from './state.js';
 
 import { openPlacesCityView } from './places.js';
@@ -240,6 +241,7 @@ export function openLodgingModal(index) {
     const results = document.getElementById('hotel-address-results');
     if (results) results.style.display = 'none';
     const modal = document.getElementById('hotel-booking-modal');
+    loadPartnerTracking();
     if (modal) modal.style.display = 'flex';
 }
 
