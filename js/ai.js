@@ -20,7 +20,8 @@ import {
     triggerHaptic,
     escapeHTML,
     escapeJS,
-    formatLocalDate
+    formatLocalDate,
+    formatTime,
 } from './state.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
@@ -1032,7 +1033,7 @@ export function openAITripModal(itinerary) {
                 const activities = Array.isArray(dayObj.activities) ? dayObj.activities : [];
 
                 const activitiesHtml = activities.map((act) => {
-                    const timeBadge = act.time ? `<span class="activity-time-badge">${escapeHTML(act.time)}</span>` : '';
+                    const timeBadge = act.time ? `<span class="activity-time-badge">${escapeHTML(formatTime(act.time))}</span>` : '';
                     const locBadge = act.location ? `<span class="activity-loc-badge">📍 ${escapeHTML(act.location)}</span>` : '';
 
                     return `
@@ -1423,7 +1424,7 @@ export function renderAICopilotMessages() {
                     const sugId = `sug_${msgIndex}_${sugIndex}`;
                     copilotSuggestionsRegistry.set(sugId, sug);
 
-                    const timeBadge = sug.time ? `<span style="display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; background:var(--primary-light, #e3f1ed); color:var(--primary); margin-left:6px;">⏱️ ${escapeHTML(sug.time)}</span>` : '';
+                    const timeBadge = sug.time ? `<span style="display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; background:var(--primary-light, #e3f1ed); color:var(--primary); margin-left:6px;">⏱️ ${escapeHTML(formatTime(sug.time))}</span>` : '';
                     const catBadge = sug.category ? `<span style="font-size:10px; font-weight:700; opacity:0.8; margin-right:4px;">${escapeHTML(sug.category)}</span>` : '';
 
                     return `

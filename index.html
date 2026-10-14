@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.22">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.22">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.22">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.22">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.22">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.23">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.23">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.23">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.23">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.23">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.22">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.22">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.23">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.23">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -369,7 +369,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.22</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.23</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -1535,6 +1535,17 @@
                         <option value="mapbox-dark">Mapbox Dark</option>
                     </select>
                 </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Default Map View</div>
+                        <div style="font-size:11px; color:var(--text-light);">Where the Route and Wishlist maps open</div>
+                    </div>
+                    <select id="setting-map-default-view" class="form-control" style="width:auto; font-weight:700; font-size:13px; padding:6px 10px;" onchange="saveMapDefaultViewSetting(this.value)">
+                        <option value="fit">Fit trip / pins</option>
+                        <option value="location">My location</option>
+                        <option value="world">Whole world</option>
+                    </select>
+                </div>
                 <div style="font-size:11px; font-weight:700; margin-bottom:6px;">Map Overlay Buttons</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div>
@@ -1577,6 +1588,51 @@
                             <button class="btn" style="background: var(--text-dark); color: white; padding: 6px 12px; font-size: 12px; border-radius: 12px;" onclick="unlockMapboxKey()">🔒 Click to Edit Token</button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Display & Motion -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;">🎛 Display &amp; Motion</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Temperature</div>
+                        <div style="font-size:11px; color:var(--text-light);">Weather on Route and Daily</div>
+                    </div>
+                    <select id="setting-temp-unit" class="form-control" style="width:auto; font-weight:700; font-size:13px; padding:6px 10px;" onchange="saveTempUnitSetting(this.value)">
+                        <option value="F">°F</option>
+                        <option value="C">°C</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Time Format</div>
+                        <div style="font-size:11px; color:var(--text-light);">Flight, check-in and plan times</div>
+                    </div>
+                    <select id="setting-time-format" class="form-control" style="width:auto; font-weight:700; font-size:13px; padding:6px 10px;" onchange="saveTimeFormatSetting(this.value)">
+                        <option value="12">12-hour</option>
+                        <option value="24">24-hour</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Vibration</div>
+                        <div style="font-size:11px; color:var(--text-light);">Small taps on supported phones</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-haptics" onchange="saveHapticsSetting(this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div>
+                        <div style="font-size:14px; font-weight:700; color:var(--text);">Reduce Motion</div>
+                        <div style="font-size:11px; color:var(--text-light);">Fewer animations and map fly-overs</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-reduce-motion" onchange="saveReduceMotionSetting(this.checked)">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
             </div>
 
@@ -1824,6 +1880,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.22"></script>
+    <script type="module" src="js/app.js?v=2.4.23"></script>
 </body>
 </html>

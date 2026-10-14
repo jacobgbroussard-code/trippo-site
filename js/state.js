@@ -390,8 +390,46 @@ export function saveWishlist() {
 }
 
 // --- HAPTIC FEEDBACK (Mobile-Native Feel) ---
+// --- Display preferences (Settings → Display & Motion) ---
+export function getTempUnit() {
+    return safeGetStorage('trippo_temp_unit', 'F') === 'C' ? 'C' : 'F';
+}
+
+export function formatTempF(tempF) {
+    const n = Number(tempF);
+    if (!Number.isFinite(n)) return '';
+    return getTempUnit() === 'C' ? `${Math.round((n - 32) * 5 / 9)}°C` : `${Math.round(n)}°F`;
+}
+
+export function getTimeFormat() {
+    return safeGetStorage('trippo_time_format', '12') === '24' ? '24' : '12';
+}
+
+// "15:30", "3:30 PM", "3:30pm" → the user's 12h/24h format. Anything else ("Morning") is returned as-is.
+export function formatTime(str) {
+    const raw = String(str || '').trim();
+    const m = raw.match(/^(\d{1,2}):(\d{2})\s*([ap])\.?\s*m?\.?$/i) || raw.match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return raw;
+    let h = Number(m[1]);
+    const min = m[2];
+    if (h > 23 || Number(min) > 59) return raw;
+    const ap = m[3] ? m[3].toLowerCase() : null;
+    if (ap) { if (h > 12) return raw; if (h === 12) h = 0; if (ap === 'p') h += 12; }
+    if (getTimeFormat() === '24') return `${String(h).padStart(2, '0')}:${min}`;
+    return `${h % 12 || 12}:${min} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+export function isReducedMotion() {
+    return safeGetStorage('trippo_reduce_motion', '0') === '1';
+}
+
+export function applyMotionPreference() {
+    if (typeof document !== 'undefined' && document.body) document.body.classList.toggle('reduce-motion', isReducedMotion());
+}
+
 export function triggerHaptic(type = 'light') {
     try {
+        if (safeGetStorage('trippo_haptics', '1') === '0') return;
         if (typeof window !== 'undefined' && 'vibrate' in navigator) {
             if (type === 'light') {
                 navigator.vibrate(12);

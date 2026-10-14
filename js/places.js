@@ -29,7 +29,8 @@ import {
     getCategoryVisuals,
     getDistance,
     calculateTransitEstimate,
-    openDirectionsLink
+    openDirectionsLink,
+    getTempUnit,
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
@@ -119,7 +120,7 @@ export function getWeatherEmoji(code) {
 
 export async function fetchCityWeather(lat, lon) {
     try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,weathercode&timezone=auto`);
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,weathercode&timezone=auto&temperature_unit=fahrenheit`);
         const data = await res.json();
         setCityWeather(data.daily);
     } catch (e) {
@@ -207,7 +208,8 @@ export function renderPlacesDayTabs() {
     for (let i = 0; i < numDays; i++) {
         let weatherStr = '';
         if (cityWeather && cityWeather.temperature_2m_max && cityWeather.temperature_2m_max[i] !== undefined) {
-            const temp = Math.round(cityWeather.temperature_2m_max[i]);
+            const tF = cityWeather.temperature_2m_max[i];
+            const temp = getTempUnit() === 'C' ? Math.round((tF - 32) * 5 / 9) : Math.round(tF);
             const emoji = getWeatherEmoji(cityWeather.weathercode[i]);
             weatherStr = `<span style="font-weight:normal; margin-left:6px; opacity:0.8;">${emoji} ${temp}°</span>`;
         }

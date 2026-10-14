@@ -4328,3 +4328,11 @@ button.ai-template-note.ai-key-cta { display: block; padding: 6px 10px; border-r
 body.hide-map-btn-trains .map-btn-trains,
 body.hide-map-btn-trails .map-btn-trails,
 body.hide-map-btn-alltrails .map-btn-alltrails { display: none !important; }
+
+/* Settings → Reduce Motion */
+body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+}

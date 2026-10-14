@@ -3,7 +3,7 @@
    js/maps.js
    ========================================================================== */
 
-import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage, safeSetStorage } from './state.js';
+import { getActiveTrip, trips, activePlacesTripId, activePlacesStopIndex, showNotification, escapeHTML, escapeJS, getDistance, calculateTransitEstimate, safeGetStorage, safeSetStorage, isReducedMotion } from './state.js';
 
 export let plannerMap = null;
 export let placesMap = null;
@@ -227,6 +227,9 @@ export function initPlannerMap() {
         if (el) {
             plannerMap = L.map('planner-map', {
                 tap: false,
+                zoomAnimation: !isReducedMotion(),
+                fadeAnimation: !isReducedMotion(),
+                markerZoomAnimation: !isReducedMotion(),
                 zoomControl: true,
                 fullscreenControl: false,
                 dragging: true,
@@ -254,6 +257,9 @@ export function initPlacesMap() {
         if (el) {
             placesMap = L.map('places-map', {
                 tap: false,
+                zoomAnimation: !isReducedMotion(),
+                fadeAnimation: !isReducedMotion(),
+                markerZoomAnimation: !isReducedMotion(),
                 zoomControl: true,
                 fullscreenControl: false,
                 dragging: true,
@@ -281,6 +287,9 @@ export function initWishlistMap() {
         if (el) {
             wishlistMap = L.map('wishlist-map', {
                 tap: false,
+                zoomAnimation: !isReducedMotion(),
+                fadeAnimation: !isReducedMotion(),
+                markerZoomAnimation: !isReducedMotion(),
                 zoomControl: true,
                 fullscreenControl: false,
                 dragging: true,
@@ -383,6 +392,29 @@ export function setOverlayButtonVisible(kind, visible) {
             if (layer) map.removeLayer(layer);
         }
     });
+}
+
+// Settings → Default map view: 'fit' (trip / pins, the default), 'location' or 'world'.
+export function getDefaultMapView() {
+    const v = safeGetStorage('trippo_map_default_view', 'fit');
+    return ['fit', 'location', 'world'].includes(v) ? v : 'fit';
+}
+
+// Returns true when it has positioned the map, so the caller should skip its own fit.
+export function applyDefaultMapView(map, context) {
+    if (!map) return false;
+    const pref = getDefaultMapView();
+    if (pref === 'world') {
+        map.setView([20, 0], 2, { animate: false });
+        return true;
+    }
+    if (pref === 'location') {
+        // Fit once, then let the GPS fix move the map; later redraws keep the user's view.
+        if (map._trippoAutoLocated) return true;
+        map._trippoAutoLocated = true;
+        if (activeGpsContext !== context) setTimeout(() => toggleUserLocation(context), 0);
+    }
+    return false;
 }
 
 export function toggleTrails(target) {
@@ -577,7 +609,9 @@ export function drawPlannerMapRoute() {
         if (plannerMap) {
             plannerMap.invalidateSize();
             const size = plannerMap.getSize ? plannerMap.getSize() : null;
-            if (bounds.isValid()) {
+            if (applyDefaultMapView(plannerMap, 'planner')) {
+                plannerMap._pendingBounds = null;
+            } else if (bounds.isValid()) {
                 if (!size || size.x === 0 || size.y === 0) {
                     plannerMap._pendingBounds = bounds;
                 } else {
@@ -985,7 +1019,8 @@ export function toggleUserLocation(context = 'places') {
                 fillOpacity: 0.12,
                 weight: 1
             }).addTo(targetMap);
-            targetMap.flyTo([latitude, longitude], Math.max(targetMap.getZoom(), 15), { animate: true, duration: 1 });
+            if (isReducedMotion()) targetMap.setView([latitude, longitude], Math.max(targetMap.getZoom(), 15), { animate: false });
+            else targetMap.flyTo([latitude, longitude], Math.max(targetMap.getZoom(), 15), { animate: true, duration: 1 });
             showNotification(`📍 Found your location (±${Math.round(accuracy)}m)`);
         } else {
             userLocationMarker.setLatLng([latitude, longitude]);

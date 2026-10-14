@@ -26,7 +26,8 @@ import {
     triggerHaptic,
     escapeHTML,
     escapeJS,
-    loadPartnerTracking
+    loadPartnerTracking,
+    formatTime,
 } from './state.js';
 
 import { initPlannerMap, safeInvalidate, plannerMap } from './maps.js';
@@ -600,7 +601,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.22",
+        trippoVersion: "2.4.23",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -646,7 +647,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.22",
+        version: "2.4.23",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -1116,34 +1117,38 @@ export function exportTripToICS() {
         }
 
         // 3. Transit Event (if present)
-        if (stop.transit && (stop.transit.type || stop.transit.carrier || stop.transit.departureTime)) {
-            const tDate = new Date(stopStart);
-            const depParts = (stop.transit.departureTime || '09:00').split(':');
+        const tr = stop.transit ? normalizeTransitFields(stop.transit) : null;
+        if (tr && (tr.type || tr.carrier || tr.departureTime || tr.confirmation)) {
+            // Transit is saved on the stop you leave from: its own date, else the end of the stay
+            let tDate = tr.date ? new Date(`${tr.date}T00:00:00`) : new Date(stopEnd);
+            if (isNaN(tDate)) tDate = new Date(stopEnd);
+            const depParts = (tr.departureTime || '09:00').split(':');
             tDate.setHours(Number(depParts[0]) || 9, Number(depParts[1]) || 0, 0);
             
             const arrDate = new Date(tDate);
-            if (stop.transit.arrivalTime) {
-                const arrParts = stop.transit.arrivalTime.split(':');
+            if (tr.arrivalTime) {
+                const arrParts = tr.arrivalTime.split(':');
                 arrDate.setHours(Number(arrParts[0]) || 12, Number(arrParts[1]) || 0, 0);
                 if (arrDate < tDate) arrDate.setDate(arrDate.getDate() + 1);
             } else {
                 arrDate.setHours(arrDate.getHours() + 2);
             }
 
-            const transitType = (stop.transit.type || 'Transit').toUpperCase();
-            const fromCity = index > 0 ? trip.stops[index - 1].name : 'Home';
+            const transitType = (tr.type || 'Transit').toUpperCase();
+            const fromCity = tr.depStation || stop.name;
+            const toCity = tr.arrStation || (trip.stops[index + 1] ? trip.stops[index + 1].name : 'Home');
             icsContent.push('BEGIN:VEVENT');
             icsContent.push(`UID:${uidBase}-transit@trippo.top`);
             icsContent.push(`DTSTAMP:${nowStr}`);
             icsContent.push(`DTSTART:${formatICSDate(tDate)}`);
             icsContent.push(`DTEND:${formatICSDate(arrDate)}`);
-            icsContent.push(`SUMMARY:${escapeICS(`✈️ ${transitType}: ${fromCity} ➔ ${stop.name}`)}`);
-            let tDesc = `Transit: ${transitType}\\nRoute: ${fromCity} to ${stop.name}`;
-            if (stop.transit.carrier) tDesc += `\\nCarrier: ${stop.transit.carrier}`;
-            if (stop.transit.confirmation) tDesc += `\\nConfirmation: ${stop.transit.confirmation}`;
-            if (stop.transit.notes) tDesc += `\\nNotes: ${stop.transit.notes}`;
+            icsContent.push(`SUMMARY:${escapeICS(`✈️ ${transitType}: ${fromCity} ➔ ${toCity}`)}`);
+            let tDesc = `Transit: ${transitType}\\nRoute: ${fromCity} to ${toCity}`;
+            if (tr.carrier) tDesc += `\\nCarrier: ${tr.carrier}`;
+            if (tr.confirmation) tDesc += `\\nConfirmation: ${tr.confirmation}`;
+            if (tr.notes) tDesc += `\\nNotes: ${tr.notes}`;
             icsContent.push(`DESCRIPTION:${escapeICS(tDesc)}`);
-            icsContent.push(`LOCATION:${escapeICS(`${fromCity} to ${stop.name}`)}`);
+            icsContent.push(`LOCATION:${escapeICS(`${fromCity} to ${toCity}`)}`);
             icsContent.push('STATUS:CONFIRMED');
             icsContent.push('END:VEVENT');
         }
@@ -1245,14 +1250,15 @@ export function printPocketItinerary() {
         }
 
         // Transit details
-        if (stop.transit && (stop.transit.type || stop.transit.carrier || stop.transit.confirmation)) {
+        const ptr = stop.transit ? normalizeTransitFields(stop.transit) : null;
+        if (ptr && (ptr.type || ptr.carrier || ptr.confirmation || ptr.departureTime)) {
             html += `
                 <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 10px; margin-bottom:8px; font-size:12px;">
-                    <strong>✈️ Transit / Arrival:</strong> ${escapeHTML((stop.transit.type || 'Travel').toUpperCase())} 
-                    ${stop.transit.carrier ? `• ${escapeHTML(stop.transit.carrier)}` : ''}
-                    ${stop.transit.departureTime ? `• Dep: ${escapeHTML(stop.transit.departureTime)}` : ''}
-                    ${stop.transit.arrivalTime ? `• Arr: ${escapeHTML(stop.transit.arrivalTime)}` : ''}
-                    ${stop.transit.confirmation ? `• <strong>Ref: ${escapeHTML(stop.transit.confirmation)}</strong>` : ''}
+                    <strong>✈️ Onward travel:</strong> ${escapeHTML((ptr.type || 'Travel').toUpperCase())}
+                    ${ptr.carrier ? `• ${escapeHTML(ptr.carrier)}` : ''}
+                    ${ptr.departureTime ? `• Dep: ${escapeHTML(formatTime(ptr.departureTime))}` : ''}
+                    ${ptr.arrivalTime ? `• Arr: ${escapeHTML(formatTime(ptr.arrivalTime))}` : ''}
+                    ${ptr.confirmation ? `• <strong>Ref: ${escapeHTML(ptr.confirmation)}</strong>` : ''}
                 </div>
             `;
         }
@@ -1277,7 +1283,7 @@ export function printPocketItinerary() {
                     ${cityPlaces.map(p => `
                         <li style="margin-bottom:3px;">
                             <strong>${escapeHTML(p.name)}</strong>
-                            ${p.time ? ` <span style="color:#6b7280;">(${escapeHTML(p.time)})</span>` : ''}
+                            ${p.time ? ` <span style="color:#6b7280;">(${escapeHTML(formatTime(p.time))})</span>` : ''}
                             ${p.notes ? ` — <em>${escapeHTML(p.notes)}</em>` : ''}
                         </li>
                     `).join('')}
@@ -1556,3 +1562,18 @@ window.initFlightHubChips = initFlightHubChips;
 
 
 
+
+// The transit form saves method/depTime/arrTime/bookingNumber; older data used type/departureTime/...
+function normalizeTransitFields(t) {
+    return {
+        type: t.method || t.type || '',
+        carrier: t.carrier || '',
+        departureTime: t.depTime || t.departureTime || '',
+        arrivalTime: t.arrTime || t.arrivalTime || '',
+        confirmation: t.bookingNumber || t.confirmation || '',
+        date: t.date || '',
+        depStation: t.depStation || '',
+        arrStation: t.arrStation || '',
+        notes: t.notes || ''
+    };
+}

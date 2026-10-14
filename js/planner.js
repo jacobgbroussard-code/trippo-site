@@ -14,7 +14,8 @@ import {
     escapeHTML,
     escapeJS,
     triggerHaptic,
-    normalizeTrip
+    normalizeTrip,
+    formatTempF, isReducedMotion,
 } from './state.js';
 
 import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords } from './maps.js';
@@ -395,7 +396,8 @@ export function focusStopOnMap(event, index) {
     const stop = trip.stops[index];
     if (!hasCoords(stop)) return;
 
-    plannerMap.flyTo([stop.lat, stop.lon], 11, { duration: 1.2 });
+    if (isReducedMotion()) plannerMap.setView([stop.lat, stop.lon], 11, { animate: false });
+    else plannerMap.flyTo([stop.lat, stop.lon], 11, { duration: 1.2 });
     const marker = (pMarkers || []).find(m => m.stopIndex === index);
     if (marker) {
         setTimeout(() => {
@@ -745,7 +747,7 @@ export async function loadStopWeather(index, lat, lon) {
     try {
         const info = await getDestinationWeather(lat, lon);
         if (info && weatherEl) {
-            weatherEl.innerHTML = `<span>${info.icon}</span> <span>${info.tempF}°F</span> • <span style="color:var(--text-light);">${info.condition}</span>`;
+            weatherEl.innerHTML = `<span>${info.icon}</span> <span>${formatTempF(info.tempF)}</span> • <span style="color:var(--text-light);">${info.condition}</span>`;
             weatherEl.title = `Packing Tip: ${info.advice}`;
             weatherEl.style.display = 'inline-flex';
         }

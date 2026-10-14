@@ -31,7 +31,7 @@ import {
     activeTripId
 } from './state.js';
 
-import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers, hasCoords } from './maps.js';
+import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers, hasCoords, applyDefaultMapView } from './maps.js';
 
 let droppedTempMarker = null;
 export let wishlistSearchTimeout = null;
@@ -498,7 +498,7 @@ export function renderWishlistPins(autoFit = true) {
         bounds.extend([p.lat, p.lon]);
     });
 
-    if (autoFit) {
+    if (autoFit && !applyDefaultMapView(wishlistMap, 'wishlist')) {
         const mappable = filteredPins.filter(hasCoords);
         if (mappable.length > 1) {
             wishlistMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 4 });

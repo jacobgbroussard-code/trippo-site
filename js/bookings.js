@@ -21,7 +21,8 @@ import {
     escapeHTML,
     escapeJS,
     triggerHaptic,
-    loadPartnerTracking
+    loadPartnerTracking,
+    formatTime,
 } from './state.js';
 
 import { openPlacesCityView } from './places.js';
@@ -97,7 +98,7 @@ export function renderBookingsList() {
             const safeLName = escapeHTML(l.name);
             const safeLConf = l.bookingNumber ? escapeHTML(l.bookingNumber) : '';
             const safeLAddr = l.address ? escapeHTML(l.address) : '';
-            const safeLCheckIn = escapeHTML(l.checkInTime || '3:00 PM');
+            const safeLCheckIn = escapeHTML(formatTime(l.checkInTime || '3:00 PM'));
             const safeLNotes = l.notes ? escapeHTML(l.notes) : '';
 
             lodgingCardHTML = `
@@ -477,8 +478,8 @@ export function renderTransitList() {
             const safeBookingNum = tr.bookingNumber ? escapeHTML(tr.bookingNumber) : '';
             const safeDepStation = escapeHTML(tr.depStation || stopA.name);
             const safeArrStation = escapeHTML(tr.arrStation || stopB.name);
-            const safeDepTime = escapeHTML(tr.depTime || '');
-            const safeArrTime = escapeHTML(tr.arrTime || '');
+            const safeDepTime = escapeHTML(formatTime(tr.depTime || ''));
+            const safeArrTime = escapeHTML(formatTime(tr.arrTime || ''));
             const safeDate = escapeHTML(tr.date || calcDateStr);
             const safeRetDate = tr.returnDate ? ' (Ret: ' + escapeHTML(tr.returnDate) + ')' : '';
 
