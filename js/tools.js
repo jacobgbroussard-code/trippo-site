@@ -597,7 +597,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.11",
+        trippoVersion: "2.4.12",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -643,7 +643,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.11",
+        version: "2.4.12",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -1418,18 +1418,18 @@ export async function renderFlightHubDeals(origin, dateStr = '') {
     try {
         const deals = await getCheapFlightDeals(origin, dateStr);
         if (!deals || deals.length === 0) {
-            listEl.innerHTML = `<div style="font-size:11px; color:#8fa09c; padding:4px 0;">No cheap deals found for ${origin}.</div>`;
+            listEl.innerHTML = `<div style="font-size:11px; color:#8fa09c; padding:4px 0;">No cheap deals found for ${escapeHTML(origin)}.</div>`;
             return;
         }
 
         listEl.innerHTML = deals.map(deal => `
-            <a href="${deal.link}" target="_blank" rel="noopener noreferrer" class="flight-deal-item" title="View flights to ${deal.city} on Aviasales">
+            <a href="${String(deal.link).startsWith('https://') ? escapeHTML(deal.link) : '#'}" target="_blank" rel="noopener noreferrer" class="flight-deal-item" title="View flights to ${escapeHTML(deal.city)} on Aviasales">
                 <div class="flight-deal-dest">
-                    <span class="flight-deal-city">${deal.city} (${deal.code})</span>
-                    <span class="flight-deal-airline">${deal.airline}</span>
+                    <span class="flight-deal-city">${escapeHTML(deal.city)} (${escapeHTML(deal.code)})</span>
+                    <span class="flight-deal-airline">${escapeHTML(deal.airline)}</span>
                 </div>
                 <div class="flight-deal-price-badge">
-                    <span>From $${deal.price}</span>
+                    <span>From ${Number(deal.price) || 0}</span>
                     <span style="font-size:9px;">↗</span>
                 </div>
             </a>

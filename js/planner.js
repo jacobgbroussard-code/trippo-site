@@ -13,7 +13,8 @@ import {
     closeModal,
     escapeHTML,
     escapeJS,
-    triggerHaptic
+    triggerHaptic,
+    normalizeTrip
 } from './state.js';
 
 import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords } from './maps.js';
@@ -689,7 +690,7 @@ export function handleFileImport(event) {
                     incomingTrip.id = 'trip_' + Date.now();
                     if (!Array.isArray(incomingTrip.places)) incomingTrip.places = [];
                     if (!Array.isArray(incomingTrip.expenses)) incomingTrip.expenses = [];
-                    trips.push(incomingTrip);
+                    trips.push(normalizeTrip(incomingTrip));
                     saveTrips();
                     if (window.openTrip) window.openTrip(incomingTrip.id);
                     showNotification(`Imported ${incomingTrip.name}!`);

@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.4.11';
+const CACHE_NAME = 'trippo-cache-v2.4.12';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -33,10 +33,10 @@ const STATIC_ASSETS = [
     './fad.jpg',
     './fad.png',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
+    'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js',
-    'https://cdn.jsdelivr.net/npm/flatpickr',
+    'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3'
 ];
 
