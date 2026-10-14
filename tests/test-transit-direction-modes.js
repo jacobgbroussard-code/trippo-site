@@ -42,7 +42,7 @@ check('index.html contains #edit-poi-transit-mode-group', () => {
 });
 
 check('index.html has bumped version in title, assets, and app.js', () => {
-    assert(/Trippo Travel Planner v\d+\.\d+\.\d+/.test(indexHtml), 'Missing valid version title');
+    assert(/My Trips <span[^>]*>v\d+\.\d+\.\d+<\/span>/.test(indexHtml), 'Missing version badge');
     assert(/styles\/main\.css\?v=\d+\.\d+\.\d+/.test(indexHtml), 'Missing main.css version');
     assert(/styles\/components\.css\?v=\d+\.\d+\.\d+/.test(indexHtml), 'Missing components.css version');
     assert(/js\/app\.js\?v=\d+\.\d+\.\d+/.test(indexHtml), 'Missing app.js version');

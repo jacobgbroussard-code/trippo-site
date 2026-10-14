@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /tests/
+Disallow: /worker/
+Disallow: /supabase/
+
+Sitemap: https://trippo.top/sitemap.xml

@@ -47,7 +47,6 @@ async function runTests() {
     const VERSION = (appJs.match(/CURRENT_VERSION = '([\d.]+)'/) || [])[1];
     check(`v${VERSION} version bump is consistent across all files`, () => {
         assert(VERSION, 'js/app.js CURRENT_VERSION not found');
-        assert(indexHtml.includes(`Trippo Travel Planner v${VERSION}`), 'index.html title mismatch');
         assert(indexHtml.includes(`js/app.js?v=${VERSION}`), 'index.html script tag mismatch');
         assert(indexHtml.includes(`v${VERSION}</span></span>`), 'index.html header badge mismatch');
         assert(toolsJs.includes(`version: "${VERSION}"`), 'js/tools.js backup version mismatch');

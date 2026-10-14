@@ -1,7 +1,7 @@
 {
   "name": "Trippo Travel Planner",
   "short_name": "Trippo",
-  "description": "Mobile-first, local-first Single-Page Application for itineraries, maps, and travel budgeting.",
+  "description": "Free travel planner for multi-city trips: route maps, daily itineraries, stays, transit and budgets. Works offline.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

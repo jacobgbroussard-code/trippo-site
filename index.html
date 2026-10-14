@@ -3,7 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Trippo Travel Planner v2.4.13</title>
+    <title>Trippo — Free Travel Planner for Multi-City Trips</title>
+
+    <!-- Search & link-preview metadata -->
+    <meta name="description" content="Trippo is a free travel planner for multi-city trips: map your route, plan each day, track stays, transit and budget, and share live with friends. Works offline on your phone.">
+    <link rel="canonical" href="https://trippo.top/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Trippo">
+    <meta property="og:url" content="https://trippo.top/">
+    <meta property="og:title" content="Trippo — Free Travel Planner for Multi-City Trips">
+    <meta property="og:description" content="Map your route, plan each day, track stays, transit and budget, and plan live with friends. Works offline.">
+    <meta property="og:image" content="https://trippo.top/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Trippo travel planner: plan multi-city trips, daily itineraries, stays and budgets, even offline.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Trippo — Free Travel Planner for Multi-City Trips">
+    <meta name="twitter:description" content="Map your route, plan each day, track stays, transit and budget, and plan live with friends. Works offline.">
+    <meta name="twitter:image" content="https://trippo.top/og-image.jpg">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Trippo",
+        "url": "https://trippo.top/",
+        "description": "Free travel planner for multi-city trips: route maps, daily itineraries, stays, transit, budgets and live trip sharing. Works offline.",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Any (web, iOS, Android)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    }
+    </script>
 
     <!-- Travelpayouts tracking script: loaded on demand by loadPartnerTracking() in js/state.js -->
     
@@ -15,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.13">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.13">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.13">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.13">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.13">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.14">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.14">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.14">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.14">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.14">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,8 +60,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.13">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.13">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.14">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.14">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -338,7 +367,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.13</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.14</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge">☁️ Cloud Sync</button>
         </h1>
@@ -1762,6 +1791,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.13"></script>
+    <script type="module" src="js/app.js?v=2.4.14"></script>
 </body>
 </html>
