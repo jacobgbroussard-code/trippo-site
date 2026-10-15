@@ -112,6 +112,39 @@ const GLOBAL_DEFAULT_DESTINATIONS = [
 ];
 
 /**
+ * Travelpayouts tracked links for partner programs (Klook, Tiqets, Airalo...).
+ * Paste one link made with that program's "Generate links" tool in the Travelpayouts dashboard,
+ * with the destination part replaced by {URL}. Until a template is set, links go straight to
+ * the partner and earn nothing.
+ */
+const PARTNER_LINK_TEMPLATES = {
+    klook: '',
+    tiqets: '',
+    airalo: ''
+};
+
+export function partnerLink(program, url) {
+    const template = PARTNER_LINK_TEMPLATES[program];
+    return template ? template.replace('{URL}', encodeURIComponent(url)) : url;
+}
+
+// Tickets and tours: Klook is strongest in Asia-Pacific, Tiqets in Europe and the Americas
+export function ticketLink(name, city, lat, lon) {
+    const q = `${name || ''} ${city || ''}`.trim();
+    const la = Number(lat), lo = Number(lon);
+    const asiaPacific = Number.isFinite(lo) && (lo > 60 || (la < 0 && lo > 100));
+    return asiaPacific
+        ? partnerLink('klook', `https://www.klook.com/en-US/search/result/?query=${encodeURIComponent(q)}`)
+        : partnerLink('tiqets', `https://www.tiqets.com/en/search/?q=${encodeURIComponent(q)}`);
+}
+
+// Airalo country pages look like airalo.com/japan-esim
+export function esimLink(country) {
+    const slug = String(country || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return partnerLink('airalo', slug ? `https://www.airalo.com/${slug}-esim` : 'https://www.airalo.com/');
+}
+
+/**
  * Builds Aviasales flight search URL with active affiliate marker
  */
 export function buildAviasalesFlightUrl(origin, destination, dateStr = '', returnStr = '') {

@@ -28,7 +28,7 @@ import {
     getDistance,
     parseLocalDate,
 } from './state.js';
-import { buildAviasalesFlightUrl } from './travel-payouts.js';
+import { buildAviasalesFlightUrl, ticketLink } from './travel-payouts.js';
 import { getTravelProfileText } from './travel-profile.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
@@ -604,6 +604,8 @@ function saveStructuredAITrip(plan) {
             };
             if (mins >= 10 && mins <= 720) place.duration = Math.round(mins);
             if (!exact) place.approxLocation = true;
+            if (act.localName && String(act.localName).trim() !== place.name) place.localName = String(act.localName).trim().slice(0, 80);
+            if (act.bookable === true) place.ticketed = true;
             places.push(place);
         });
     });
@@ -1139,7 +1141,7 @@ RULES
 4. Day trips (e.g. Nara from Osaka) are NOT stops: keep "stop" as the base city and set "dayTrip": true.
 5. Moving between cities goes in "transitToNext" of the earlier stop (fastest practical option, e.g. high-speed rail), not as an activity. On a travel day, plan only what fits after arrival.
 6. Each day: 4-6 activities with realistic 24h clock times, including lunch and dinner at specific real restaurants or food streets. Cluster each day by neighbourhood and respect opening days for the travel month.
-7. Every activity needs accurate "lat"/"lon" (4 decimals), "durationMinutes", a typical "costUSD" per person (0 if free) and a "tip" only when it really helps.
+7. Every activity needs accurate "lat"/"lon" (4 decimals), "durationMinutes", a typical "costUSD" per person (0 if free) and a "tip" only when it really helps. Add "localName" (the official name in the local script) in countries that don't use the Latin alphabet, and "bookable": true when tickets or tours for it are sold online.
 8. Use Google Search to check that places exist and are open. Do not invent places.
 9. If the request mentions a month or dates, set "startDate" (YYYY-MM-DD, the next such date after today); otherwise leave it "". With flights, startDate is the day the outbound flight leaves.
 10. Flights: the traveller's home airport is given below. Unless the request says they're already there or it's an easy drive, plan the flight out and back. For long-haul or international trips, leave from the best big airport they could drive to in about 4 hours when it has better nonstop or one-stop options than the home airport (say so in "driveNote"); if the request names a departure city, use that. Name real airlines that fly the route, typical local departure and arrival times, flight time, and a typical round-trip economy fare per person for the travel month. Day 1 is the day they land; the flight home leaves the day after the last day. Use "flights": null when no flight is needed.
@@ -1165,7 +1167,7 @@ Return ONLY this JSON:
   "days": [
     {"day": 1, "stop": "Kyoto", "dayTrip": false, "theme": "Kyoto: Higashiyama temples and Gion",
      "activities": [
-       {"time": "09:00", "durationMinutes": 90, "name": "Kiyomizu-dera", "category": "See & Do", "description": "Wooden terrace over the city; go early before the crowds.", "location": "Higashiyama, Kyoto", "lat": 34.9949, "lon": 135.7850, "costUSD": 3, "tip": "Walk down Sannenzaka afterwards."}
+       {"time": "09:00", "durationMinutes": 90, "name": "Kiyomizu-dera", "category": "See & Do", "description": "Wooden terrace over the city; go early before the crowds.", "location": "Higashiyama, Kyoto", "lat": 34.9949, "lon": 135.7850, "costUSD": 3, "tip": "Walk down Sannenzaka afterwards.", "localName": "清水寺", "bookable": false}
      ]}
   ],
   "tips": ["2-4 short practical tips: passes, bookings, money, etiquette"]
@@ -1500,6 +1502,8 @@ export function openAITripModal(itinerary, keepEdits = false) {
                     const cost = Number(act.costUSD);
                     const costBadge = Number.isFinite(cost) && act.costUSD !== '' && act.costUSD !== null ? `<span class="activity-loc-badge">${cost > 0 ? `~$${Math.round(cost)}` : 'Free'}</span>` : '';
                     const tipLine = act.tip ? `<div class="ai-activity-tip">${escapeHTML(act.tip)}</div>` : '';
+                    const ticketBadge = act.bookable === true ? `<a class="activity-ticket-link" href="${escapeHTML(ticketLink(act.name, String(dayObj.stop || itinerary.destination || ''), act.lat, act.lon))}" target="_blank" rel="noopener noreferrer"><svg class="ico" aria-hidden="true"><use href="#i-ticket"></use></svg>Tickets</a>` : '';
+                    const localLine = act.localName ? `<span class="place-local-name">${escapeHTML(act.localName)}</span>` : '';
                     const locBadge = act.location ? `<span class="activity-loc-badge"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(act.location)}</span>` : '';
 
                     return `
@@ -1508,9 +1512,10 @@ export function openAITripModal(itinerary, keepEdits = false) {
                                 <span class="ai-activity-name">${escapeHTML(act.name || 'Activity')}</span>
                                 ${timeBadge}
                             </div>
+                            ${localLine}
                             <div class="ai-activity-desc">${escapeHTML(act.description || '')}</div>
                             ${tipLine}
-                            ${locBadge || costBadge ? `<div class="ai-activity-footer">${locBadge}${costBadge}</div>` : ''}
+                            ${locBadge || costBadge || ticketBadge ? `<div class="ai-activity-footer">${locBadge}${costBadge}${ticketBadge}</div>` : ''}
                         </div>
                     `;
                 }).join('');

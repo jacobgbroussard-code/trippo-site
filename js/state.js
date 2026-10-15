@@ -628,12 +628,27 @@ export function calculateTransitEstimate(lat1, lon1, lat2, lon2, preferredMode =
     }
 }
 
+// Rough mainland China box, minus Hong Kong, Macau and Taiwan (Google Maps doesn't work in the mainland)
+export function inMainlandChina(lat, lon) {
+    lat = Number(lat); lon = Number(lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+    if (lat < 18 || lat > 53.6 || lon < 73.5 || lon > 134.8) return false;
+    if (lat > 22.13 && lat < 22.57 && lon > 113.52 && lon < 114.45) return false; // Hong Kong, Macau
+    if (lon > 119.9 && lat < 25.4) return false;                                  // Taiwan
+    if (lat > 37.7 && lon > 124.3) return false;                                   // North Korea side
+    if (lon < 97 && lat < 28) return false;                                        // Myanmar / India side
+    if (lat < 23 && lon < 106.5 && lon > 97) return false;                         // Laos / Vietnam side
+    return true;
+}
+
 export function openDirectionsLink(lat1, lon1, lat2, lon2, mode = 'walking') {
     if (lat1 === undefined || lat1 === null || lon1 === undefined || lon1 === null ||
         lat2 === undefined || lat2 === null || lon2 === undefined || lon2 === null) return;
     const validModes = ['walking', 'driving', 'transit'];
     const travelmode = validModes.includes(mode) ? mode : 'walking';
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=${travelmode}`;
+    const url = inMainlandChina(lat2, lon2)
+        ? `https://uri.amap.com/navigation?from=${lon1},${lat1},Start&to=${lon2},${lat2},Destination&mode=${{ walking: 'walk', driving: 'car', transit: 'bus' }[travelmode]}&coordinate=wgs84&callnative=1`
+        : `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=${travelmode}`;
     window.open(url, '_blank');
 }
 

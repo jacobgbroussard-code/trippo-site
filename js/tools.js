@@ -42,6 +42,7 @@ import { getCheapFlightDeals } from './travel-payouts.js';
 export function renderHome() {
     const listEl = document.getElementById('trip-list');
     if (!listEl) return;
+    if (window.renderHomeTodayCard) window.renderHomeTodayCard();
     if (trips.length === 0) {
         listEl.innerHTML = `
             <div style="text-align: center; color: #8fa39f; padding: 40px 20px;">
@@ -464,7 +465,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.44",
+        trippoVersion: "2.4.45",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -510,7 +511,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.44",
+        version: "2.4.45",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

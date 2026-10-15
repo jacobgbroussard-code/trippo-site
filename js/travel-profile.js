@@ -34,6 +34,7 @@ export function getTravelProfileText() {
     if (p.avoid) parts.push(`avoid: ${p.avoid}`);
     if (p.lightWalking) parts.push('keep walking light');
     if (p.kids) parts.push('travelling with kids');
+    if (p.passport) parts.push(`passport: ${p.passport}`);
     return parts.length ? `Traveller profile (follow it unless the request says otherwise): ${parts.join('; ')}.` : '';
 }
 
@@ -72,6 +73,8 @@ function renderTravelProfile() {
             <input id="tp-food" class="form-control" maxlength="120" placeholder="e.g. vegetarian, love spicy, no seafood" value="${escapeHTML(p.food || '')}" onchange="setTravelProfileText('food', this.value)"></div>
         <div class="tp-field"><label class="tp-label" for="tp-avoid">Avoid</label>
             <input id="tp-avoid" class="form-control" maxlength="120" placeholder="e.g. long queues, tourist traps, early starts" value="${escapeHTML(p.avoid || '')}" onchange="setTravelProfileText('avoid', this.value)"></div>
+        <div class="tp-field"><label class="tp-label" for="tp-passport">Passport</label>
+            <input id="tp-passport" class="form-control" maxlength="60" placeholder="e.g. United States (used for visa and entry checks)" value="${escapeHTML(p.passport || '')}" onchange="setTravelProfileText('passport', this.value)"></div>
         <label class="tp-toggle"><span>Keep walking light</span><span class="switch"><input type="checkbox" ${p.lightWalking ? 'checked' : ''} onchange="setTravelProfileFlag('lightWalking', this.checked)"><span class="slider round"></span></span></label>
         <label class="tp-toggle"><span>Travelling with kids</span><span class="switch"><input type="checkbox" ${p.kids ? 'checked' : ''} onchange="setTravelProfileFlag('kids', this.checked)"><span class="slider round"></span></span></label>`;
 }
@@ -102,7 +105,7 @@ export function toggleTravelProfileInterest(name) {
     });
 }
 export function setTravelProfileText(field, value) {
-    if (!['food', 'avoid'].includes(field)) return;
+    if (!['food', 'avoid', 'passport'].includes(field)) return;
     const p = getTravelProfile();
     p[field] = String(value || '').trim().slice(0, 120);
     saveProfile(p);

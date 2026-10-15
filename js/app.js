@@ -25,9 +25,11 @@ import * as budgetEstimator from './budget-estimator.js';
 import * as budgetTracker from './budget-tracker.js';
 import * as travelProfile from './travel-profile.js';
 import * as bookingImport from './booking-import.js';
+import * as tripCheckup from './trip-checkup.js';
+import * as today from './today.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.44';
+const CURRENT_VERSION = '2.4.45';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -81,7 +83,9 @@ Object.assign(window, {
     ...budgetEstimator,
     ...budgetTracker,
     ...travelProfile,
-    ...bookingImport
+    ...bookingImport,
+    ...tripCheckup,
+    ...today
 });
 
 // Replay any early calls queued before module finished loading

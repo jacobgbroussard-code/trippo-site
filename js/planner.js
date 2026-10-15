@@ -256,6 +256,8 @@ export function renderPlanner() {
     if (toolsRow) toolsRow.style.display = trip.stops.length >= 2 ? 'flex' : 'none';
     const addNextBtn = document.getElementById('planner-add-next-btn');
     if (addNextBtn) addNextBtn.style.display = trip.stops.length >= 1 ? '' : 'none';
+    const checkupBtn = document.getElementById('planner-checkup-btn');
+    if (checkupBtn) checkupBtn.style.display = trip.stops.length >= 1 ? '' : 'none';
 
     const allLocked = trip.stops.length > 0 && trip.stops.every(s => s.locked);
     const lockAllBtn = document.getElementById('toggle-lock-all-btn');

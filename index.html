@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.44">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.44">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.44">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.44">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.44">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.45">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.45">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.45">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.45">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.45">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.44">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.44">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.45">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.45">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -366,6 +366,9 @@
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openAITripSearchModal()">
                 <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-sparkles"></use></svg></span> AI Trip Planner
             </div>
+            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openTripCheckup()">
+                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-clipboard-check"></use></svg></span> Trip Check-up
+            </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="toggleSidebar(false); openBookingImport()">
                 <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-file-import"></use></svg></span> Import a Booking
             </div>
@@ -448,7 +451,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.44</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.45</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -461,6 +464,7 @@
                 <span style="background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; justify-content: center; align-items: center; font-size: 15px;">+</span>
                 Create a Trip
             </button>
+            <div id="home-today-card" style="width: 100%;"></div>
             <div id="trip-list" style="width: 100%;"></div>
         </div>
     </div>
@@ -526,6 +530,7 @@
             
             <div id="itinerary-list"></div>
             <button type="button" id="planner-add-next-btn" class="dashed-add-btn" onclick="openCitySearchModal()" style="display:none; margin-top: 4px;">+ Add next stop</button>
+            <button type="button" id="planner-checkup-btn" class="checkup-entry-btn" onclick="openTripCheckup()" style="display:none;"><svg class="ico" aria-hidden="true"><use href="#i-clipboard-check"></use></svg><span><strong>Trip check-up</strong><small>Problems, book-ahead dates and a before-you-go list</small></span><span aria-hidden="true">›</span></button>
             
             <a href="https://www.getyourguide.com/" id="planner-activities-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
                 <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-ticket"></use></svg></span>
@@ -590,6 +595,7 @@
                 <p style="text-align:center; font-size:11px; color:#8fa39f; margin: 10px 0 6px 0; font-weight:600;">Drag your hotel to the top to lock it as the starting point. Tap any line on the map for walking directions.</p>
                 <div class="places-tool-row">
                     <button class="optimize-btn" onclick="optimizeCityRoute()"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Auto-Optimize</button>
+                    <button type="button" class="optimize-btn" onclick="openDayViewForDaily()" title="Now and next, directions, running late and rainy-day swaps"><svg class="ico" aria-hidden="true"><use href="#i-sun"></use></svg>Day view</button>
                     <button type="button" class="optimize-btn" onclick="openDayTrips()" title="Day trips and 1-night stopovers from this city"><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg>Day trips</button>
                 </div>
                 <div id="saved-places-container"></div>
@@ -2052,6 +2058,34 @@
         </div>
     </div>
 
+    <!-- TRIP CHECK-UP -->
+    <div id="trip-checkup-modal" class="modal" onclick="handleModalBackdropClick(event, 'trip-checkup-modal')" role="dialog" aria-modal="true" aria-labelledby="trip-checkup-title">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('trip-checkup-modal')" aria-label="Close">✕</button>
+            <h2 id="trip-checkup-title" style="margin:0 0 8px; font-size:20px;">Trip check-up</h2>
+            <div id="trip-checkup-body"></div>
+            <button type="button" class="cancel-btn" onclick="closeModal('trip-checkup-modal')" style="width:100%; margin-top:14px;">Done</button>
+        </div>
+    </div>
+
+    <!-- TODAY / DAY VIEW -->
+    <div id="today-modal" class="modal" onclick="handleModalBackdropClick(event, 'today-modal')" role="dialog" aria-modal="true" aria-label="Day view">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('today-modal')" aria-label="Close">✕</button>
+            <div id="today-body"></div>
+            <button type="button" class="cancel-btn" onclick="closeModal('today-modal')" style="width:100%; margin-top:14px;">Done</button>
+        </div>
+    </div>
+
+    <!-- DRIVER CARD (place name in the local script, big enough to show a driver) -->
+    <div id="driver-card-modal" class="modal" onclick="handleModalBackdropClick(event, 'driver-card-modal')" role="dialog" aria-modal="true" aria-label="Driver card">
+        <div class="modal-content driver-card" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeModal('driver-card-modal')" aria-label="Close">✕</button>
+            <div class="driver-hint">Please take me here</div>
+            <div id="driver-card-body"></div>
+        </div>
+    </div>
+
     <!-- TRAVEL PROFILE (used by every AI feature) -->
     <div id="travel-profile-modal" class="modal" onclick="handleModalBackdropClick(event, 'travel-profile-modal')" role="dialog" aria-modal="true" aria-label="Travel profile">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -2145,6 +2179,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.44"></script>
+    <script type="module" src="js/app.js?v=2.4.45"></script>
 </body>
 </html>

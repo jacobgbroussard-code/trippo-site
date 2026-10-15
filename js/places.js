@@ -35,6 +35,8 @@ import {
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
+import { inMainlandChina } from './state.js';
+import { ticketLink } from './travel-payouts.js';
 import { plannerCardHTML } from './day-planner.js';
 
 export let poiSearchTimeout = null;
@@ -381,7 +383,12 @@ export function renderCityPlaces() {
                     ${svButton}
                 </div>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${escapeHTML(p.name)}</h4>
+                ${p.localName ? `<span class="place-local-name">${escapeHTML(p.localName)}</span>` : ''}
                 <p style="margin: 0; font-size: 12px; color: #728481;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(p.address ? p.address.substring(0, 36) : '')}...</p>
+                ${p.ticketed || p.localName || inMainlandChina(p.lat, p.lon) ? `<div class="place-chip-row">
+                    ${p.localName || inMainlandChina(p.lat, p.lon) ? `<button type="button" class="place-chip" onclick="event.stopPropagation(); openDriverCard('${safePlaceId}')"><svg class="ico" aria-hidden="true"><use href="#i-language"></use></svg>Driver card</button>` : ''}
+                    ${p.ticketed ? `<a class="place-chip" href="${escapeHTML(ticketLink(p.name, trip.stops[p.cityIndex] ? trip.stops[p.cityIndex].name : '', p.lat, p.lon))}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()"><svg class="ico" aria-hidden="true"><use href="#i-ticket"></use></svg>Tickets</a>` : ''}
+                </div>` : ''}
             </div>
         </div>`;
     }).join('');
