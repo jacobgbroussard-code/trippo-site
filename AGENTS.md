@@ -57,8 +57,11 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
   private key is only on the owner's PC. See `backup/README.md`. Never commit a private key.
 
 ## Affiliate links (Travelpayouts, as of Oct 2026)
-- Joined and earning: Aviasales (flight links with `marker=581802`). Also joined but not yet wired
-  in properly: Airalo, Klook, Tiqets, WeGoTrip, Localrent, QEEQ, GetRentacar, Economybookings, Yesim, Saily.
+- IDs: account / marker **785709**, Trippo project / trs **581802** (the tp-em.com script uses the project ID).
+  Links before v2.4.47 wrongly used 581802 as the marker. All partner links go through `partnerLink()` in
+  js/travel-payouts.js (tp.media, fresh click each time); campaign_id/p per program are in `PARTNER_PROGRAMS`.
+- Wired: Aviasales, Klook, Tiqets, Airalo, Yesim. Also joined but not wired: WeGoTrip, Localrent, QEEQ,
+  GetRentacar, Economybookings, Saily, KKday, Kiwitaxi, Go City and others.
 - **Not joined:** GetYourGuide, DiscoverCars, Omio, Booking.com, Trip.com. Travelpayouts locks them until
   trippo.top has ~3 months of steady traffic, so links to them currently earn nothing. The DiscoverCars
   `a_aid=` and Omio `cmp=` parameters in the app are not real tracking.
@@ -66,8 +69,8 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 - The `tp-em.com` tracking script only loads on booking/flight screens (`loadPartnerTracking()` in
   js/state.js) because it gets full page access; keep it that way.
 - The account has no payout method yet; only the owner can add it.
-- Partner links (Klook, Tiqets, Airalo) go through `partnerLink()` in js/travel-payouts.js: paste one generated
-  Travelpayouts link per program into `PARTNER_LINK_TEMPLATES` with the destination replaced by `{URL}`.
+- To add a program: generate a link in Travelpayouts, switch on "Full link" in its ⋮ menu, copy campaign_id and p
+  into `PARTNER_PROGRAMS`.
 - Real flight prices: the Travelpayouts API has no CORS and needs a secret token, so it goes through the worker
   (`GET /flight-prices`, `/flight-deals`, token in the `TP_TOKEN` wrangler secret). Set `FLIGHT_PRICES_URL` in
   js/travel-payouts.js to the deployed worker URL; empty = AI estimates only. See worker/README.md.

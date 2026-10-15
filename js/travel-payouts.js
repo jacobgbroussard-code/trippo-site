@@ -1,10 +1,13 @@
 /* ==========================================================================
    Trippo Travel Planner - Travelpayouts Monetization & Deals Engine
    js/travel-payouts.js
-   Affiliate Marker: 581802
+   Travelpayouts account (marker) 785709, Trippo project (trs) 581802
    ========================================================================== */
 
-export const TRAVELPAYOUTS_MARKER = '581802';
+// The marker is the Travelpayouts account ID; 581802 is the Trippo project ("trs") ID.
+// Links before v2.4.47 used 581802 as the marker, so those clicks weren't credited to the account.
+export const TRAVELPAYOUTS_MARKER = '785709';
+export const TRAVELPAYOUTS_PROJECT = '581802';
 
 // Local storage key for optional Travelpayouts API token
 const TP_TOKEN_KEY = 'trippo_travelpayouts_token';
@@ -112,20 +115,22 @@ const GLOBAL_DEFAULT_DESTINATIONS = [
 ];
 
 /**
- * Travelpayouts tracked links for partner programs (Klook, Tiqets, Airalo...).
- * Paste one link made with that program's "Generate links" tool in the Travelpayouts dashboard,
- * with the destination part replaced by {URL}. Until a template is set, links go straight to
- * the partner and earn nothing.
+ * Travelpayouts tracked links: every click goes through tp.media, which records it and forwards to
+ * the partner page in "u" with our account attached. campaign_id and p come from each program's
+ * "Generate links" tool (switch on "Full link" in the link's menu to see them).
  */
-const PARTNER_LINK_TEMPLATES = {
-    klook: '',
-    tiqets: '',
-    airalo: ''
+const PARTNER_PROGRAMS = {
+    aviasales: { campaign: 100, p: 4114 },
+    klook: { campaign: 137, p: 4110 },
+    tiqets: { campaign: 89, p: 2074 },
+    airalo: { campaign: 541, p: 8310 },
+    yesim: { campaign: 224, p: 5998 }
 };
 
 export function partnerLink(program, url) {
-    const template = PARTNER_LINK_TEMPLATES[program];
-    return template ? template.replace('{URL}', encodeURIComponent(url)) : url;
+    const prog = PARTNER_PROGRAMS[program];
+    if (!prog || !/^https:\/\//.test(String(url || ''))) return url;
+    return `https://tp.media/r?campaign_id=${prog.campaign}&marker=${TRAVELPAYOUTS_MARKER}&p=${prog.p}&trs=${TRAVELPAYOUTS_PROJECT}&u=${encodeURIComponent(url)}`;
 }
 
 // Tickets and tours: Klook is strongest in Asia-Pacific, Tiqets in Europe and the Americas
@@ -187,13 +192,13 @@ export async function getLiveFares(origin, destination, depart = '', ret = '') {
 export function buildAviasalesFlightUrl(origin, destination, dateStr = '', returnStr = '') {
     const orig = (origin || 'LFT').toUpperCase();
     const dest = (destination || 'anywhere').toUpperCase();
-    let url = `https://www.aviasales.com/search?marker=${TRAVELPAYOUTS_MARKER}&origin=${orig}&destination=${dest}`;
+    let url = `https://www.aviasales.com/search?origin=${orig}&destination=${dest}`;
     if (dateStr && dateStr.trim()) {
         url += `&depart_date=${dateStr.trim()}`;
         if (returnStr && returnStr.trim()) url += `&return_date=${returnStr.trim()}`;
     }
     url += '&currency=USD';
-    return url;
+    return partnerLink('aviasales', url);
 }
 
 /**

@@ -36,7 +36,7 @@ import { renderPlanner } from './planner.js';
 import { renderPlacesMasterList, openPlacesCityView } from './places.js';
 import { renderBookingsView, renderBookingsList, renderTransitView, renderTransitList } from './bookings.js';
 import { showWishlistDirectory, cancelDroppedPin } from './wishlist.js';
-import { getCheapFlightDeals } from './travel-payouts.js';
+import { getCheapFlightDeals, partnerLink } from './travel-payouts.js';
 
 /* --- HOME VIEW & TRIP CREATION --- */
 export function renderHome() {
@@ -465,7 +465,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.46",
+        trippoVersion: "2.4.47",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -511,7 +511,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.46",
+        version: "2.4.47",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -1210,7 +1210,7 @@ if (typeof window !== 'undefined') {
    EXPLORE EVERYWHERE & ROUTE HUB (SIDEBAR FLIGHT TOOL)
    ========================================================================== */
 export const FLIGHT_HUB_DEFAULT_AIRPORT = 'LFT';
-export const FLIGHT_HUB_AFFILIATE_MARKER = '581802';
+export const FLIGHT_HUB_AFFILIATE_MARKER = '785709'; // Travelpayouts account ID (links go through tp.media)
 
 export function getFlightHubOrigin() {
     let stored = null;
@@ -1266,9 +1266,9 @@ export function updateFlightHubLinks(origin) {
 
     const aviasales = document.getElementById('flighthub-aviasales');
     if (aviasales) {
-        aviasales.href = dateStr
-            ? `https://www.aviasales.com/search?marker=${FLIGHT_HUB_AFFILIATE_MARKER}&origin=${code}&destination=anywhere&depart_date=${dateStr}`
-            : `https://www.aviasales.com/search?marker=${FLIGHT_HUB_AFFILIATE_MARKER}&origin=${code}&destination=anywhere`;
+        aviasales.href = partnerLink('aviasales', dateStr
+            ? `https://www.aviasales.com/search?origin=${code}&destination=anywhere&depart_date=${dateStr}`
+            : `https://www.aviasales.com/search?origin=${code}&destination=anywhere`);
     }
 
     // Update active highlight on quick chips

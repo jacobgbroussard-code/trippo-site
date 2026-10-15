@@ -12,17 +12,17 @@ async function runTests() {
 
     // 1. Verify Affiliate Marker
     console.log('\n1. Checking Affiliate Marker:');
-    if (TRAVELPAYOUTS_MARKER === '581802') {
-        console.log('✅ Affiliate Marker is correctly set to 581802');
+    if (TRAVELPAYOUTS_MARKER === '785709') {
+        console.log('✅ Affiliate Marker is correctly set to 785709');
     } else {
-        throw new Error(`Affiliate marker mismatch: expected 581802, got ${TRAVELPAYOUTS_MARKER}`);
+        throw new Error(`Affiliate marker mismatch: expected 785709, got ${TRAVELPAYOUTS_MARKER}`);
     }
 
     // 2. Test Aviasales URL Builder
     console.log('\n2. Testing Flight URL Builder:');
     const flightUrl = buildAviasalesFlightUrl('LFT', 'MCO', '2026-10-15');
     console.log('Generated Flight URL:', flightUrl);
-    if (flightUrl.includes('marker=581802') && flightUrl.includes('origin=LFT') && flightUrl.includes('destination=MCO')) {
+    if (flightUrl.startsWith('https://tp.media/r?campaign_id=100&marker=785709&p=4114&trs=581802&u=') && decodeURIComponent(flightUrl).includes('origin=LFT') && decodeURIComponent(flightUrl).includes('destination=MCO')) {
         console.log('✅ Flight URL contains correct marker, origin, and destination');
     } else {
         throw new Error('Flight URL structure failed');
@@ -33,7 +33,7 @@ async function runTests() {
     const dealsLFT = await getCheapFlightDeals('LFT');
     console.log(`Found ${dealsLFT.length} deals for LFT:`);
     dealsLFT.forEach(d => console.log(`   - ${d.city} (${d.code}): From $${d.price} [${d.airline}]`));
-    if (dealsLFT.length >= 3 && dealsLFT[0].price > 0 && dealsLFT[0].link.includes('marker=581802')) {
+    if (dealsLFT.length >= 3 && dealsLFT[0].price > 0 && dealsLFT[0].link.includes('marker=785709')) {
         console.log('✅ LFT Deals generated properly with affiliate links');
     } else {
         throw new Error('LFT Deals generation failed');
@@ -54,7 +54,7 @@ async function runTests() {
     console.log('\n5. Testing Hotel Pricing Insights:');
     const romeInfo = getHotelPricingInsights('Rome', '2026-10-12', '2026-10-15');
     console.log('Rome Hotel Info:', romeInfo);
-    if (romeInfo.estimatedNightly.includes('$') && romeInfo.hotellookUrl.includes('marker=581802')) {
+    if (romeInfo.estimatedNightly.includes('$') && romeInfo.hotellookUrl.includes('marker=785709')) {
         console.log('✅ Rome Hotel insights & Hotellook affiliate link verified');
     } else {
         throw new Error('Hotel pricing insights failed');
@@ -62,7 +62,7 @@ async function runTests() {
 
     const nyInfo = getHotelPricingInsights('New York', '2026-10-20', '2026-10-24');
     console.log('New York Hotel Info:', nyInfo);
-    if (nyInfo.estimatedNightly.includes('$') && nyInfo.hotellookUrl.includes('marker=581802')) {
+    if (nyInfo.estimatedNightly.includes('$') && nyInfo.hotellookUrl.includes('marker=785709')) {
         console.log('✅ New York Hotel insights verified');
     } else {
         throw new Error('New York hotel pricing failed');

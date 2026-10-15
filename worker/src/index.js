@@ -12,7 +12,10 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_PROMPT_CHARS = 2000;
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_MESSAGES = 8; // the chat handler only ever uses the last 8
-const TP_MARKER = "581802"; // Travelpayouts partner marker (public; it's in every affiliate link)
+// Travelpayouts account (marker) and Trippo project (trs); public, they're in every affiliate link
+const TP_MARKER = "785709";
+const TP_PROJECT = "581802";
+const tpAviasales = (url) => `https://tp.media/r?campaign_id=100&marker=${TP_MARKER}&p=4114&trs=${TP_PROJECT}&u=${encodeURIComponent(url)}`;
 const IATA = /^[A-Z]{3}$/;
 const MONTH_OR_DAY = /^\d{4}-\d{2}(-\d{2})?$/;
 
@@ -45,7 +48,7 @@ async function flightPrices(url, env) {
     transfers: f.transfers,
     returnTransfers: f.return_transfers,
     durationMinutes: f.duration_to || f.duration || null,
-    link: f.link ? `https://www.aviasales.com${f.link}${String(f.link).includes("?") ? "&" : "?"}marker=${TP_MARKER}` : null,
+    link: f.link ? tpAviasales(`https://www.aviasales.com${f.link}`) : null,
   }));
   return { status: 200, body: { success: true, currency: "usd", fares } };
 }
