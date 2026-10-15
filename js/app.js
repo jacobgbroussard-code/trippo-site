@@ -30,7 +30,7 @@ import * as today from './today.js';
 import * as fareWatch from './fare-watch.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.50';
+const CURRENT_VERSION = '2.4.51';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);

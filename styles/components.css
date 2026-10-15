@@ -2340,6 +2340,25 @@ body.dark-mode .close-modal:hover {
     font-size: 13px;
 }
 
+/* Daily: hotel base and arrival airport/station */
+.timeline-node-pin .ico { width: 14px; height: 14px; margin: 0; }
+.timeline-node-pin.hub-pin { background: #334155; }
+.place-item-card.is-base-card { border-left: 4px solid var(--accent); }
+.place-item-card.is-hub-card { border-left: 4px solid #334155; }
+.place-category-badge.is-base { background: var(--accent); color: #fff; }
+.place-category-badge.is-hub { background: #334155; color: #fff; }
+.drag-handle.is-locked-handle { cursor: default; color: #b7c7c3; display: flex; align-items: center; }
+.drag-handle.is-locked-handle .ico { width: 14px; height: 14px; }
+body.dark-mode .timeline-node-pin.hub-pin,
+body.dark-mode .place-category-badge.is-hub { background: #64748b; }
+body.dark-mode .place-item-card.is-hub-card { border-left-color: #64748b; }
+
+/* Daily map pins */
+.day-pin { width: 26px; height: 26px; margin: 2px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 12px; border: 2px solid #fff; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); box-sizing: border-box; }
+.day-pin .ico { width: 15px; height: 15px; margin: 0; stroke-width: 2.2; }
+.day-pin.day-pin-hotel { width: 30px; height: 30px; margin: 0; border-radius: 9px; background: var(--accent); }
+.day-pin.day-pin-hub { width: 30px; height: 30px; margin: 0; background: #334155; }
+
 .transit-connector-row {
     display: flex;
     flex-direction: column;

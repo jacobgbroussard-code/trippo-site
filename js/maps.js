@@ -915,17 +915,18 @@ export async function drawPlacesMapRoute(dayPlaces) {
     const validPlaces = dayPlaces.filter(hasCoords);
     const bounds = L.latLngBounds();
     validPlaces.forEach((p, index) => {
-        const isStart = index === 0;
-        const bg = isStart ? 'var(--accent)' : 'var(--primary)';
-        const iconHtml = isStart ? '🏨' : (index + 1);
-
-        const icon = L.divIcon({
+        // hotel = bed pin, airport/station = dark pin with the plane/train/bus, activities = numbers
+        const kind = p._kind || (index === 0 ? 'hotel' : 'place');
+        const pinHtml = kind === 'hotel' ? `<div class="day-pin day-pin-hotel" title="${escapeHTML(p.name || 'Hotel')}">${icon('bed', 'ico-only')}</div>`
+            : kind === 'hub' ? `<div class="day-pin day-pin-hub" title="${escapeHTML(p.name || '')}">${icon(p._hub || 'plane', 'ico-only')}</div>`
+            : `<div class="day-pin">${p._num || index + 1}</div>`;
+        const pinIcon = L.divIcon({
             className: 'custom-div-icon',
-            html: `<div style="background:${bg};color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid white;box-shadow:0 3px 6px rgba(0,0,0,0.3);">${iconHtml}</div>`,
+            html: pinHtml,
             iconSize: [30, 30],
             iconAnchor: [15, 15]
         });
-        const marker = L.marker([p.lat, p.lon], { icon: icon }).addTo(placesMap);
+        const marker = L.marker([p.lat, p.lon], { icon: pinIcon, zIndexOffset: kind === 'place' ? 0 : 500 }).addTo(placesMap);
         cMarkers.push(marker);
         bounds.extend([p.lat, p.lon]);
     });

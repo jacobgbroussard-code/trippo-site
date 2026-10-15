@@ -34,7 +34,7 @@ import {
     icon,
 } from './state.js';
 
-import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
+import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal, hasCoords } from './maps.js';
 import { inMainlandChina } from './state.js';
 import { ticketLink } from './travel-payouts.js';
 import { plannerCardHTML } from './day-planner.js';
@@ -291,6 +291,16 @@ export { calculateTransitEstimate, openDirectionsLink };
 export function setPlaceTransitMode(placeId, mode) {
     const trip = trips.find(t => t.id === activePlacesTripId);
     if (!trip || !Array.isArray(trip.places)) return;
+    if (String(placeId) === HOTEL_ID) {
+        // the way to the booked stay (it isn't one of the day's places)
+        const stop = trip.stops && trip.stops[activePlacesStopIndex];
+        if (stop && stop.lodging) {
+            stop.lodging.transitMode = mode;
+            saveTrips();
+            renderCityPlaces();
+        }
+        return;
+    }
     const normalizedId = String(placeId).replace(/\u2019/g, "'");
     const place = trip.places.find(p => (p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex) && (String(p.id) === String(placeId) || p.name === placeId || p.name === normalizedId))
         || trip.places.find(p => String(p.id) === String(placeId) || p.name === placeId || p.name === normalizedId);
@@ -301,6 +311,92 @@ export function setPlaceTransitMode(placeId, mode) {
         renderCityPlaces();
         showNotification(`Commute set to ${mode === 'walking' ? 'Walking 🚶' : (mode === 'driving' ? 'Driving 🚗' : 'Transit 🚆')}`);
     }
+}
+
+// --- Day bases: the hotel starts every day in a city; an airport or station first on day 1 is the arrival ---
+const HOTEL_ID = '__hotel__';
+const HUB_PATTERNS = [
+    ['plane', /\b(airport|aeropuerto|aeroporto|a[ée]roport|flughafen|airfield)\b|机场|空港/i],
+    ['train', /\b(railway station|train station|rail station|high[- ]speed rail(way)? station|(north|south|east|west) (railway )?station)\b|火车站|高铁站/i],
+    ['bus', /\b(bus station|bus terminal|coach station|coach terminal)\b|汽车站|客运站/i]
+];
+const HUB_WORDS = { plane: 'airport', train: 'station', bus: 'bus station' };
+
+export function hubKind(place) {
+    const text = `${(place && place.name) || ''} ${(place && place.localName) || ''}`;
+    const hit = HUB_PATTERNS.find(([, re]) => re.test(text));
+    return hit ? hit[0] : '';
+}
+
+const isHotelPlace = p => !!p && (p.category === '🏨 Hotel / Base' || detectCategory(p.name || '') === '🏨 Hotel / Base');
+const simpleName = s => String(s || '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '');
+function sameName(a, b) {
+    const x = simpleName(a), y = simpleName(b);
+    return !!x && !!y && (x === y || (Math.min(x.length, y.length) >= 6 && (x.includes(y) || y.includes(x))));
+}
+
+// Where the traveller sleeps in this city: the booked stay, else a hotel saved as one of the city's places
+export function cityHotel(trip, cityIndex) {
+    const stop = trip && trip.stops && trip.stops[cityIndex];
+    if (!stop) return null;
+    const cityPlaces = (trip.places || []).filter(p => p.cityIndex === cityIndex);
+    const l = stop.lodging;
+    if (l && l.name) {
+        // a stay saved without looking up its address sits on the city center, so it has no real spot
+        const located = hasCoords(l) && !(Number(l.lat) === Number(stop.lat) && Number(l.lon) === Number(stop.lon));
+        const named = cityPlaces.find(p => sameName(p.name, l.name) && hasCoords(p));
+        if (!located && named) return { ...named, fromPlace: true };
+        return { id: HOTEL_ID, name: l.name, address: l.address || '', lat: located ? Number(l.lat) : null, lon: located ? Number(l.lon) : null, transitMode: l.transitMode, category: '🏨 Hotel / Base', fromLodging: true };
+    }
+    const saved = cityPlaces.find(p => isHotelPlace(p) && hasCoords(p));
+    return saved ? { ...saved, fromPlace: true } : null;
+}
+
+function isTheHotel(place, hotel) {
+    if (!place || !hotel) return false;
+    if (hotel.fromPlace && String(place.id) === String(hotel.id)) return true;
+    if (sameName(place.name, hotel.name)) return true;
+    return isHotelPlace(place) && hasCoords(place) && hasCoords(hotel) && getDistance(place.lat, place.lon, hotel.lat, hotel.lon) < 0.08;
+}
+
+// A day's stops in display order: [arrival airport/station] → hotel (locked) → activities numbered 1, 2, 3…
+export function buildDayStops(trip, cityIndex, dayIndex) {
+    const stop = trip.stops[cityIndex];
+    const numDays = Math.max(1, Number(stop.nights) || 1);
+    const inLeg = cityIndex > 0 && trip.stops[cityIndex - 1] ? trip.stops[cityIndex - 1].transit : null;
+    const items = (trip.places || []).filter(p => p.cityIndex === cityIndex && p.dayIndex === dayIndex).map(place => ({ place, kind: 'place' }));
+    items.forEach((it, i) => {
+        let hub = hubKind(it.place);
+        if (!hub && i === 0 && dayIndex === 0 && inLeg && (inLeg.method === 'train' || inLeg.method === 'bus') && /station|terminal|站/i.test(it.place.name || '')) hub = inLeg.method;
+        if (!hub) return;
+        it.kind = 'hub';
+        it.hub = hub;
+        it.role = i === 0 && dayIndex === 0 ? 'arrival' : i === items.length - 1 && dayIndex === numDays - 1 ? 'departure' : '';
+    });
+    const lead = items.length && items[0].role === 'arrival' ? [items.shift()] : [];
+    const hotel = cityHotel(trip, cityIndex);
+    let base = null;
+    if (hotel) {
+        const at = items.findIndex(it => it.kind === 'place' && isTheHotel(it.place, hotel));
+        base = at >= 0 ? items.splice(at, 1)[0] : { place: hotel, virtual: true };
+        base.kind = 'hotel';
+        // coming back to the hotel later in the day keeps the hotel pin
+        items.forEach(it => { if (it.kind === 'place' && isTheHotel(it.place, hotel)) it.kind = 'hotel'; });
+    } else if (!lead.length && items.length && items[0].kind === 'place') {
+        // no hotel known: the first place is the starting base, as before
+        base = items.shift();
+        base.kind = 'hotel';
+        base.guessed = true;
+    }
+    if (base) {
+        base.locked = true;
+        base.isBase = true;
+    }
+    lead.forEach(it => { it.locked = true; });
+    const out = [...lead, ...(base ? [base] : []), ...items];
+    let n = 0;
+    out.forEach(it => { if (it.kind === 'place') it.num = ++n; });
+    return out;
 }
 
 export function renderCityPlaces() {
@@ -321,25 +417,46 @@ export function renderCityPlaces() {
     const container = document.getElementById('saved-places-container');
     if (!container) return;
 
-    const dayPlaces = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
+    const dayStops = trip.stops && trip.stops[activePlacesStopIndex] ? buildDayStops(trip, activePlacesStopIndex, activePlacesDayIndex) : [];
+    const emptyNote = `<div class="empty-day-note">No stops planned for Day ${activePlacesDayIndex + 1} yet.</div>`;
 
-    if (dayPlaces.length === 0) {
+    if (dayStops.length === 0) {
         // Keep the empty day quiet; the ✨ AI Copilot button in the header is the way into Copilot
-        container.innerHTML = `<div class="empty-day-note">No stops planned for Day ${activePlacesDayIndex + 1} yet.</div>`;
+        container.innerHTML = emptyNote;
         drawPlacesMapRoute([]);
         return;
     }
 
-    container.innerHTML = dayPlaces.map((p, index) => {
-        const isStart = index === 0;
-        const badge = isStart ? `<span class="place-category-badge" style="background:var(--accent); color:white;"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg>Starting Base</span>` : `<span class="place-category-badge">${p.category}</span>`;
+    container.innerHTML = dayStops.map((it, index) => {
+        const p = it.place;
+        let badge = `<span class="place-category-badge">${p.category || ''}</span>`;
+        let pin = `<div class="timeline-node-pin">${it.num || index + 1}</div>`;
+        let cardClass = '';
+        if (it.kind === 'hotel') {
+            pin = `<div class="timeline-node-pin start-pin">${icon('bed', 'ico-only')}</div>`;
+            if (it.isBase) {
+                badge = it.guessed
+                    ? `<span class="place-category-badge is-base">${icon('home')}Starting Base</span>`
+                    : `<span class="place-category-badge is-base" title="Your hotel starts every day in this city">${icon('lock')}Your hotel · starting base</span>`;
+                cardClass = ' is-base-card';
+            } else {
+                badge = `<span class="place-category-badge is-base">${icon('bed')}Back to your hotel</span>`;
+            }
+        } else if (it.kind === 'hub') {
+            const word = HUB_WORDS[it.hub] || 'station';
+            const label = it.role === 'arrival' ? `Arrival ${word}` : it.role === 'departure' ? `Departure ${word}` : word.charAt(0).toUpperCase() + word.slice(1);
+            pin = `<div class="timeline-node-pin hub-pin">${icon(it.hub, 'ico-only')}</div>`;
+            badge = `<span class="place-category-badge is-hub">${icon(it.hub)}${label}</span>`;
+            cardClass = ' is-hub-card';
+        }
 
         let connectorHTML = '';
-        if (index > 0) {
-            const prev = dayPlaces[index - 1];
-            const distKm = getDistance(prev.lat, prev.lon, p.lat, p.lon);
+        const prev = index > 0 ? dayStops[index - 1].place : null;
+        if (prev) {
+            const located = hasCoords(prev) && hasCoords(p);
+            const distKm = located ? getDistance(prev.lat, prev.lon, p.lat, p.lon) : 0;
             const currentMode = p.transitMode || (distKm <= 2.0 ? 'walking' : 'driving');
-            const transit = calculateTransitEstimate(prev.lat, prev.lon, p.lat, p.lon, currentMode);
+            const transit = located ? calculateTransitEstimate(prev.lat, prev.lon, p.lat, p.lon, currentMode) : null;
             const safePlaceId = escapeJS(p.id || p.name);
 
             if (transit) {
@@ -369,87 +486,105 @@ export function renderCityPlaces() {
 
         const safePlaceId = escapeJS(p.id || p.name);
         const safePlaceName = escapeJS(p.name || '');
-        const svButton = (p.lat && p.lon) ? `
+        const svButton = hasCoords(p) ? `
             <button type="button" class="streetview-btn" onclick="event.stopPropagation(); openStreetViewModal(${Number(p.lat)}, ${Number(p.lon)}, '${safePlaceName}')" title="Street View" style="background:none; border:none; padding:4px 8px; font-size:15px; cursor:pointer; color:var(--primary); opacity:0.85;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-eye"></use></svg></button>` : '';
+        const handle = it.locked
+            ? `<div class="drag-handle is-locked-handle" title="${it.kind === 'hub' ? 'Arrival stays first' : 'Your hotel stays first every day'}">${icon('lock', 'ico-only')}</div>`
+            : `<div class="drag-handle" style="color:${it.kind === 'place' ? '#b7c7c3' : 'var(--accent)'};" title="Drag to reorder">≡</div>`;
+        const chips = !it.virtual && (p.ticketed || p.localName || inMainlandChina(p.lat, p.lon)) ? `<div class="place-chip-row">
+                    ${p.localName || inMainlandChina(p.lat, p.lon) ? `<button type="button" class="place-chip" onclick="event.stopPropagation(); openDriverCard('${safePlaceId}')"><svg class="ico" aria-hidden="true"><use href="#i-language"></use></svg>Driver card</button>` : ''}
+                    ${p.ticketed ? `<a class="place-chip" href="${escapeHTML(ticketLink(p.name, trip.stops[p.cityIndex] ? trip.stops[p.cityIndex].name : '', p.lat, p.lon))}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()"><svg class="ico" aria-hidden="true"><use href="#i-ticket"></use></svg>Tickets</a>` : ''}
+                </div>` : '';
 
         return `
         ${connectorHTML}
-        <div class="place-item-card" data-id="${escapeHTML(p.id || p.name)}" ${isStart ? 'style="border-left: 4px solid var(--accent);"' : ''}>
-            <div class="timeline-node-pin ${isStart ? 'start-pin' : ''}">${isStart ? '🏨' : (index + 1)}</div>
-            <div class="drag-handle" style="color:${isStart ? 'var(--accent)' : '#b7c7c3'};" title="Drag to reorder">≡</div>
-            <div style="flex-grow:1;" onclick="openEditPlaceModal('${safePlaceId}')">
+        <div class="place-item-card${cardClass}${it.locked ? ' is-locked' : ''}" data-id="${escapeHTML(String(p.id || p.name))}"${it.virtual ? '' : ` data-place-id="${escapeHTML(String(p.id))}"`}>
+            ${pin}
+            ${handle}
+            <div style="flex-grow:1;" onclick="openDayStop('${safePlaceId}')">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     ${badge}
                     ${svButton}
                 </div>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${escapeHTML(p.name)}</h4>
                 ${p.localName ? `<span class="place-local-name">${escapeHTML(p.localName)}</span>` : ''}
-                <p style="margin: 0; font-size: 12px; color: #728481;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(p.address ? p.address.substring(0, 36) : '')}...</p>
-                ${p.ticketed || p.localName || inMainlandChina(p.lat, p.lon) ? `<div class="place-chip-row">
-                    ${p.localName || inMainlandChina(p.lat, p.lon) ? `<button type="button" class="place-chip" onclick="event.stopPropagation(); openDriverCard('${safePlaceId}')"><svg class="ico" aria-hidden="true"><use href="#i-language"></use></svg>Driver card</button>` : ''}
-                    ${p.ticketed ? `<a class="place-chip" href="${escapeHTML(ticketLink(p.name, trip.stops[p.cityIndex] ? trip.stops[p.cityIndex].name : '', p.lat, p.lon))}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()"><svg class="ico" aria-hidden="true"><use href="#i-ticket"></use></svg>Tickets</a>` : ''}
-                </div>` : ''}
+                ${p.address ? `<p style="margin: 0; font-size: 12px; color: #728481;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(p.address.substring(0, 36))}${p.address.length > 36 ? '...' : ''}</p>` : ''}
+                ${chips}
             </div>
         </div>`;
-    }).join('');
+    }).join('') + (dayStops.some(it => it.kind === 'place') ? '' : emptyNote);
 
     if (window.placesSortable) window.placesSortable.destroy();
     if (typeof Sortable !== 'undefined') {
         window.placesSortable = Sortable.create(container, {
             handle: '.drag-handle',
+            draggable: '.place-item-card:not(.is-locked)',
+            // nothing goes above the arrival point or the hotel
+            onMove: evt => !(evt.related && evt.related.classList.contains('is-locked')),
             animation: 160,
             delay: 150,
             delayOnTouchOnly: true,
-            onEnd: function (evt) {
+            onEnd: function () {
                 triggerHaptic('medium');
-                let matchingPlaces = [];
-                let otherPlaces = [];
-                trip.places.forEach(p => {
-                    if (p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex) {
-                        matchingPlaces.push(p);
-                    } else {
-                        otherPlaces.push(p);
-                    }
-                });
-                const movedItem = matchingPlaces.splice(evt.oldIndex, 1)[0];
-                matchingPlaces.splice(evt.newIndex, 0, movedItem);
-                trip.places = [...otherPlaces, ...matchingPlaces];
+                const order = [...container.querySelectorAll('.place-item-card[data-place-id]')].map(el => el.dataset.placeId);
+                const day = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
+                const byId = new Map(day.map(p => [String(p.id), p]));
+                const sorted = order.map(id => byId.get(id)).filter(Boolean);
+                day.forEach(p => { if (!sorted.includes(p)) sorted.push(p); });
+                trip.places = [...trip.places.filter(p => !day.includes(p)), ...sorted];
                 saveTrips();
                 renderCityPlaces();
             }
         });
     }
-    drawPlacesMapRoute(dayPlaces);
+    drawPlacesMapRoute(dayStops.map(it => ({ ...it.place, _kind: it.kind, _hub: it.hub || '', _num: it.num || 0 })));
+}
+
+// The booked stay opens its booking; a place opens its editor
+export function openDayStop(placeId) {
+    if (String(placeId) === HOTEL_ID) {
+        if (window.openLodgingModal) window.openLodgingModal(activePlacesStopIndex);
+        return;
+    }
+    openEditPlaceModal(placeId);
 }
 
 export function optimizeCityRoute() {
     const trip = trips.find(t => t.id === activePlacesTripId);
-    if (!trip || !Array.isArray(trip.places)) return;
-    let dayPlaces = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
-    if (dayPlaces.length < 3) {
-        showNotification("Add at least 3 places to this day to auto-optimize.");
+    if (!trip || !Array.isArray(trip.places) || !trip.stops || !trip.stops[activePlacesStopIndex]) return;
+    const dayStops = buildDayStops(trip, activePlacesStopIndex, activePlacesDayIndex);
+    const movable = dayStops.filter(it => it.kind === 'place' && hasCoords(it.place)).map(it => it.place);
+    if (movable.length < 2) {
+        showNotification("Add at least 2 places to this day to auto-optimize.");
         return;
     }
 
-    let unvisited = [...dayPlaces];
-    let optimized = [unvisited.shift()];
-
+    // Start from the hotel (or whatever fixed stop comes right before the activities)
+    const firstIdx = dayStops.findIndex(it => it.kind === 'place' && hasCoords(it.place));
+    const start = dayStops.slice(0, firstIdx).reverse().find(it => hasCoords(it.place));
+    const unvisited = [...movable];
+    const optimized = start ? [] : [unvisited.shift()];
+    let last = start ? start.place : optimized[0];
     while (unvisited.length > 0) {
-        let last = optimized[optimized.length - 1];
         let nearestIdx = 0;
         let minDst = Infinity;
         unvisited.forEach((p, idx) => {
-            let dst = getDistance(last.lat, last.lon, p.lat, p.lon);
+            const dst = getDistance(last.lat, last.lon, p.lat, p.lon);
             if (dst < minDst) { minDst = dst; nearestIdx = idx; }
         });
-        optimized.push(unvisited.splice(nearestIdx, 1)[0]);
+        last = unvisited.splice(nearestIdx, 1)[0];
+        optimized.push(last);
     }
 
-    let otherPlaces = trip.places.filter(p => !(p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex));
-    trip.places = [...otherPlaces, ...optimized];
+    // The activities take the new order; the arrival point, hotel and anything unmapped keep their slots
+    let k = 0;
+    const order = dayStops.filter(it => !it.virtual).map(it => (it.kind === 'place' && hasCoords(it.place) ? optimized[k++] : it.place));
+    const day = trip.places.filter(p => p.cityIndex === activePlacesStopIndex && p.dayIndex === activePlacesDayIndex);
+    day.forEach(p => { if (!order.includes(p)) order.push(p); });
+    trip.places = [...trip.places.filter(p => !day.includes(p)), ...order];
     saveTrips();
     renderCityPlaces();
-    showNotification("✨ Route optimized from Starting Base!");
+    showNotification(start && start.kind === 'hotel' ? "✨ Route optimized from your hotel!" : "✨ Route optimized from Starting Base!");
 }
 
 export function openPlaceSearchModal() {

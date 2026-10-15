@@ -9,7 +9,7 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
 
 - `index.html` — single page, all markup and modals
 - `js/` — ES modules: `app.js` (entry/boot), `state.js` (shared state + safe storage),
-  `planner.js`, `places.js`, `places-autocomplete.js`, `maps.js` (Leaflet + tile providers),
+  `planner.js`, `places.js` (Daily: `buildDayStops()` keeps the hotel locked as each day's base, an airport/station first on day 1 is the arrival), `places-autocomplete.js`, `maps.js` (Leaflet + tile providers),
   `wishlist.js`, `bookings.js` (Trip.com / Booking / Google Flights deep links),
   `travel-payouts.js`, `tools.js`, `weather.js`, `settings.js`, `collab.js` ("Plan with Friends"),
   `db.js` (Supabase auth), `sync.js` (offline-first cloud sync), `ai.js` (AI assistant/copilot;

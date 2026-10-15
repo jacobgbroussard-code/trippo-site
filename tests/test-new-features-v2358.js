@@ -173,7 +173,7 @@ async function testNewFeaturesV2358() {
             switchTab('places');
             openPlacesCityView(1); // Shanghai has places poi_1, poi_2
             const pins = document.querySelectorAll('#saved-places-container .timeline-node-pin');
-            const firstIsStart = pins[0] && pins[0].classList.contains('start-pin') && pins[0].innerText.includes('🏨');
+            const firstIsStart = pins[0] && pins[0].classList.contains('start-pin') && (pins[0].innerText.includes('🏨') || !!pins[0].querySelector('use[href="#i-bed"]'));
             
             // Check connectors
             const connectors = document.querySelectorAll('#saved-places-container .transit-connector-row');
