@@ -243,6 +243,7 @@ export function initPlannerMap() {
             createBaseTileLayer('planner').addTo(plannerMap);
             updateMapProvider();
             attachMapResizeObserver(plannerMap, 'planner-map');
+            setTimeout(() => { if (window.restoreExploreLayers) window.restoreExploreLayers('planner'); }, 400);
         }
     }
     if (plannerMap) {
@@ -273,6 +274,7 @@ export function initPlacesMap() {
             createBaseTileLayer('places').addTo(placesMap);
             updateMapProvider();
             attachMapResizeObserver(placesMap, 'places-map');
+            setTimeout(() => { if (window.restoreExploreLayers) window.restoreExploreLayers('places'); }, 400);
         }
     }
     if (placesMap) {
@@ -303,6 +305,7 @@ export function initWishlistMap() {
             createBaseTileLayer('wishlist').addTo(wishlistMap);
             updateMapProvider();
             attachMapResizeObserver(wishlistMap, 'wishlist-map');
+            setTimeout(() => { if (window.restoreExploreLayers) window.restoreExploreLayers('wishlist'); }, 400);
             if (window.handleWishlistMapClick) {
                 wishlistMap.on('click', window.handleWishlistMapClick);
             }
@@ -385,6 +388,7 @@ export function setOverlayButtonVisible(kind, visible) {
         const map = target === 'wishlist' ? wishlistMap : plannerMap;
         if (!map) return;
         if (kind === 'trains') {
+            if (target === 'planner' && window.setExploreLayer) window.setExploreLayer('planner', 'hsr', false);
             Object.values(trainLayers[target]).forEach(l => { if (l) map.removeLayer(l); });
             trainOverlayModes[target] = 'off';
             setLayerState(target, 'train', 'Off');
@@ -425,11 +429,13 @@ function setLayerState(target, kind, text) {
     if (!el) return;
     el.textContent = text;
     el.classList.toggle('on', text !== 'Off');
-    const anyOn = ['trails', 'train'].some(k => {
-        const s = document.getElementById(`${target}-${k}-state`);
-        return s && s.classList.contains('on');
-    });
-    document.getElementById(`${target}-layers-btn`)?.classList.toggle('layers-active', anyOn);
+    refreshLayersButton(target);
+}
+
+// The Layers button is highlighted while anything in its menu is on
+export function refreshLayersButton(target) {
+    const menu = document.getElementById(`${target}-layers-menu`);
+    document.getElementById(`${target}-layers-btn`)?.classList.toggle('layers-active', !!(menu && menu.querySelector('.layers-state.on')));
 }
 
 function closeLayersOnOutside(e) {

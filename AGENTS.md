@@ -22,9 +22,13 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   confirmation / screenshot / PDF and fills a stay or travel-leg form for review), `trip-checkup.js` (quick checks +
   Gemini review, book-ahead .ics, before-you-go list), `today.js` (Day view / Today: now-next, running late,
   rainy-day swaps, driver cards, home Today card), `fare-watch.js` (home "Flight prices" card: real fares
-  for each upcoming trip's first flight leg, checked every 12 h, drop alerts)
+  for each upcoming trip's first flight leg, checked every 12 h, drop alerts),
+  `explore-layers.js` (map Layers: Sights from OpenStreetMap/Overpass, Famous nearby from Wikipedia, AI Neighborhoods
+  fetched for the whole trip at once, Metro & tram per city, High-speed rail; caches in IndexedDB, not localStorage)
 - `styles/main.css`, `styles/components.css`
 - `sw.js` — service worker with a static-asset cache list
+- `data/highspeed-rail.json` — the Route map's High-speed rail layer (OSM railway=rail + highspeed=yes, simplified);
+  rebuild with `node data/build-highspeed-rail.js` (slow: ~60 Overpass queries, busy servers are retried/split)
 - `worker/` — separate Cloudflare Worker (Gemini-backed "Edge AI"), deployed with wrangler
 - `tests/` — standalone Node scripts that drive Chrome via CDP; not a test framework
 

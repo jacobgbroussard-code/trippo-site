@@ -4444,13 +4444,36 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 }
 .layers-item:hover, .layers-item:focus-visible { background: var(--bg); outline: none; }
 .layers-item .ico { margin-right: 0; width: 19px; height: 19px; color: var(--text-light, #64748b); }
-.layers-label { flex: 1; }
+.layers-label { flex: 1; white-space: nowrap; }
 .layers-state { font-size: 12px; font-weight: 700; color: var(--text-light, #64748b); padding: 3px 9px; border-radius: 999px; background: var(--bg); }
 .layers-state.on { background: var(--primary); color: #fff; }
 .layers-item .layers-ext { width: 15px; height: 15px; }
-body.hide-map-btn-trains.hide-map-btn-trails .map-layers-wrap:not(.has-alltrails),
+body.hide-map-btn-trains.hide-map-btn-trails .map-layers-wrap:not(.has-alltrails):not(.has-explore),
 body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-wrap.has-alltrails { display: none; }
 .map-btn.map-btn-icon { width: 34px; padding: 0; justify-content: center; }
+
+/* Explore layers: sights, famous places, neighborhoods, metro (js/explore-layers.js) */
+.explore-pin-icon { background: none; border: 0; }
+.explore-pin { width: 26px; height: 26px; margin: 1px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #fff; color: var(--pin); border: 2px solid var(--pin); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); box-sizing: border-box; }
+.explore-pin .ico { width: 14px; height: 14px; margin: 0; stroke-width: 2.2; }
+.explore-pin.is-notable { background: var(--pin); color: #fff; }
+.famous-pin { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2.5px solid #fff; background: #c2410c center / cover no-repeat; color: #fff; box-shadow: 0 0 0 2px #c2410c, 0 3px 10px rgba(15, 23, 42, 0.35); box-sizing: border-box; }
+.famous-pin .ico { width: 16px; height: 16px; margin: 0; }
+.explore-area-icon { background: none; border: 0; }
+.explore-area-label { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; padding: 3px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); color: var(--area); border: 1.5px solid var(--area); font-size: 11.5px; font-weight: 800; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18); cursor: pointer; }
+.explore-low-zoom .explore-area-label { display: none; }
+.explore-popup .leaflet-popup-content { margin: 12px 14px; }
+.explore-pop { min-width: 190px; font-family: inherit; }
+.explore-pop-img { height: 110px; margin: -2px 0 8px; border-radius: 10px; background: #e2e8f0 center / cover no-repeat; }
+.explore-pop-kind { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+.explore-pop-title { display: block; font-size: 15px; color: var(--text); line-height: 1.25; }
+.explore-pop-local { font-size: 13px; color: var(--text-light, #64748b); margin-top: 2px; }
+.explore-pop-desc { margin: 6px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--text); }
+.explore-pop-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.explore-pop-add { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 0; border-radius: 999px; background: var(--primary); color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.explore-pop-add .ico { width: 14px; height: 14px; margin: 0; }
+.explore-pop-links { display: flex; gap: 10px; font-size: 12px; font-weight: 700; }
+.explore-pop-links a { color: var(--primary); text-decoration: none; }
 
 /* Trip Budget: summary, tabs and estimator */
 .budget-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }

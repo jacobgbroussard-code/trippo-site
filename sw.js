@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.4.51';
+const CACHE_NAME = 'trippo-cache-v2.4.52';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -34,6 +34,7 @@ const STATIC_ASSETS = [
     './js/trip-checkup.js',
     './js/today.js',
     './js/fare-watch.js',
+    './js/explore-layers.js',
     './js/sync.js',
     './js/error-report.js',
     './js/keyboard-access.js',
@@ -93,7 +94,9 @@ self.addEventListener('fetch', (event) => {
         url.hostname.includes('project-osrm.org') ||
         url.hostname.includes('nominatim.openstreetmap.org') ||
         url.hostname.includes('googleapis.com') ||
-        url.hostname.includes('supabase.co')
+        url.hostname.includes('supabase.co') ||
+        url.hostname.includes('wikipedia.org') ||
+        url.hostname.includes('overpass')
     ) {
         return;
     }

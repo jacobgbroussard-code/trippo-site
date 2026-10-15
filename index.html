@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.51">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.51">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.51">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.51">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.51">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.52">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.52">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.52">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.52">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.52">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.51">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.51">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.52">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.52">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -452,7 +452,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.51</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.52</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -477,11 +477,14 @@
             <div class="map-controls-row">
                 <button class="map-btn" id="planner-gps-btn" onclick="toggleUserLocation('planner')"><svg class="ico" aria-hidden="true"><use href="#i-current-location"></use></svg>My Location</button>
                 <button class="map-btn" id="planner-fullscreen-btn" onclick="toggleMapMode('planner', 'map')"><svg class="ico" aria-hidden="true"><use href="#i-window-maximize"></use></svg>Full Map</button>
-            <div class="map-layers-wrap" id="planner-layers-wrap">
+            <div class="map-layers-wrap has-explore" id="planner-layers-wrap">
                 <button class="map-btn" id="planner-layers-btn" aria-haspopup="true" aria-expanded="false" onclick="toggleLayersMenu('planner', event)"><svg class="ico" aria-hidden="true"><use href="#i-stack-2"></use></svg>Layers</button>
                 <div class="map-layers-menu" id="planner-layers-menu">
                     <button type="button" class="layers-item map-btn-trails" onclick="toggleTrails('planner')"><svg class="ico" aria-hidden="true"><use href="#i-mountain"></use></svg><span class="layers-label">Hiking trails</span><span class="layers-state" id="planner-trails-state">Off</span></button>
-                    <button type="button" class="layers-item map-btn-trains" id="planner-train-btn" onclick="cycleTrainOverlay('planner')"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg><span class="layers-label">Trains</span><span class="layers-state" id="planner-train-state">Off</span></button>
+                    <button type="button" class="layers-item map-btn-trains" onclick="toggleExploreLayer('planner', 'hsr')"><svg class="ico" aria-hidden="true"><use href="#i-bolt"></use></svg><span class="layers-label">High-speed rail</span><span class="layers-state" id="planner-hsr-state">Off</span></button>
+                    <button type="button" class="layers-item" onclick="toggleExploreLayer('planner', 'areas')"><svg class="ico" aria-hidden="true"><use href="#i-map-2"></use></svg><span class="layers-label">Neighborhoods</span><span class="layers-state" id="planner-areas-state">Off</span></button>
+                    <button type="button" class="layers-item" onclick="toggleExploreLayer('planner', 'sights')"><svg class="ico" aria-hidden="true"><use href="#i-camera"></use></svg><span class="layers-label">Sights</span><span class="layers-state" id="planner-sights-state">Off</span></button>
+                    <button type="button" class="layers-item" onclick="toggleExploreLayer('planner', 'famous')"><svg class="ico" aria-hidden="true"><use href="#i-flame"></use></svg><span class="layers-label">Famous nearby</span><span class="layers-state" id="planner-famous-state">Off</span></button>
                 </div>
             </div>
             </div>
@@ -567,7 +570,16 @@
                 <div class="map-controls-row">
                     <button class="map-btn map-btn-icon" id="places-gps-btn" onclick="toggleUserLocation('places')" aria-label="Show my location" title="Show my location"><svg class="ico" aria-hidden="true"><use href="#i-current-location"></use></svg></button>
                     <button class="map-btn" id="places-fullscreen-btn" onclick="toggleMapMode('places', 'map')"><svg class="ico" aria-hidden="true"><use href="#i-window-maximize"></use></svg>Full Map</button>
-                    <button class="map-btn map-btn-icon map-btn-alltrails" onclick="openAllTrailsNearCenter('places')" aria-label="Open this area in AllTrails" title="Open this area in AllTrails"><svg class="ico" aria-hidden="true"><use href="#i-trees"></use></svg></button>
+                    <div class="map-layers-wrap has-alltrails has-explore" id="places-layers-wrap">
+                        <button class="map-btn" id="places-layers-btn" aria-haspopup="true" aria-expanded="false" onclick="toggleLayersMenu('places', event)"><svg class="ico" aria-hidden="true"><use href="#i-stack-2"></use></svg>Layers</button>
+                        <div class="map-layers-menu" id="places-layers-menu">
+                            <button type="button" class="layers-item" onclick="toggleExploreLayer('places', 'sights')"><svg class="ico" aria-hidden="true"><use href="#i-camera"></use></svg><span class="layers-label">Sights</span><span class="layers-state" id="places-sights-state">Off</span></button>
+                            <button type="button" class="layers-item" onclick="toggleExploreLayer('places', 'famous')"><svg class="ico" aria-hidden="true"><use href="#i-flame"></use></svg><span class="layers-label">Famous nearby</span><span class="layers-state" id="places-famous-state">Off</span></button>
+                            <button type="button" class="layers-item" onclick="toggleExploreLayer('places', 'areas')"><svg class="ico" aria-hidden="true"><use href="#i-map-2"></use></svg><span class="layers-label">Neighborhoods</span><span class="layers-state" id="places-areas-state">Off</span></button>
+                            <button type="button" class="layers-item" onclick="toggleExploreLayer('places', 'metro')"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg><span class="layers-label">Metro &amp; tram</span><span class="layers-state" id="places-metro-state">Off</span></button>
+                            <button type="button" class="layers-item map-btn-alltrails" onclick="openAllTrailsNearCenter('places')"><svg class="ico" aria-hidden="true"><use href="#i-trees"></use></svg><span class="layers-label">Open AllTrails</span><svg class="ico layers-ext" aria-hidden="true"><use href="#i-external-link"></use></svg></button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="sheet">
@@ -689,11 +701,13 @@
                 <div class="map-controls-row">
                     <button class="map-btn" id="wishlist-gps-btn" onclick="toggleUserLocation('wishlist')"><svg class="ico" aria-hidden="true"><use href="#i-current-location"></use></svg>My Location</button>
                     <button class="map-btn" id="wishlist-fullscreen-btn" onclick="toggleMapMode('wishlist', 'map')"><svg class="ico" aria-hidden="true"><use href="#i-window-maximize"></use></svg>Full Map</button>
-                <div class="map-layers-wrap has-alltrails" id="wishlist-layers-wrap">
+                <div class="map-layers-wrap has-alltrails has-explore" id="wishlist-layers-wrap">
                     <button class="map-btn" id="wishlist-layers-btn" aria-haspopup="true" aria-expanded="false" onclick="toggleLayersMenu('wishlist', event)"><svg class="ico" aria-hidden="true"><use href="#i-stack-2"></use></svg>Layers</button>
                     <div class="map-layers-menu" id="wishlist-layers-menu">
                         <button type="button" class="layers-item map-btn-trails" onclick="toggleTrails('wishlist')"><svg class="ico" aria-hidden="true"><use href="#i-mountain"></use></svg><span class="layers-label">Hiking trails</span><span class="layers-state" id="wishlist-trails-state">Off</span></button>
                         <button type="button" class="layers-item map-btn-trains" id="wishlist-train-btn" onclick="cycleTrainOverlay('wishlist')"><svg class="ico" aria-hidden="true"><use href="#i-train"></use></svg><span class="layers-label">Trains</span><span class="layers-state" id="wishlist-train-state">Off</span></button>
+                        <button type="button" class="layers-item" onclick="toggleExploreLayer('wishlist', 'sights')"><svg class="ico" aria-hidden="true"><use href="#i-camera"></use></svg><span class="layers-label">Sights</span><span class="layers-state" id="wishlist-sights-state">Off</span></button>
+                        <button type="button" class="layers-item" onclick="toggleExploreLayer('wishlist', 'famous')"><svg class="ico" aria-hidden="true"><use href="#i-flame"></use></svg><span class="layers-label">Famous nearby</span><span class="layers-state" id="wishlist-famous-state">Off</span></button>
                         <button type="button" class="layers-item map-btn-alltrails" onclick="openAllTrailsNearCenter()"><svg class="ico" aria-hidden="true"><use href="#i-trees"></use></svg><span class="layers-label">Open AllTrails</span><svg class="ico layers-ext" aria-hidden="true"><use href="#i-external-link"></use></svg></button>
                     </div>
                 </div>
@@ -2205,6 +2219,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.51"></script>
+    <script type="module" src="js/app.js?v=2.4.52"></script>
 </body>
 </html>
