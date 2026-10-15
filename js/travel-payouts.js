@@ -154,7 +154,7 @@ export function esimLink(country) {
  * secret (the Travelpayouts API also can't be called from a web page). Empty = not set up yet,
  * and the app shows Gemini's typical-fare estimates instead.
  */
-export const FLIGHT_PRICES_URL = '';
+export const FLIGHT_PRICES_URL = 'https://trippo-ai-worker.trippo-ai-worker.workers.dev';
 
 function flightWorkerBase() {
     let custom = '';
@@ -171,14 +171,20 @@ export async function getLiveFares(origin, destination, depart = '', ret = '') {
     if (!base || !/^[A-Z]{3}$/i.test(String(origin || '')) || !/^[A-Z]{3}$/i.test(String(destination || ''))) return null;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 9000);
-    try {
+    const ask = async (dep, back) => {
         const q = new URLSearchParams({ origin: String(origin).toUpperCase(), destination: String(destination).toUpperCase() });
-        if (depart) q.set('depart', depart);
-        if (ret) q.set('return', ret);
+        if (dep) q.set('depart', dep);
+        if (back) q.set('return', back);
         const res = await fetch(`${base}/flight-prices?${q}`, { signal: ctrl.signal });
         if (!res.ok) return null;
         const json = await res.json();
         return json && json.success && Array.isArray(json.fares) ? json.fares.filter(f => Number(f.price) > 0) : null;
+    };
+    try {
+        const fares = await ask(depart, ret);
+        // Exact days are often missing from the cached data; the same months usually have fares
+        if (fares && !fares.length && depart.length === 10) return await ask(depart.slice(0, 7), ret.slice(0, 7));
+        return fares;
     } catch (e) {
         return null;
     } finally {
@@ -212,6 +218,23 @@ export function buildHotellookUrl(cityName, checkIn = '', checkOut = '') {
     return url;
 }
 
+// Travelpayouts prices are keyed by city code; the catalog uses each city's main airport
+const AIRPORT_CITY_CODES = {
+    JFK: 'NYC', LGA: 'NYC', EWR: 'NYC', MCO: 'ORL', ORD: 'CHI', MDW: 'CHI', IAD: 'WAS', DCA: 'WAS',
+    IAH: 'HOU', LHR: 'LON', LGW: 'LON', CDG: 'PAR', NRT: 'TYO', HND: 'TYO', FCO: 'ROM', PVG: 'SHA',
+    PEK: 'BJS', ICN: 'SEL', MXP: 'MIL', DTW: 'DTT', SJD: 'SJD', SJU: 'SJU'
+};
+
+const AIRLINE_NAMES = {
+    AA: 'American', UA: 'United', DL: 'Delta', WN: 'Southwest', B6: 'JetBlue', NK: 'Spirit', F9: 'Frontier',
+    AS: 'Alaska', G4: 'Allegiant', SY: 'Sun Country', HA: 'Hawaiian', AC: 'Air Canada', AM: 'Aeromexico',
+    Y4: 'Volaris', VB: 'Viva Aerobus', BA: 'British Airways', VS: 'Virgin Atlantic', AF: 'Air France',
+    KL: 'KLM', LH: 'Lufthansa', IB: 'Iberia', TP: 'TAP', EK: 'Emirates', QR: 'Qatar Airways', TK: 'Turkish',
+    NH: 'ANA', JL: 'JAL', ZG: 'Zipair', CX: 'Cathay Pacific', KE: 'Korean Air', CA: 'Air China', MU: 'China Eastern', MX: 'Mexicana'
+};
+
+export const airlineName = (code) => AIRLINE_NAMES[code] || code || '';
+
 /**
  * Fetches cheap flight deals for a given airport.
  * Uses Travelpayouts Data API if token is present, otherwise returns curated dynamic matrix.
@@ -236,22 +259,16 @@ export async function getCheapFlightDeals(origin, dateStr = '') {
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.success && data.data) {
-                    const deals = [];
-                    const destKeys = Object.keys(data.data);
-                    for (let i = 0; i < Math.min(destKeys.length, 5); i++) {
-                        const destCode = destKeys[i];
-                        const priceInfo = Object.values(data.data[destCode])[0];
-                        if (priceInfo && priceInfo.price) {
-                            deals.push({
-                                city: destCode,
-                                code: destCode,
-                                price: Math.round(priceInfo.price),
-                                airline: `Airline #${priceInfo.airline || 'Partner'}`,
-                                link: buildAviasalesFlightUrl(code, destCode, dateStr)
-                            });
-                        }
-                    }
-                    if (deals.length > 0) return deals;
+                    // Real fares for the curated destinations (the API lists every city it has, A to Z)
+                    const deals = (AIRPORT_CATALOG[code] || GLOBAL_DEFAULT_DESTINATIONS).map(item => {
+                        const byStops = data.data[item.code] || data.data[AIRPORT_CITY_CODES[item.code]];
+                        const fare = byStops && Object.values(byStops).filter(f => Number(f.price) > 0).sort((a, b) => a.price - b.price)[0];
+                        const link = buildAviasalesFlightUrl(code, item.code, dateStr);
+                        return fare
+                            ? { ...item, price: Math.round(fare.price), airline: airlineName(fare.airline) || item.airline, link }
+                            : { ...item, typical: true, link };
+                    });
+                    if (deals.some(d => !d.typical)) return deals;
                 }
             }
         } catch (err) {

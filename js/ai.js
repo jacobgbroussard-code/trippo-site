@@ -28,7 +28,7 @@ import {
     getDistance,
     parseLocalDate,
 } from './state.js';
-import { buildAviasalesFlightUrl, ticketLink, getLiveFares, hasLiveFlightPrices } from './travel-payouts.js';
+import { buildAviasalesFlightUrl, ticketLink, getLiveFares, hasLiveFlightPrices, airlineName } from './travel-payouts.js';
 import { getTravelProfileText } from './travel-profile.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
@@ -1317,7 +1317,7 @@ async function showLiveFares(fl, start) {
     el.innerHTML = `<div class="ai-live-fares"><strong>Real recent fares</strong>${fares.slice(0, 3).map(f => `
         <a href="${escapeHTML(f.link || buildAviasalesFlightUrl(out.from, out.to, start))}" target="_blank" rel="noopener noreferrer">
             <span>$${Math.round(f.price)}</span>
-            <span>${escapeHTML([f.airline, f.departAt ? new Date(f.departAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '', Number(f.transfers) === 0 ? 'nonstop' : `${f.transfers} stop${Number(f.transfers) === 1 ? '' : 's'}`].filter(Boolean).join(' · '))}</span>
+            <span>${escapeHTML([airlineName(f.airline), f.departAt ? new Date(f.departAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '', Number(f.transfers) === 0 ? 'nonstop' : `${f.transfers} stop${Number(f.transfers) === 1 ? '' : 's'}`].filter(Boolean).join(' · '))}</span>
         </a>`).join('')}<small>Prices other travellers found recently on Aviasales, per person. Check before booking.</small></div>`;
 }
 

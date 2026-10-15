@@ -111,7 +111,7 @@ async function testFlightHubBrowser() {
                 googleHref: google ? google.href : null,
                 flightconnHref: flightconn ? flightconn.href : null,
                 kayakHref: kayak ? kayak.href : null,
-                aviasalesHref: aviasales ? aviasales.href : null,
+                aviasalesHref: aviasales ? decodeURIComponent(aviasales.href) : null,
                 dealCount: deals.length
             };
         })()`);
@@ -121,7 +121,8 @@ async function testFlightHubBrowser() {
         assert.ok(initial.googleHref.includes('flights+from+LFT+to+anywhere'), 'Google Flights default link');
         assert.ok(initial.flightconnHref.includes('/flights-from-lft'), 'FlightConnections default link');
         assert.ok(initial.kayakHref.includes('/explore/LFT'), 'Kayak Explore default link');
-        assert.ok(initial.aviasalesHref.includes('origin=LFT'), 'Aviasales default link');
+        // tp.media link; Travelpayouts' tp-em.com script may rewrite it to its own tracker
+        assert.ok(/^https:\/\/(tp\.media\/r|tp-em\.com\/re)\?campaign_id=100&marker=785709&/.test(initial.aviasalesHref) && initial.aviasalesHref.includes('origin=LFT'), 'Aviasales default link: ' + initial.aviasalesHref);
         console.log('  ✅ [PASS] Initial default airport (LFT) and 5 outbound links generated');
 
         // 2. Chip Click Interaction (MSY)

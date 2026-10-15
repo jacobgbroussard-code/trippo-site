@@ -465,7 +465,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.47",
+        trippoVersion: "2.4.48",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -511,7 +511,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.47",
+        version: "2.4.48",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

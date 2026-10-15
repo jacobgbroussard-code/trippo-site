@@ -29,3 +29,6 @@ tests/test-wmi-spawn.ps1
 tests/artifacts/
 # Test screenshots (tests also copy them to tests/artifacts/)
 tests/*.png
+
+# wrangler local cache
+.wrangler/

@@ -72,8 +72,11 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 - To add a program: generate a link in Travelpayouts, switch on "Full link" in its ⋮ menu, copy campaign_id and p
   into `PARTNER_PROGRAMS`.
 - Real flight prices: the Travelpayouts API has no CORS and needs a secret token, so it goes through the worker
-  (`GET /flight-prices`, `/flight-deals`, token in the `TP_TOKEN` wrangler secret). Set `FLIGHT_PRICES_URL` in
-  js/travel-payouts.js to the deployed worker URL; empty = AI estimates only. See worker/README.md.
+  (`GET /flight-prices`, `/flight-deals`, token in the `TP_TOKEN` wrangler secret). Live since v2.4.48 at
+  https://trippo-ai-worker.trippo-ai-worker.workers.dev (`FLIGHT_PRICES_URL` in js/travel-payouts.js; empty = AI
+  estimates only). Redeploy the worker with `npx.cmd wrangler@4 deploy` in `worker/` (PowerShell blocks `npx.ps1`).
+  The data is cached searches: exact days are often empty (the app retries the month) and small airports like LFT
+  have almost none. See worker/README.md.
 
 ## Rules
 - **Never commit secrets.** `.env`, `site-credentials-and-services.csv`, `SITE_MANAGEMENT_DIRECTORY.md`,
