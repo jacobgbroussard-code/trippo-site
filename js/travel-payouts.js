@@ -124,8 +124,14 @@ const PARTNER_PROGRAMS = {
     klook: { campaign: 137, p: 4110 },
     tiqets: { campaign: 89, p: 2074 },
     airalo: { campaign: 541, p: 8310 },
-    yesim: { campaign: 224, p: 5998 }
+    yesim: { campaign: 224, p: 5998 },
+    saily: { campaign: 629, p: 8979 },
+    qeeq: { campaign: 172, p: 4845 },
+    localrent: { campaign: 87, p: 2043 },
+    kiwitaxi: { campaign: 1, p: 647 },
+    wegotrip: { campaign: 150, p: 4487 }
 };
+
 
 export function partnerLink(program, url) {
     const prog = PARTNER_PROGRAMS[program];
@@ -235,6 +241,14 @@ const AIRLINE_NAMES = {
 
 export const airlineName = (code) => AIRLINE_NAMES[code] || code || '';
 
+// Nearby big airports (within a few hours' drive) for small airports with little fare data
+const NEARBY_HUBS = {
+    LFT: [{ code: 'MSY', city: 'New Orleans' }, { code: 'IAH', city: 'Houston' }],
+    BTR: [{ code: 'MSY', city: 'New Orleans' }, { code: 'IAH', city: 'Houston' }],
+    LCH: [{ code: 'IAH', city: 'Houston' }, { code: 'MSY', city: 'New Orleans' }],
+    AEX: [{ code: 'MSY', city: 'New Orleans' }, { code: 'IAH', city: 'Houston' }]
+};
+
 /**
  * Fetches cheap flight deals for a given airport.
  * Uses Travelpayouts Data API if token is present, otherwise returns curated dynamic matrix.
@@ -274,6 +288,12 @@ export async function getCheapFlightDeals(origin, dateStr = '') {
         } catch (err) {
             console.debug('Travelpayouts live API fetch fallback:', err);
         }
+    }
+
+    // Small airports have almost no fare data: show real fares from the nearest big airports instead
+    for (const hub of (workerBase ? NEARBY_HUBS[code] || [] : [])) {
+        const hubDeals = await getCheapFlightDeals(hub.code, dateStr);
+        if (hubDeals.some(d => !d.typical)) return hubDeals.map(d => ({ ...d, via: hub.city }));
     }
 
     // No live prices: typical fares, labelled as such

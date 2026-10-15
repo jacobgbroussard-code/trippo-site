@@ -27,9 +27,10 @@ import * as travelProfile from './travel-profile.js';
 import * as bookingImport from './booking-import.js';
 import * as tripCheckup from './trip-checkup.js';
 import * as today from './today.js';
+import * as fareWatch from './fare-watch.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.48';
+const CURRENT_VERSION = '2.4.49';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -85,7 +86,8 @@ Object.assign(window, {
     ...travelProfile,
     ...bookingImport,
     ...tripCheckup,
-    ...today
+    ...today,
+    ...fareWatch
 });
 
 // Replay any early calls queued before module finished loading

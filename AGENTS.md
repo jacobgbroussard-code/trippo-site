@@ -21,7 +21,8 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   `travel-profile.js` (AI travel profile used by every AI prompt), `booking-import.js` (Gemini reads a pasted
   confirmation / screenshot / PDF and fills a stay or travel-leg form for review), `trip-checkup.js` (quick checks +
   Gemini review, book-ahead .ics, before-you-go list), `today.js` (Day view / Today: now-next, running late,
-  rainy-day swaps, driver cards, home Today card)
+  rainy-day swaps, driver cards, home Today card), `fare-watch.js` (home "Flight prices" card: real fares
+  for each upcoming trip's first flight leg, checked every 12 h, drop alerts)
 - `styles/main.css`, `styles/components.css`
 - `sw.js` — service worker with a static-asset cache list
 - `worker/` — separate Cloudflare Worker (Gemini-backed "Edge AI"), deployed with wrangler
@@ -60,8 +61,10 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 - IDs: account / marker **785709**, Trippo project / trs **581802** (the tp-em.com script uses the project ID).
   Links before v2.4.47 wrongly used 581802 as the marker. All partner links go through `partnerLink()` in
   js/travel-payouts.js (tp.media, fresh click each time); campaign_id/p per program are in `PARTNER_PROGRAMS`.
-- Wired: Aviasales, Klook, Tiqets, Airalo, Yesim. Also joined but not wired: WeGoTrip, Localrent, QEEQ,
-  GetRentacar, Economybookings, Saily, KKday, Kiwitaxi, Go City and others.
+- Wired: Aviasales, Klook, Tiqets (tour cards + place tickets), Airalo, Yesim, Saily (eSIM), QEEQ (car card),
+  Kiwitaxi (transfer card), WeGoTrip (audio tours card); Localrent is in `PARTNER_PROGRAMS` but unused. Also joined
+  but not wired: GetRentacar, Economybookings, KKday, Go City and others. Small airports (LFT, BTR, LCH, AEX) show
+  sidebar deals from nearby hubs (`NEARBY_HUBS`).
 - **Not joined:** GetYourGuide, DiscoverCars, Omio, Booking.com, Trip.com. Travelpayouts locks them until
   trippo.top has ~3 months of steady traffic, so links to them currently earn nothing. The DiscoverCars
   `a_aid=` and Omio `cmp=` parameters in the app are not real tracking.

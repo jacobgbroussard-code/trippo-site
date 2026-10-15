@@ -248,7 +248,7 @@ export function openPlacesCityView(stopIndex) {
     // Dynamically personalize Local Tours & Tickets action card for this city
     const actLink = document.getElementById('places-activities-link');
     if (actLink && stop) {
-        actLink.href = `https://www.getyourguide.com/s/?q=${encodeURIComponent(stop.name)}`;
+        actLink.href = ticketLink('', stop.name.split(',')[0], stop.lat, stop.lon);
         const actTitle = actLink.querySelector('.action-title');
         if (actTitle) {
             actTitle.innerText = `Find Tours & Tickets in ${stop.name}`;

@@ -43,6 +43,7 @@ export function renderHome() {
     const listEl = document.getElementById('trip-list');
     if (!listEl) return;
     if (window.renderHomeTodayCard) window.renderHomeTodayCard();
+    if (window.renderFareWatchCard) window.renderFareWatchCard();
     if (trips.length === 0) {
         listEl.innerHTML = `
             <div style="text-align: center; color: #8fa39f; padding: 40px 20px;">
@@ -465,7 +466,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.48",
+        trippoVersion: "2.4.49",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -511,7 +512,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.48",
+        version: "2.4.49",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -1299,7 +1300,7 @@ export async function renderFlightHubDeals(origin, dateStr = '') {
             <a href="${String(deal.link).startsWith('https://') ? escapeHTML(deal.link) : '#'}" target="_blank" rel="noopener noreferrer" class="flight-deal-item" title="View flights to ${escapeHTML(deal.city)} on Aviasales">
                 <div class="flight-deal-dest">
                     <span class="flight-deal-city">${escapeHTML(deal.city)} (${escapeHTML(deal.code)})</span>
-                    <span class="flight-deal-airline">${escapeHTML(deal.airline)}</span>
+                    <span class="flight-deal-airline">${escapeHTML(deal.airline)}${deal.via ? ` · from ${escapeHTML(deal.via)}` : ''}</span>
                 </div>
                 <div class="flight-deal-price-badge">
                     <span title="${deal.typical ? 'Typical round-trip fare, not a live price' : 'Recent fare found on Aviasales'}">${deal.typical ? 'About' : 'From'} $${Number(deal.price) || 0}</span>

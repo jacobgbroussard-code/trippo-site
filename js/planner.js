@@ -3,6 +3,7 @@
    js/planner.js
    ========================================================================== */
 
+import { ticketLink } from './travel-payouts.js';
 import {
     getActiveTrip,
     trips,
@@ -342,14 +343,13 @@ export function renderPlanner() {
             // Use the longest stay (not the departure/origin stop) as the featured destination
             const featuredStop = trip.stops.reduce((best, s) => ((s.nights || 0) > (best.nights || 0) ? s : best), trip.stops[0]);
             const destCity = featuredStop.name;
-            actLink.href = `https://www.getyourguide.com/s/?q=${encodeURIComponent(destCity)}`;
+            actLink.href = ticketLink('', destCity.split(',')[0], featuredStop.lat, featuredStop.lon);
             const actTitle = actLink.querySelector('.action-title');
             if (actTitle) {
                 actTitle.innerText = `Find Tours & Activities in ${destCity}`;
             }
             actLink.style.display = 'flex';
         } else {
-            actLink.href = 'https://www.getyourguide.com/';
             actLink.style.display = 'none';
         }
     }

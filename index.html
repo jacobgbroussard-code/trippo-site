@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.48">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.48">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.48">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.48">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.48">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.49">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.49">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.49">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.49">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.49">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.48">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.48">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.49">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.49">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -451,7 +451,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.48</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.49</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -465,6 +465,7 @@
                 Create a Trip
             </button>
             <div id="home-today-card" style="width: 100%;"></div>
+            <div id="home-fare-watch" style="width: 100%;"></div>
             <div id="trip-list" style="width: 100%;"></div>
         </div>
     </div>
@@ -610,6 +611,14 @@
                     </div>
                     <span class="action-arrow">↗</span>
                 </a>
+                <a href="https://tp.media/r?campaign_id=150&amp;marker=785709&amp;p=4487&amp;trs=581802&amp;u=https%3A%2F%2Fwegotrip.com%2Fen%2F" id="places-audio-tour-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+                    <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-language"></use></svg></span>
+                    <div class="action-content">
+                        <div class="action-title">Self-Guided Audio Tours (WeGoTrip)</div>
+                        <div class="action-subtitle">Walk at your own pace with a guide on your phone</div>
+                    </div>
+                    <span class="action-arrow">↗</span>
+                </a>
             </div>
         </div>
     </div>
@@ -621,11 +630,19 @@
             <select id="booking-trip-select" class="form-control" style="margin-bottom: 20px; font-weight: 700;" onchange="syncSelectedTrip(this.value, 'bookings')"></select>
             <div id="bookings-list-container"></div>
             
-            <a href="https://www.discovercars.com/?a_aid=581802" id="bookings-car-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+            <a href="https://tp.media/r?campaign_id=1&amp;marker=785709&amp;p=647&amp;trs=581802&amp;u=https%3A%2F%2Fkiwitaxi.com%2Fen%2F" id="bookings-transfer-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
+                <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-plane-departure"></use></svg></span>
+                <div class="action-content">
+                    <div class="action-title">Book an Airport Transfer (Kiwitaxi)</div>
+                    <div class="action-subtitle">Fixed-price pickup from the airport to your hotel, driver waits for delays</div>
+                </div>
+                <span class="action-arrow">↗</span>
+            </a>
+            <a href="https://tp.media/r?campaign_id=172&amp;marker=785709&amp;p=4845&amp;trs=581802&amp;u=https%3A%2F%2Fwww.qeeq.com%2F" id="bookings-car-link" target="_blank" rel="noopener noreferrer" class="travel-partner-action-card">
                 <span class="action-icon"><svg class="ico ico-only" aria-hidden="true"><use href="#i-car"></use></svg></span>
                 <div class="action-content">
-                    <div class="action-title">Compare Rental Cars (DiscoverCars)</div>
-                    <div class="action-subtitle">Free cancellation, trusted local suppliers & best rates</div>
+                    <div class="action-title">Compare Rental Cars (QEEQ)</div>
+                    <div class="action-subtitle">Prices from major and local rental companies side by side</div>
                 </div>
                 <span class="action-arrow">↗</span>
             </a>
@@ -959,6 +976,14 @@
                     <div style="flex:1;">
                         <div style="font-size:13px; font-weight:700;">Yesim Unlimited Data</div>
                         <div style="font-size:11px; color:var(--text-light);">Unlimited daily plans & pay-as-you-go international data</div>
+                    </div>
+                    <span style="font-size:12px; font-weight:700; color:var(--primary);">Browse ↗</span>
+                </a>
+                <a href="https://tp.media/r?campaign_id=629&amp;marker=785709&amp;p=8979&amp;trs=581802&amp;u=https%3A%2F%2Fsaily.com%2F" target="_blank" rel="noopener noreferrer" class="flight-hub-link" style="padding:12px; border-radius:12px;">
+                    <span style="font-size:20px;"><svg class="ico ico-only" aria-hidden="true"><use href="#i-world-search"></use></svg></span>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">Saily eSIM</div>
+                        <div style="font-size:11px; color:var(--text-light);">Simple data plans by country or region, set up in the app</div>
                     </div>
                     <span style="font-size:12px; font-weight:700; color:var(--primary);">Browse ↗</span>
                 </a>
@@ -2179,6 +2204,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.48"></script>
+    <script type="module" src="js/app.js?v=2.4.49"></script>
 </body>
 </html>

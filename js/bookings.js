@@ -211,7 +211,7 @@ export function renderBookingsList() {
             const firstCity = trip.stops[0].name;
             const carTitle = carLink.querySelector('.action-title');
             if (carTitle) {
-                carTitle.innerText = `Compare Rental Cars in ${firstCity} (DiscoverCars)`;
+                carTitle.innerText = `Compare Rental Cars in ${firstCity} (QEEQ)`;
             }
             carLink.style.display = 'flex';
         } else {
