@@ -61,23 +61,33 @@ async function fetchOnce(b, attempts) {
     throw last;
 }
 
+const skipped = [];
+
 // A tile the servers won't answer in one go is split into quarters (down to 1/64 of the original)
 async function fetchTile(b, depth = 0) {
     const file = path.join(RAW, `${b.join('_')}.json`);
     if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
     let data;
     try {
-        data = await fetchOnce(b, depth === 0 ? 2 : 4);
+        data = await fetchOnce(b, depth === 0 ? 2 : depth >= 3 ? 10 : 4);
     } catch (e) {
-        if (depth >= 3) throw new Error('gave up on tile ' + b.join(','));
+        if (depth >= 3) {
+            // keep going without it (listed at the end); rerun later to fill the gap from the cache
+            skipped.push(b.join(','));
+            console.log(`  skipped ${b.join(',')}`);
+            return { elements: [] };
+        }
         const [s, w, n, e2] = b;
         const mLat = Math.round((s + n) * 50) / 100, mLon = Math.round((w + e2) * 50) / 100;
         console.log(`  splitting ${b.join(',')}`);
         const elements = [];
+        const holesBefore = skipped.length;
         for (const part of [[s, w, mLat, mLon], [s, mLon, mLat, e2], [mLat, w, n, mLon], [mLat, mLon, n, e2]]) {
             elements.push(...((await fetchTile(part, depth + 1)).elements || []));
         }
         data = { elements };
+        // with a hole in it, don't cache the whole tile, so a rerun fetches the missing piece
+        if (skipped.length > holesBefore) return data;
     }
     fs.writeFileSync(file, JSON.stringify(data));
     return data;
@@ -193,4 +203,5 @@ const CACHED_ONLY = process.argv.includes('--cached-only');
     const out = { generated: new Date().toISOString().slice(0, 10), source: 'OpenStreetMap contributors (ODbL), railway=rail + highspeed=yes', lines };
     fs.writeFileSync(OUT, JSON.stringify(out));
     console.log(`wrote ${lines.length} lines, ${(fs.statSync(OUT).size / 1024).toFixed(0)} KB -> ${OUT}`);
+    if (skipped.length) console.log(`skipped ${skipped.length} tiles the servers never answered (rerun to fill them): ${skipped.join(' ')}`);
 })().catch(e => { console.error(e); process.exit(1); });

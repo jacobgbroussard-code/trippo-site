@@ -590,6 +590,13 @@ let plannerLegs = [];
 let plannerStopDots = [];
 let plannerLegsTripId = null;
 let selectedPlannerLeg = null; // { tripId, key }, survives redraws
+// Route lines and stop dots are drawn on a canvas: iPhone Safari sometimes stops repainting SVG lines
+// after they change, leaving legs missing until the next full redraw
+let plannerRouteRenderer = null;
+function routeRenderer() {
+    if (!plannerRouteRenderer || plannerRouteRenderer._map !== plannerMap) plannerRouteRenderer = L.canvas({ padding: 0.5, tolerance: 6 });
+    return plannerRouteRenderer;
+}
 
 const mercY = lat => Math.log(Math.tan(Math.PI / 4 + Math.max(-85, Math.min(85, lat)) * Math.PI / 360)) * 180 / Math.PI;
 const unMercY = y => (2 * Math.atan(Math.exp(y * Math.PI / 180)) - Math.PI / 2) * 180 / Math.PI;
@@ -626,7 +633,7 @@ export function plannerLegPath(a, b, bow = 0) {
 function legLineStyle(leg, state) {
     const c = LEG_COLORS[leg.back ? 'back' : 'out'];
     if (state === 'selected') return { color: c.hi, weight: 6, opacity: 1, dashArray: null };
-    return { color: c.base, weight: state === 'hover' ? 6 : 5, opacity: state === 'dim' ? 0.35 : state === 'hover' ? 1 : 0.85, dashArray: '8, 8' };
+    return { color: c.base, weight: state === 'hover' ? 6 : 5, opacity: state === 'dim' ? 0.55 : state === 'hover' ? 1 : 0.85, dashArray: '8, 8' };
 }
 
 function legBadgeHTML(leg, heading) {
@@ -748,8 +755,8 @@ export function drawPlannerMapRoute(opts = {}) {
         const hover = () => paintPlannerLegs(leg.key);
         const unhover = () => paintPlannerLegs();
         // wide see-through line under the dashes: easier to tap, and the glow when selected
-        const glow = L.polyline(path.latlngs, { color: '#ffffff', weight: 18, opacity: 0, bubblingMouseEvents: false }).addTo(plannerMap);
-        const line = L.polyline(path.latlngs, { ...legLineStyle(leg, 'normal'), bubblingMouseEvents: false }).addTo(plannerMap);
+        const glow = L.polyline(path.latlngs, { renderer: routeRenderer(), color: '#ffffff', weight: 18, opacity: 0, bubblingMouseEvents: false }).addTo(plannerMap);
+        const line = L.polyline(path.latlngs, { renderer: routeRenderer(), ...legLineStyle(leg, 'normal'), bubblingMouseEvents: false }).addTo(plannerMap);
         [glow, line].forEach(l => { l.on('click', open); l.on('mouseover', hover); l.on('mouseout', unhover); });
         pLines.push(glow, line);
         leg.glows = [glow];
@@ -776,6 +783,7 @@ export function drawPlannerMapRoute(opts = {}) {
     stops.forEach((stop, stopIndex) => {
         if (!hasCoords(stop)) return;
         const marker = L.circleMarker([stop.lat, stop.lon], {
+            renderer: routeRenderer(),
             radius: 8,
             fillColor: "#124b43",
             color: "#ffffff",
