@@ -4526,3 +4526,8 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .expense-edit-field span { font-size: 11px; font-weight: 700; color: var(--text-light, #64748b); }
 .expense-edit-field .form-control { height: 38px; padding: 0 10px; font-size: 16px; }
 .expense-details .expense-split-with { grid-column: 1 / -1; margin: 0; }
+/* Travel-leg cost card (estimate → budget plan, paid → expenses) */
+.leg-cost-card { background: var(--primary-light); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 10px 12px; margin: 0 0 14px; }
+.leg-cost-card input { font-size: 16px; font-weight: 700; }
+.leg-cost-hint { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--text-light, #64748b); }
+.leg-cost-hint .ico { flex: none; width: 14px; height: 14px; margin: 1px 0 0; color: var(--primary); }

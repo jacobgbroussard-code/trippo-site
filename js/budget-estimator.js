@@ -197,6 +197,38 @@ export function toggleEstimateLine(tripId, key, on) {
     changed(trip);
 }
 
+// The "getting there" line for arriving at stops[toIndex] (set from the travel-leg window)
+function travelLineKey(trip, toIndex) {
+    const stop = trip.stops && trip.stops[toIndex];
+    return stop ? `${stop.id || 'i' + toIndex}:travel` : null;
+}
+
+export function getTravelEstimate(trip, toIndex) {
+    const key = travelLineKey(trip, toIndex);
+    let line = null;
+    if (key) estimateTripBudget(trip).groups.forEach(g => g.lines.forEach(l => { if (l.key === key) line = l; }));
+    return line ? { amount: line.amount, estimate: line.estimate, custom: line.custom } : null;
+}
+
+// Empty value goes back to the automatic estimate; a number becomes this leg's own estimate
+export function setTravelEstimate(trip, toIndex, value) {
+    const key = travelLineKey(trip, toIndex);
+    if (!key) return;
+    const lines = getPlan(trip).lines;
+    const entry = { ...(lines[key] || {}) };
+    const n = parseFloat(String(value ?? '').replace(/[^0-9.]/g, ''));
+    if (Number.isFinite(n) && n >= 0) { entry.amount = Math.round(n); entry.on = true; } else delete entry.amount;
+    lines[key] = entry;
+    // A round-trip ticket on the first leg already covers the way home, so don't count that line twice
+    const stops = trip.stops || [];
+    const first = stops[0];
+    if (toIndex === 1 && stops.length > 1 && first && first.transit && first.transit.flightType === 'rt' && Number.isFinite(entry.amount)) {
+        const last = stops[stops.length - 1];
+        const retKey = `${last.id || 'i' + (stops.length - 1)}:return`;
+        lines[retKey] = { ...(lines[retKey] || {}), on: false };
+    }
+}
+
 export function setEstimateAmount(tripId, key, value) {
     const trip = findTrip(tripId);
     if (!trip) return;

@@ -613,6 +613,12 @@ export function openTransitBookingModal(index) {
     if (notesInput) notesInput.value = transit.notes || '';
     const priceInput = document.getElementById('transit-price-input');
     if (priceInput) priceInput.value = window.getBookingPrice ? window.getBookingPrice(trip, 'travel', index) : '';
+    const estInput = document.getElementById('transit-estimate-input');
+    if (estInput) {
+        const est = window.getTravelEstimate ? window.getTravelEstimate(trip, index + 1) : null;
+        estInput.value = est && est.custom ? Math.round(est.amount) : '';
+        estInput.placeholder = est ? `~$${Math.round(est.estimate).toLocaleString('en-US')} (auto)` : 'e.g. 900';
+    }
 
     // Flight mode default: round-trip if 2-stop trip and trip.isRoundTrip, else one-way
     const isRound = (trip.isRoundTrip && trip.stops.length === 2) || (Array.isArray(trip.roundTripSegments) && trip.roundTripSegments.includes(index));
@@ -675,6 +681,9 @@ export function saveTransitBooking() {
         const kind = { plane: 'Flight', train: 'Train', bus: 'Bus', car: 'Drive' }[t.method] || 'Transport';
         window.syncBookingExpense(trip, 'travel', activeTransitIndex, document.getElementById('transit-price-input')?.value,
             `${kind} ${trip.stops[activeTransitIndex].name} → ${next ? next.name : ''}${t.flightType === 'rt' ? ' (round trip)' : ''}`);
+    }
+    if (window.setTravelEstimate && next) {
+        window.setTravelEstimate(trip, activeTransitIndex + 1, document.getElementById('transit-estimate-input')?.value);
     }
     saveTrips();
     closeModal('transit-booking-modal');

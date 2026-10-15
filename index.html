@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.34">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.34">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.34">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.34">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.34">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.35">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.35">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.35">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.35">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.35">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.34">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.34">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.35">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.35">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -445,7 +445,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.34</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.35</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -1519,6 +1519,20 @@
                 </div>
             </div>
 
+            <div class="leg-cost-card">
+                <div class="form-row" style="margin:0;">
+                    <div class="form-group" style="margin:0;">
+                        <label for="transit-estimate-input">Estimated cost</label>
+                        <input type="number" step="1" min="0" inputmode="decimal" id="transit-estimate-input" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="transit-price-input">Actual paid</label>
+                        <input type="number" step="0.01" min="0" inputmode="decimal" id="transit-price-input" class="form-control" placeholder="Not booked yet">
+                    </div>
+                </div>
+                <p class="leg-cost-hint"><svg class="ico" aria-hidden="true"><use href="#i-wallet"></use></svg>Totals for all travelers. The estimate goes into the Trip Budget plan, and the paid amount counts as spent.</p>
+            </div>
+
             <div class="form-group">
                 <label>Travel Date</label>
                 <input type="text" id="transit-date" class="form-control date-picker">
@@ -1546,11 +1560,6 @@
                     <label>Arr. Time</label>
                     <input type="time" id="transit-arr-time" class="form-control">
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label>Total Price ($) <span class="label-hint">all travelers, counts toward Trip Budget</span></label>
-                <input type="number" step="0.01" min="0" inputmode="decimal" id="transit-price-input" class="form-control" placeholder="e.g. 1450">
             </div>
 
             <div class="form-group">
@@ -2020,6 +2029,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.34"></script>
+    <script type="module" src="js/app.js?v=2.4.35"></script>
 </body>
 </html>
