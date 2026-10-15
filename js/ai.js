@@ -762,7 +762,7 @@ export async function submitAITripSearch() {
         const itinerary = await fetchItineraryFromCloudflareWorker(query);
         currentAIGeneratedItinerary = itinerary;
         setAILoadingState(false);
-        rememberAIPlan(query, itinerary);
+        if (window.saveAIPlanToLibrary) window.saveAIPlanToLibrary(query, itinerary);
         openAITripModal(itinerary);
         triggerHaptic('success');
     } catch (err) {
@@ -1078,57 +1078,38 @@ export function openAITripModal(itinerary) {
 /**
  * Open the AI Trip Generator search modal from Trip Tools in the sidebar
  */
-// --- PLANNER HISTORY: last generated plan + recent prompts (kept across closes and reloads) ---
-const AI_RECENT_KEY = 'trippo_ai_recent_prompts';
-const AI_LAST_PLAN_KEY = 'trippo_ai_last_plan';
+// Saved plans, recent prompts and comparison live in js/ai-plans.js
+export function setCurrentAIItinerary(itinerary) {
+    currentAIGeneratedItinerary = itinerary || null;
+}
+
+// --- COPILOT CHAT HISTORY: kept per trip on this device (last 40 messages, 10 most recent trips) ---
+const AI_CHATS_KEY = 'trippo_ai_chats_v1';
+let copilotHistoryTripId = null;
 
 function readJSON(key, fallback) {
     try { const v = JSON.parse(safeGetStorage(key) || 'null'); return v ?? fallback; } catch (e) { return fallback; }
 }
 
-function rememberAIPlan(query, itinerary) {
-    const recent = readJSON(AI_RECENT_KEY, []).filter(q => typeof q === 'string' && q.toLowerCase() !== query.toLowerCase());
-    recent.unshift(query);
-    safeSetStorage(AI_RECENT_KEY, JSON.stringify(recent.slice(0, 6)));
-    safeSetStorage(AI_LAST_PLAN_KEY, JSON.stringify({ query, itinerary }));
-    renderAIPlannerHistory();
+function loadCopilotChat(tripId) {
+    const all = readJSON(AI_CHATS_KEY, {});
+    const saved = all && all[tripId];
+    return saved && Array.isArray(saved.messages) ? saved.messages.filter(m => m && typeof m.content === 'string') : null;
 }
 
-export function reopenLastAIPlan() {
-    const last = readJSON(AI_LAST_PLAN_KEY, null);
-    if (!last || !last.itinerary) return;
-    currentAIGeneratedItinerary = last.itinerary;
-    openAITripModal(last.itinerary);
-}
-
-export function useRecentAIPrompt(index) {
-    const q = readJSON(AI_RECENT_KEY, [])[Number(index)];
-    const input = document.getElementById('ai-trip-input');
-    if (!q || !input) return;
-    input.value = q;
-    input.focus();
-    triggerHaptic('light');
-}
-
-export function renderAIPlannerHistory() {
-    const box = document.getElementById('ai-planner-history');
-    if (!box) return;
-    const recent = readJSON(AI_RECENT_KEY, []).filter(q => typeof q === 'string');
-    const last = readJSON(AI_LAST_PLAN_KEY, null);
-    const plan = last && last.itinerary;
-    box.innerHTML = (plan ? `
-        <button type="button" class="ai-last-plan" onclick="reopenLastAIPlan()">
-            <span class="ai-last-plan-label">Your last plan</span>
-            <strong>${escapeHTML(plan.title || plan.destination || last.query)}</strong>
-            <span class="ai-last-plan-sub">${escapeHTML(last.query)}${Array.isArray(plan.days) ? ` · ${plan.days.length} days` : ''}</span>
-        </button>` : '') +
-        (recent.length ? `<div class="ai-recent-title">Recent ideas</div>` + recent.map((q, i) =>
-            `<button type="button" class="ai-recent-item" onclick="useRecentAIPrompt(${i})">${escapeHTML(q)}</button>`).join('') : '');
+function saveCopilotChat() {
+    if (!copilotHistoryTripId) return;
+    const all = readJSON(AI_CHATS_KEY, {}) || {};
+    const msgs = copilotChatHistory.slice(-40);
+    if (!msgs.some(m => m.role === 'user')) delete all[copilotHistoryTripId];
+    else all[copilotHistoryTripId] = { messages: msgs, updatedAt: Date.now() };
+    Object.keys(all).sort((x, y) => (all[y].updatedAt || 0) - (all[x].updatedAt || 0)).slice(10).forEach(k => delete all[k]);
+    safeSetStorage(AI_CHATS_KEY, JSON.stringify(all));
 }
 
 export function openAITripSearchModal() {
     toggleSidebar(false);
-    renderAIPlannerHistory();
+    if (window.renderAIPlanLibrary) window.renderAIPlanLibrary();
     const modal = document.getElementById('ai-trip-search-modal');
     if (modal) {
         modal.style.display = 'flex';
@@ -1225,10 +1206,13 @@ export function openAICopilot(stopIndex = null, dayIndex = null) {
     renderAICopilotDayChips();
 
     // Check if initial greeting needs to be rendered
-    const messagesContainer = document.getElementById('ai-copilot-messages');
-    if (messagesContainer && copilotChatHistory.length === 0) {
-        renderAICopilotGreeting(stop.name, activeCopilotDayIndex + 1);
+    if (copilotHistoryTripId !== trip.id) {
+        copilotHistoryTripId = trip.id;
+        copilotSuggestionsRegistry.clear();
+        copilotChatHistory = loadCopilotChat(trip.id) || [];
     }
+    if (copilotChatHistory.length === 0) renderAICopilotGreeting(stop.name, activeCopilotDayIndex + 1);
+    else renderAICopilotMessages();
 
     // Open modal
     const modal = document.getElementById('ai-copilot-modal');
@@ -1398,12 +1382,17 @@ export async function submitAICopilotInput() {
     // Show typing indicator
     setCopilotTyping(true);
 
+    // Pin the answer to the day it was asked about, even if the user switches days while waiting
+    const askedStop = activeCopilotStopIndex;
+    const askedDay = activeCopilotDayIndex;
+
     try {
         const responseData = await fetchChatFromWorker(query, {
             city: stop.name,
             day: activeCopilotDayIndex + 1,
             tripName: trip.name,
-            existingPlaces: existingPlaces
+            existingPlaces: existingPlaces,
+            ...buildCopilotTripContext(trip, askedStop, askedDay)
         });
 
         setCopilotTyping(false);
@@ -1414,7 +1403,9 @@ export async function submitAICopilotInput() {
         copilotChatHistory.push({
             role: 'bot',
             content: replyText,
-            suggestions: suggestions
+            suggestions: suggestions,
+            stopIndex: askedStop,
+            dayIndex: askedDay
         });
 
         renderAICopilotMessages();
@@ -1429,6 +1420,8 @@ export async function submitAICopilotInput() {
             role: 'bot',
             content: fallback.reply,
             suggestions: fallback.suggestions,
+            stopIndex: askedStop,
+            dayIndex: askedDay,
             isTemplate: true,
             needsKey: err instanceof NoAIKeyError
         });
@@ -1436,6 +1429,29 @@ export async function submitAICopilotInput() {
         renderAICopilotMessages();
         triggerHaptic('light');
     }
+}
+
+// Trip facts the copilot uses to give answers that fit this trip, day and group
+function buildCopilotTripContext(trip, stopIdx, dayIdx) {
+    const stops = Array.isArray(trip.stops) ? trip.stops : [];
+    const stop = stops[stopIdx] || {};
+    const ctx = {};
+    if (stops.length > 1) ctx.route = stops.map(s => `${s.name} (${Number(s.nights) || 0} nights)`).join(' → ');
+    if (trip.startDate) {
+        const d = new Date(`${trip.startDate}T12:00:00`);
+        if (!isNaN(d)) {
+            const offset = stops.slice(0, stopIdx).reduce((n, s) => n + (Number(s.nights) || 0), 0) + dayIdx;
+            d.setDate(d.getDate() + offset);
+            ctx.date = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        }
+    }
+    if (stop.lodging && stop.lodging.name) ctx.hotel = [stop.lodging.name, stop.lodging.address].filter(Boolean).join(', ');
+    const others = (trip.places || []).filter(p => p.cityIndex === stopIdx && p.dayIndex !== dayIdx).map(p => p.name).filter(Boolean);
+    if (others.length) ctx.otherDays = others.slice(0, 25).join(', ');
+    const travelers = Number(trip.budgetTravelers) || 0;
+    const style = trip.budgetPlan && trip.budgetPlan.style;
+    if (travelers || style) ctx.group = [travelers ? `${travelers} traveler${travelers === 1 ? '' : 's'}` : '', style ? `${style === 'mid' ? 'mid-range' : style} budget` : ''].filter(Boolean).join(', ');
+    return ctx;
 }
 
 /**
@@ -1463,6 +1479,8 @@ export function renderAICopilotMessages() {
                 .replace(/\n/g, '<br>');
 
             let suggestionsHtml = '';
+            const sIdx = Number.isInteger(msg.stopIndex) ? msg.stopIndex : activeCopilotStopIndex;
+            const dIdx = Number.isInteger(msg.dayIndex) ? msg.dayIndex : activeCopilotDayIndex;
             if (Array.isArray(msg.suggestions) && msg.suggestions.length > 0) {
                 const batchKey = `batch_${msgIndex}`;
                 copilotSuggestionsRegistry.set(batchKey, msg.suggestions);
@@ -1481,8 +1499,8 @@ export function renderAICopilotMessages() {
                                     <div class="ai-chat-card-title">${catBadge}${escapeHTML(sug.name)}${timeBadge}</div>
                                     ${sug.address ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(sug.address)}</div>` : ''}
                                 </div>
-                                <button type="button" id="btn_${sugId}" class="ai-card-add-btn" onclick="addPlaceFromAISuggestion('${sugId}', ${activeCopilotStopIndex}, ${activeCopilotDayIndex})">
-                                    <span>+ Add to Day ${activeCopilotDayIndex + 1}</span>
+                                <button type="button" id="btn_${sugId}" class="ai-card-add-btn" onclick="addPlaceFromAISuggestion('${sugId}', ${sIdx}, ${dIdx})"${sug.added ? ' disabled' : ''}>
+                                    <span>${sug.added ? `✓ Added to Day ${dIdx + 1}` : `+ Add to Day ${dIdx + 1}`}</span>
                                 </button>
                             </div>
                             <div class="ai-chat-card-desc">${escapeHTML(sug.description || '')}</div>
@@ -1491,8 +1509,8 @@ export function renderAICopilotMessages() {
                 }).join('');
 
                 const addAllBtn = msg.suggestions.length > 1 ? `
-                    <button type="button" id="btn_${batchKey}" class="ai-add-all-btn" onclick="addAllPlacesFromAISuggestions('${batchKey}', ${activeCopilotStopIndex}, ${activeCopilotDayIndex})">
-                        <span><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg>Add All (${msg.suggestions.length}) to Day ${activeCopilotDayIndex + 1}</span>
+                    <button type="button" id="btn_${batchKey}" class="ai-add-all-btn" onclick="addAllPlacesFromAISuggestions('${batchKey}', ${sIdx}, ${dIdx})"${msg.suggestions.every(s => s.added) ? ' disabled' : ''}>
+                        <span><svg class="ico" aria-hidden="true"><use href="#i-plus"></use></svg>Add All (${msg.suggestions.length}) to Day ${dIdx + 1}</span>
                     </button>
                 ` : '';
 
@@ -1520,6 +1538,7 @@ export function renderAICopilotMessages() {
 
     container.innerHTML = html;
     container.scrollTop = container.scrollHeight;
+    saveCopilotChat();
 }
 
 /**
@@ -1570,6 +1589,8 @@ export function addPlaceFromAISuggestion(sugId, stopIdx, dayIdx) {
     }
 
     saveTrips();
+    sug.added = true;
+    saveCopilotChat();
 
     // Re-render daily planner if active
     if (typeof window.renderCityPlaces === 'function') window.renderCityPlaces();
@@ -1606,6 +1627,8 @@ export function addAllPlacesFromAISuggestions(batchKey, stopIdx, dayIdx) {
 
     let count = 0;
     suggestions.forEach((sug, i) => {
+        if (sug.added) return; // already added one by one
+        sug.added = true;
         const latOffset = (Math.random() - 0.5) * 0.015;
         const lonOffset = (Math.random() - 0.5) * 0.015;
 
@@ -1641,6 +1664,7 @@ export function addAllPlacesFromAISuggestions(batchKey, stopIdx, dayIdx) {
     }
 
     saveTrips();
+    saveCopilotChat();
     if (typeof window.renderCityPlaces === 'function') window.renderCityPlaces();
 
     const batchBtn = document.getElementById(`btn_${batchKey}`);
@@ -1704,7 +1728,7 @@ Current Context:
 - Active Day: Day ${day}
 - Trip: ${tripName}
 - Already Scheduled Places for Day ${day}: ${existingPlaces}
-
+${context.date ? `- Date: ${context.date} (think about season, weather, opening days and holidays)\n` : ''}${context.route ? `- Whole trip route: ${context.route}\n` : ''}${context.hotel ? `- Staying at: ${context.hotel} (prefer places that are easy to reach from here; mention rough travel time)\n` : ''}${context.otherDays ? `- Already planned on other days in ${city} (don't repeat these): ${context.otherDays}\n` : ''}${context.group ? `- Group: ${context.group}\n` : ''}
 CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
 1. STRICT IMMUTABILITY & NO-DELETION RESTRICTION: You are strictly an ADDITIVE recommendation assistant. You do NOT have any authority, ability, or permission to delete, modify, clear, remove, or overwrite existing trips, itineraries, stops, or places.
 2. If the user asks you to delete, cancel, wipe, clear, remove, or replace any trips, cities, days, stops, or places, you MUST decline politely and explain:
@@ -1726,9 +1750,12 @@ CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
     }
   ]
 }`;
-            const conversationMessages = copilotChatHistory.slice(-8).map(m => ({
+            // Remember what was already suggested so follow-ups ("something cheaper", "closer to that") make sense
+            const conversationMessages = copilotChatHistory.slice(-10).map(m => ({
                 role: m.role === 'bot' ? 'assistant' : 'user',
-                content: m.content
+                content: m.role === 'bot' && Array.isArray(m.suggestions) && m.suggestions.length
+                    ? `${m.content}\n(Suggested: ${m.suggestions.map(s => s.name).filter(Boolean).join(', ')})`
+                    : m.content
             }));
             if (conversationMessages.length === 0 || conversationMessages[conversationMessages.length - 1].content !== promptText) {
                 conversationMessages.push({ role: "user", content: promptText });

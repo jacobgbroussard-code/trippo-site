@@ -18,11 +18,12 @@ import * as weather from './weather.js';
 import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
+import * as aiPlans from './ai-plans.js';
 import * as budgetEstimator from './budget-estimator.js';
 import * as budgetTracker from './budget-tracker.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.36';
+const CURRENT_VERSION = '2.4.37';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -70,6 +71,7 @@ Object.assign(window, {
     ...settings,
     ...collab,
     ...ai,
+    ...aiPlans,
     ...budgetEstimator,
     ...budgetTracker
 });

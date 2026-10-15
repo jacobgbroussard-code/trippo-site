@@ -12,7 +12,8 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   `planner.js`, `places.js`, `places-autocomplete.js`, `maps.js` (Leaflet + tile providers),
   `wishlist.js`, `bookings.js` (Trip.com / Booking / Google Flights deep links),
   `travel-payouts.js`, `tools.js`, `weather.js`, `settings.js`, `collab.js` ("Plan with Friends"),
-  `db.js` (Supabase auth), `sync.js` (offline-first cloud sync), `ai.js` (AI assistant/copilot),
+  `db.js` (Supabase auth), `sync.js` (offline-first cloud sync), `ai.js` (AI assistant/copilot;
+  copilot chats saved per trip on-device), `ai-plans.js` (saved AI plans, max 24, + compare),
   `budget-estimator.js` (per-stop cost estimates in the Trip Budget modal), `budget-tracker.js`
   (expenses tagged by stop/category, who paid, settle up, booking prices → `bk_*` expenses)
 - `styles/main.css`, `styles/components.css`
