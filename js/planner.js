@@ -19,7 +19,7 @@ import {
     formatTempF, isReducedMotion, icon,
 } from './state.js';
 
-import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords } from './maps.js';
+import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords, highlightPlannerLeg } from './maps.js';
 import { getDestinationWeather } from './weather.js';
 import { getDistanceUnit, getShowDistances } from './settings.js';
 
@@ -95,7 +95,7 @@ export function getDistanceBetweenStops(stop1, stop2, unit = 'km') {
     return Math.round(R * c);
 }
 
-export function renderPlanner() {
+export function renderPlanner(opts = {}) {
     const trip = getActiveTrip();
     if (!trip) return;
     const tripSelect = document.getElementById('planner-trip-select');
@@ -319,7 +319,7 @@ export function renderPlanner() {
                 }
 
                 saveTrips();
-                renderPlanner();
+                renderPlanner({ keepMapView: true });
             }
         });
 
@@ -354,7 +354,7 @@ export function renderPlanner() {
         }
     }
 
-    drawPlannerMapRoute();
+    drawPlannerMapRoute(opts);
 }
 
 export function toggleStopLock(event, index) {
@@ -438,6 +438,7 @@ export function focusSegmentOnMap(event, idx1, idx2) {
         ]);
         plannerMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 10 });
     }
+    highlightPlannerLeg(idx1);
     const unit = getDistanceUnit();
     const dist = getDistanceBetweenStops(s1, s2, unit);
     const distStr = dist !== null ? `${dist.toLocaleString()} ${unit}` : '';
@@ -559,7 +560,7 @@ export function optimizeTripRoute() {
     }
 
     saveTrips();
-    renderPlanner();
+    renderPlanner({ keepMapView: true });
     showNotification(lockedCount > 0 ? "✨ Unlocked stops optimized around locked stops!" : "✨ Trip route optimized!");
 }
 

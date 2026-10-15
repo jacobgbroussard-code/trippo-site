@@ -725,7 +725,7 @@ export function saveTransitBooking() {
     closeModal('transit-booking-modal');
     const plannerView = document.getElementById('planner-view');
     const transitView = document.getElementById('transit-view');
-    if (plannerView && plannerView.classList.contains('active')) drawPlannerMapRoute();
+    if (plannerView && plannerView.classList.contains('active')) drawPlannerMapRoute({ keepMapView: true });
     if (transitView && transitView.classList.contains('active')) renderTransitList();
     showNotification("Transit booking saved!");
 }
@@ -741,7 +741,7 @@ export function deleteTransitBooking() {
     closeModal('transit-booking-modal');
     const plannerView = document.getElementById('planner-view');
     const transitView = document.getElementById('transit-view');
-    if (plannerView && plannerView.classList.contains('active')) drawPlannerMapRoute();
+    if (plannerView && plannerView.classList.contains('active')) drawPlannerMapRoute({ keepMapView: true });
     if (transitView && transitView.classList.contains('active')) renderTransitList();
     showNotification("Transit booking cleared.");
 }

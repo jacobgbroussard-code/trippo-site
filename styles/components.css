@@ -2295,6 +2295,23 @@ body.dark-mode .close-modal:hover {
     transition: transform 0.15s ease;
 }
 
+/* Route map travel badges: vehicle in a disc, pointer on the rim showing the direction of travel */
+.route-leg-icon { background: none; border: 0; }
+.route-leg-badge { --leg: var(--leg-base); position: relative; width: 40px; height: 40px; cursor: pointer; transition: transform 0.15s ease, opacity 0.15s ease; }
+.route-leg-disc { position: absolute; inset: 7px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #fff; border: 2px solid var(--leg); color: var(--leg); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28); transition: box-shadow 0.15s ease; }
+.route-leg-disc .ico { width: 15px; height: 15px; margin: 0; stroke-width: 2.2; transition: none; }
+.route-leg-plane .route-leg-disc .ico { fill: currentColor; stroke-width: 1.4; }
+.route-leg-heading { position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 1px 1.5px rgba(15, 23, 42, 0.35)); }
+.route-leg-heading::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--leg); }
+.route-leg-dot .route-leg-disc { inset: 11px; border-width: 1.5px; }
+.route-leg-dot .route-leg-disc .ico { width: 12px; height: 12px; fill: currentColor; stroke-width: 1.5; }
+.route-leg-icon.is-selected .route-leg-heading::before { top: -6px; border-left-width: 6px; border-right-width: 6px; border-bottom-width: 8px; }
+.route-leg-icon.is-tiny:not(.is-selected) { visibility: hidden; pointer-events: none; }
+.route-leg-icon.is-selected .route-leg-badge { --leg: var(--leg-hi); transform: scale(1.15); }
+.route-leg-icon.is-selected .route-leg-disc { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 3px 12px rgba(15, 23, 42, 0.35); }
+.route-leg-icon.is-dim .route-leg-badge { opacity: 0.55; }
+@media (hover: hover) { .route-leg-badge:hover { transform: scale(1.1); } }
+
 .wishlist-bubble-card {
     min-width: 220px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

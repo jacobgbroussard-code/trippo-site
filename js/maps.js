@@ -19,6 +19,8 @@ export let cLines = [];
 export let wMarkers = [];
 
 let activeRouteToken = null;
+let routeTokenSeq = 0;
+const osrmRouteCache = new Map(); // "profile|coords" -> GeoJSON geometry, newest last
 
 const BASE_MAP_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 const BASE_MAP_OPTS = {
@@ -572,17 +574,198 @@ export function getShortestRoutePath(lat1, lon1, lat2, lon2) {
 // Stops from older or partial data can lack coordinates; Leaflet throws on those.
 export const hasCoords = s => !!s && Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lon)) && s.lat !== null && s.lon !== null && !(s.lat === 0 && s.lon === 0);
 
-export function drawPlannerMapRoute() {
+// --- Route map legs: there-and-back colors, heading badges, selected leg ---
+const LEG_COLORS = {
+    out: { base: '#124b43', hi: '#10b981' },
+    back: { base: '#c2410c', hi: '#f97316' }
+};
+const LEG_GLYPHS = { plane: 'plane', train: 'train', bus: 'bus', car: 'car' };
+let plannerLegs = [];
+let plannerStopDots = [];
+let plannerLegsTripId = null;
+let selectedPlannerLeg = null; // { tripId, key }, survives redraws
+
+const mercY = lat => Math.log(Math.tan(Math.PI / 4 + Math.max(-85, Math.min(85, lat)) * Math.PI / 360)) * 180 / Math.PI;
+const unMercY = y => (2 * Math.atan(Math.exp(y * Math.PI / 180)) - Math.PI / 2) * 180 / Math.PI;
+const wrapLon = lon => ((lon + 180) % 360 + 360) % 360 - 180;
+
+// One leg the short way round, worked out in map (Mercator) space so the heading matches the screen
+// (0 = up/north, 90 = right/east). bow > 0 bends it to the right of travel, so a way back on the same
+// route bends the other way and the two show as separate arcs. Past the date line it also returns a
+// copy one world over, like getShortestRoutePath's mirrored segments.
+export function plannerLegPath(a, b, bow = 0) {
+    const x1 = wrapLon(Number(a.lon));
+    let x2 = Number(b.lon);
+    while (x2 - x1 > 180) x2 -= 360;
+    while (x2 - x1 < -180) x2 += 360;
+    const y1 = mercY(Number(a.lat)), y2 = mercY(Number(b.lat));
+    const dx = x2 - x1, dy = y2 - y1;
+    const heading = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+    const cx = (x1 + x2) / 2 + dy * bow, cy = (y1 + y2) / 2 - dx * bow;
+    const steps = bow ? 32 : 1;
+    const pts = [];
+    for (let s = 0; s <= steps; s++) {
+        const t = s / steps, u = 1 - t;
+        pts.push([unMercY(u * u * y1 + 2 * u * t * cy + t * t * y2), u * u * x1 + 2 * u * t * cx + t * t * x2]);
+    }
+    const mid = [unMercY(0.25 * y1 + 0.5 * cy + 0.25 * y2), 0.25 * x1 + 0.5 * cx + 0.25 * x2];
+    const shift = pts.some(p => p[1] > 180) ? -360 : pts.some(p => p[1] < -180) ? 360 : 0;
+    return {
+        latlngs: shift ? [pts, pts.map(p => [p[0], p[1] + shift])] : pts,
+        mids: shift ? [mid, [mid[0], mid[1] + shift]] : [mid],
+        heading
+    };
+}
+
+function legLineStyle(leg, state) {
+    const c = LEG_COLORS[leg.back ? 'back' : 'out'];
+    if (state === 'selected') return { color: c.hi, weight: 6, opacity: 1, dashArray: null };
+    return { color: c.base, weight: state === 'hover' ? 6 : 5, opacity: state === 'dim' ? 0.35 : state === 'hover' ? 1 : 0.85, dashArray: '8, 8' };
+}
+
+function legBadgeHTML(leg, heading) {
+    const c = LEG_COLORS[leg.back ? 'back' : 'out'];
+    const vars = `--leg-base:${c.base};--leg-hi:${c.hi}`;
+    const h = Math.round(heading);
+    if (!leg.method) {
+        // no travel booked yet: a small arrow showing which way the leg goes
+        return `<div class="route-leg-badge route-leg-dot" style="${vars}"><span class="route-leg-disc" style="transform:rotate(${h}deg)"><svg class="ico ico-only" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l6.5 13l-6.5 -3.5l-6.5 3.5z"/></svg></span></div>`;
+    }
+    const glyph = LEG_GLYPHS[leg.method] || 'navigation';
+    // The plane and arrow turn to the heading; side-view vehicles face right, so they flip when heading west
+    const turn = glyph === 'plane' ? `rotate(${h - 90}deg)` : glyph === 'navigation' ? `rotate(${h}deg)` : (h > 180 ? 'scaleX(-1)' : 'none');
+    return `<div class="route-leg-badge route-leg-${glyph}" style="${vars}"><span class="route-leg-disc"><svg class="ico ico-only" style="transform:${turn}" aria-hidden="true"><use href="#i-${glyph}"></use></svg></span><span class="route-leg-heading" style="transform:rotate(${h}deg)"></span></div>`;
+}
+
+function paintPlannerLegs(hoverKey = null) {
+    const sel = selectedPlannerLeg && selectedPlannerLeg.tripId === plannerLegsTripId ? selectedPlannerLeg.key : null;
+    let selectedLeg = null;
+    plannerLegs.forEach(leg => {
+        const state = leg.key === sel ? 'selected' : leg.key === hoverKey ? 'hover' : sel ? 'dim' : 'normal';
+        if (state === 'selected') selectedLeg = leg;
+        leg.lines.forEach(l => l.setStyle(legLineStyle(leg, state)));
+        leg.glows.forEach(g => g.setStyle(state === 'selected' ? { opacity: 0.9, weight: 13 } : { opacity: 0, weight: 18 }));
+        leg.badges.forEach(m => {
+            const el = m.getElement && m.getElement();
+            if (el) {
+                el.classList.toggle('is-selected', state === 'selected');
+                el.classList.toggle('is-dim', state === 'dim');
+            }
+            m.setZIndexOffset(state === 'selected' ? 2000 : 1000);
+        });
+    });
+    sizePlannerLegBadges();
+    if (selectedLeg) {
+        selectedLeg.glows.forEach(g => g.bringToFront());
+        selectedLeg.lines.forEach(l => l.bringToFront());
+        plannerStopDots.forEach(d => d.bringToFront());
+    }
+}
+
+// Badges on legs that are only a few pixels long at this zoom would pile up on the stop dots: hide them
+function sizePlannerLegBadges() {
+    if (!plannerMap || !plannerMap._loaded) return;
+    plannerLegs.forEach(leg => {
+        const p1 = plannerMap.latLngToLayerPoint(leg.ends[0]), p2 = plannerMap.latLngToLayerPoint(leg.ends[1]);
+        const tiny = p1.distanceTo(p2) < 72;
+        leg.badges.forEach(m => { const el = m.getElement && m.getElement(); if (el) el.classList.toggle('is-tiny', tiny); });
+    });
+}
+
+// Highlight the leg leaving stop `index` (the list's distance badges call this too)
+export function highlightPlannerLeg(index) {
+    const leg = plannerLegs.find(l => l.i === index && !l.virtual);
+    if (!leg) return;
+    selectedPlannerLeg = { tripId: plannerLegsTripId, key: leg.key };
+    paintPlannerLegs();
+}
+
+export function clearPlannerLegHighlight() {
+    if (!selectedPlannerLeg) return;
+    selectedPlannerLeg = null;
+    paintPlannerLegs();
+}
+
+// keepMapView: redraw without re-fitting the map (reordering keeps the same stops, so the view stays put)
+export function drawPlannerMapRoute(opts = {}) {
     if (!plannerMap) return;
+    const keepView = !!(opts && opts.keepMapView === true && plannerMap._loaded);
     pMarkers.forEach(m => plannerMap.removeLayer(m));
     pLines.forEach(p => plannerMap.removeLayer(p));
     pMarkers = [];
     pLines = [];
+    plannerLegs = [];
+    plannerStopDots = [];
 
     const trip = getActiveTrip();
     if (!trip || !trip.stops || trip.stops.length === 0) return;
     const stops = trip.stops;
+    plannerLegsTripId = trip.id;
 
+    if (!plannerMap._trippoLegClickHooked) {
+        plannerMap._trippoLegClickHooked = true;
+        plannerMap.on('click', clearPlannerLegHighlight);
+        plannerMap.on('zoomend', sizePlannerLegBadges);
+    }
+
+    const legs = [];
+    for (let i = 0; i < stops.length - 1; i++) {
+        const a = stops[i], b = stops[i + 1];
+        if (!hasCoords(a) || !hasCoords(b)) continue;
+        legs.push({ i, a, b, key: `${a.id || i}>${b.id || i + 1}`, method: (a.transit && a.transit.method) || '', back: false, paired: false });
+    }
+    // A leg that retraces an earlier one in reverse is the way back: its own color, and both bow apart
+    const len = l => getDistance(l.a.lat, l.a.lon, l.b.lat, l.b.lon);
+    const sameSpot = (p, q, d) => getDistance(p.lat, p.lon, q.lat, q.lon) <= Math.max(40, d * 0.12);
+    legs.forEach((leg, n) => {
+        const d = len(leg);
+        const earlier = legs.slice(0, n).find(o => sameSpot(o.a, leg.b, d) && sameSpot(o.b, leg.a, d));
+        if (earlier) { leg.back = !earlier.back; leg.paired = earlier.paired = true; }
+    });
+    // A round-trip flight booked on one leg also draws its way back, unless the trip already has that leg
+    legs.slice().forEach((leg, n) => {
+        const t = leg.a.transit;
+        if (leg.method !== 'plane' || !t || t.flightType !== 'rt') return;
+        const d = len(leg);
+        if (legs.slice(n + 1).some(o => sameSpot(o.a, leg.b, d) && sameSpot(o.b, leg.a, d))) return;
+        leg.paired = true;
+        legs.push({ i: leg.i, a: leg.b, b: leg.a, key: `${leg.key}:rt`, method: 'plane', back: true, paired: true, virtual: true });
+    });
+
+    legs.forEach(leg => {
+        const path = plannerLegPath(leg.a, leg.b, leg.paired ? 0.16 : 0);
+        const open = () => {
+            selectedPlannerLeg = { tripId: trip.id, key: leg.key };
+            paintPlannerLegs();
+            if (window.openTransitBookingModal) window.openTransitBookingModal(leg.i);
+        };
+        const hover = () => paintPlannerLegs(leg.key);
+        const unhover = () => paintPlannerLegs();
+        // wide see-through line under the dashes: easier to tap, and the glow when selected
+        const glow = L.polyline(path.latlngs, { color: '#ffffff', weight: 18, opacity: 0, bubblingMouseEvents: false }).addTo(plannerMap);
+        const line = L.polyline(path.latlngs, { ...legLineStyle(leg, 'normal'), bubblingMouseEvents: false }).addTo(plannerMap);
+        [glow, line].forEach(l => { l.on('click', open); l.on('mouseover', hover); l.on('mouseout', unhover); });
+        pLines.push(glow, line);
+        leg.glows = [glow];
+        leg.lines = [line];
+        const pts = path.latlngs[0] && Array.isArray(path.latlngs[0][0]) ? path.latlngs[0] : path.latlngs;
+        leg.ends = [pts[0], pts[pts.length - 1]];
+        leg.badges = path.mids.map(([lat, lon]) => {
+            const marker = L.marker([lat, lon], {
+                icon: L.divIcon({ className: 'transit-div-icon route-leg-icon', html: legBadgeHTML(leg, path.heading), iconSize: [40, 40], iconAnchor: [20, 20] }),
+                zIndexOffset: 1000,
+                keyboard: false
+            }).addTo(plannerMap);
+            marker.on('click', open);
+            marker.on('mouseover', hover);
+            marker.on('mouseout', unhover);
+            pMarkers.push(marker);
+            return marker;
+        });
+        plannerLegs.push(leg);
+    });
+
+    // Stop dots go on top of the lines
     const bounds = L.latLngBounds();
     stops.forEach((stop, stopIndex) => {
         if (!hasCoords(stop)) return;
@@ -596,56 +779,20 @@ export function drawPlannerMapRoute() {
         marker.bindPopup(`<div style="font-weight:700; font-size:14px; color:#124b43; padding:2px 0;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(stop.name)}</div><div style="font-size:12px; color:#555;">${stop.nights} Night${stop.nights !== 1 ? 's' : ''}</div>`);
         marker.stopIndex = stopIndex; // pMarkers also holds transit icons and skips unmapped stops
         pMarkers.push(marker);
+        plannerStopDots.push(marker);
         bounds.extend([stop.lat, stop.lon]);
     });
 
-    for (let i = 0; i < stops.length - 1; i++) {
-        if (!hasCoords(stops[i]) || !hasCoords(stops[i + 1])) continue;
-
-        const routeInfo = getShortestRoutePath(stops[i].lat, stops[i].lon, stops[i + 1].lat, stops[i + 1].lon);
-
-        const pLine = L.polyline(routeInfo.latlngs, {
-            color: '#124b43',
-            weight: 5,
-            dashArray: '8, 8',
-            opacity: 0.85
-        }).addTo(plannerMap);
-
-        pLine.on('click', function () {
-            if (window.openTransitBookingModal) window.openTransitBookingModal(i);
-        });
-        pLines.push(pLine);
-
-        if (stops[i].transit && stops[i].transit.method) {
-            const emojis = { plane: '✈️', train: '🚆', bus: '🚌', car: '🚗' };
-            const emoji = emojis[stops[i].transit.method] || '🎟';
-
-            const addTransitMarker = (lat, lon) => {
-                const icon = L.divIcon({
-                    className: 'transit-div-icon',
-                    html: `<div style="background:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:16px; border:2px solid var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.3); cursor:pointer;">${emoji}</div>`,
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16]
-                });
-
-                const marker = L.marker([lat, lon], { icon: icon, zIndexOffset: 1000 }).addTo(plannerMap);
-                marker.on('click', function () {
-                    if (window.openTransitBookingModal) window.openTransitBookingModal(i);
-                });
-                pMarkers.push(marker);
-            };
-
-            addTransitMarker(routeInfo.midLat, routeInfo.midLon);
-            if (routeInfo.crossesAntimeridian) {
-                const mirrorLon = routeInfo.midLon < 0 ? routeInfo.midLon + 360 : routeInfo.midLon - 360;
-                addTransitMarker(routeInfo.midLat, mirrorLon);
-            }
-        }
+    if (selectedPlannerLeg && selectedPlannerLeg.tripId === trip.id) {
+        if (plannerLegs.some(l => l.key === selectedPlannerLeg.key)) paintPlannerLegs();
+        else selectedPlannerLeg = null;
     }
+    sizePlannerLegBadges();
 
     requestAnimationFrame(() => {
         if (plannerMap) {
             plannerMap.invalidateSize();
+            if (keepView) return;
             const size = plannerMap.getSize ? plannerMap.getSize() : null;
             if (applyDefaultMapView(plannerMap, 'planner')) {
                 plannerMap._pendingBounds = null;
@@ -750,7 +897,7 @@ export async function drawPlacesMapRoute(dayPlaces) {
     cMarkers = [];
     cLines = [];
 
-    const currentToken = Date.now();
+    const currentToken = ++routeTokenSeq;
     activeRouteToken = currentToken;
 
     if (dayPlaces.length === 0) {
@@ -793,14 +940,14 @@ export async function drawPlacesMapRoute(dayPlaces) {
             const modeStyle = getPlaceModeStyle(currentMode);
             const popupHTML = getSegmentPopupHTML(fromPlace, toPlace, i, i + 1, currentMode);
 
-            // 1. Immediate straight polyline for instant responsiveness
+            // 1. The road route if it was fetched before, otherwise a straight line until it arrives
             const routeInfo = getShortestRoutePath(fromPlace.lat, fromPlace.lon, toPlace.lat, toPlace.lon);
-            let segmentLayer = L.polyline(routeInfo.latlngs, {
-                color: modeStyle.color,
-                weight: modeStyle.weight,
-                opacity: modeStyle.opacity,
-                dashArray: modeStyle.dashArray
-            }).addTo(placesMap);
+            const osrmProfile = currentMode === 'walking' ? 'walking' : 'driving';
+            const coords = `${Number(fromPlace.lon).toFixed(5)},${Number(fromPlace.lat).toFixed(5)};${Number(toPlace.lon).toFixed(5)},${Number(toPlace.lat).toFixed(5)}`;
+            const cacheKey = `${osrmProfile}|${coords}`;
+            const cachedRoute = (currentMode === 'walking' || currentMode === 'driving') ? osrmRouteCache.get(cacheKey) : null;
+            const lineStyle = { color: modeStyle.color, weight: modeStyle.weight, opacity: modeStyle.opacity, dashArray: modeStyle.dashArray };
+            let segmentLayer = (cachedRoute ? L.geoJSON(cachedRoute, { style: lineStyle }) : L.polyline(routeInfo.latlngs, lineStyle)).addTo(placesMap);
 
             segmentLayer.bindPopup(popupHTML);
             segmentLayer.on('popupopen', function (e) {
@@ -854,9 +1001,7 @@ export async function drawPlacesMapRoute(dayPlaces) {
             }
 
             // 3. Asynchronously fetch detailed road geometry for walking and driving
-            if (currentMode === 'walking' || currentMode === 'driving') {
-                const osrmProfile = currentMode === 'walking' ? 'walking' : 'driving';
-                const coords = `${fromPlace.lon.toFixed(5)},${fromPlace.lat.toFixed(5)};${toPlace.lon.toFixed(5)},${toPlace.lat.toFixed(5)}`;
+            if (!cachedRoute && (currentMode === 'walking' || currentMode === 'driving')) {
 
                 (async (capturedLayer, segToken, targetToPlace) => {
                     try {
@@ -867,6 +1012,10 @@ export async function drawPlacesMapRoute(dayPlaces) {
                         });
                         clearTimeout(timeoutId);
                         const data = await res.json();
+                        if (data.routes && data.routes[0] && data.routes[0].geometry) {
+                            osrmRouteCache.set(cacheKey, data.routes[0].geometry);
+                            if (osrmRouteCache.size > 300) osrmRouteCache.delete(osrmRouteCache.keys().next().value);
+                        }
                         if (activeRouteToken !== segToken) return;
 
                         if (data.routes && data.routes[0] && data.routes[0].geometry) {
