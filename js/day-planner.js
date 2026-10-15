@@ -54,7 +54,7 @@ const KINDS = [
     { kind: 'beach', re: /beach|\bbay\b|island|lagoon/i, min: 180 },
     { kind: 'food', re: /dumpling|restaurant|dinner|lunch|brunch|breakfast|\bfood\b|\beat\b|noodle|bbq|hot ?pot|street food|roast duck|sushi|ramen|bistro|tapas/i, min: 75, cat: '🍽 Food & Drink' },
     { kind: 'cafe', re: /caf[eé]|coffee|tea ?house|bakery|dessert|gelato/i, min: 45, cat: '☕ Cafe & Chill' },
-    { kind: 'nightlife', re: /\bbar\b|\bpub\b|\bclub\b|speakeasy|nightlife/i, min: 120, cat: '🍽 Food & Drink', time: 'evening' }
+    { kind: 'nightlife', re: /\bbars?\b|\bpubs?\b|\bclubs?\b|speakeasy|nightlife|izakaya/i, min: 120, cat: '🍽 Food & Drink', time: 'evening' }
 ];
 const FOOD_RE = KINDS.find(k => k.kind === 'food').re;
 
@@ -142,10 +142,11 @@ export function parsePlanList(text) {
 /* --- facts: Gemini when there's a key, otherwise typical times + map search --- */
 async function enrichWithAI(items, stop) {
     const system = `You are a travel logistics expert helping plan days in ${stop.name}. For each listed entry give realistic planning facts.
-Return ONLY JSON: {"places":[{"i":0,"name":"Official place name","lat":31.2397,"lon":121.4900,"minutes":120,"bestTime":"morning","closedDays":["Monday"],"isFood":false,"isMeal":false}]}
+Return ONLY JSON: {"places":[{"i":0,"name":"Official place name","lat":31.2397,"lon":121.4900,"minutes":120,"bestTime":"morning","opens":"09:00","closes":"17:00","closedDays":["Monday"],"isFood":false,"isMeal":false}]}
 - i: the entry's index from the list. name: the real place's usual English name.
 - minutes: how long visitors typically spend there, not counting travel. Full-day trips (e.g. a theme park or a trip out of town) are 360-540.
 - bestTime: "morning", "afternoon", "evening" or "any" (e.g. evening for night views, shows and night markets).
+- opens / closes: usual opening hours as 24h "HH:MM" (omit for places that are always open, like streets or crossings). Markets that close early should say so.
 - closedDays: regular weekly closing days only, as weekday names. isMeal: true when the entry is mainly a meal.
 - If an entry is an activity rather than a place, use the most likely spot for it in ${stop.name}.`;
     const user = `City: ${stop.name}${hasCoords(stop) ? ` (around ${stop.lat.toFixed(3)}, ${stop.lon.toFixed(3)})` : ''}\nEntries:\n` +
@@ -161,6 +162,12 @@ Return ONLY JSON: {"places":[{"i":0,"name":"Official place name","lat":31.2397,"
         const lat = Number(r.lat), lon = Number(r.lon);
         if (Number.isFinite(lat) && Number.isFinite(lon) && (!hasCoords(stop) || getDistance(lat, lon, stop.lat, stop.lon) < 150)) { it.lat = lat; it.lon = lon; }
         if (['morning', 'evening'].includes(r.bestTime)) it.bestTime = r.bestTime;
+        const opens = toMinutes(r.opens), closes = toMinutes(r.closes);
+        if (opens !== null && closes !== null && closes > opens) {
+            it.opens = opens; it.closes = closes;
+            if (closes <= 15 * 60) it.bestTime = 'morning';      // e.g. fish markets
+            else if (opens >= 16 * 60) it.bestTime = 'evening';  // e.g. night markets, bars
+        }
         if (Array.isArray(r.closedDays)) it.closedDays = r.closedDays.map(d => WEEKDAYS.indexOf(String(d).toLowerCase())).filter(d => d >= 0);
         if (r.isMeal === true) { it.kind = 'food'; it.category = '🍽 Food & Drink'; }
         if (typeof r.isFood === 'boolean') it.isFood = r.isFood || it.kind === 'food';
@@ -250,8 +257,11 @@ function orderDay(list, startPoint) {
     const rest = list.filter(i => i.minutes < FULL_DAY);
     const a = nearestChain([...fullDay, ...rest.filter(i => i.bestTime === 'morning')], startPoint);
     const b = nearestChain(rest.filter(i => i.bestTime !== 'morning' && i.bestTime !== 'evening'), a[a.length - 1] || startPoint);
-    const c = nearestChain(rest.filter(i => i.bestTime === 'evening'), b[b.length - 1] || a[a.length - 1] || startPoint);
-    return [...a, ...b, ...c];
+    const evening = rest.filter(i => i.bestTime === 'evening');
+    const late = i => ['nightlife', 'show'].includes(i.kind);
+    const c = nearestChain(evening.filter(i => !late(i)), b[b.length - 1] || a[a.length - 1] || startPoint);
+    const d = nearestChain(evening.filter(late), c[c.length - 1] || b[b.length - 1] || startPoint);
+    return [...a, ...b, ...c, ...d];
 }
 
 function buildTimeline(dayItems, pace, fixed, startPoint, dayStart) {
@@ -278,8 +288,9 @@ function buildTimeline(dayItems, pace, fixed, startPoint, dayStart) {
     const visit = (it, earliest = 0, extra = 0, note = '') => {
         const tr = travelBetween(at, it);
         const mins = it.minutes + extra;
-        const start = clearOfFixed(Math.max(t + tr.min, earliest), mins);
-        out.push({ type: 'visit', item: it, start, end: start + mins, travel: tr, note });
+        const start = clearOfFixed(Math.max(t + tr.min, earliest, Number.isFinite(it.opens) ? it.opens : 0), mins);
+        const closedBy = Number.isFinite(it.closes) && start + Math.min(mins, 60) > it.closes;
+        out.push({ type: 'visit', item: it, start, end: start + mins, travel: tr, note: closedBy ? `closes ${hhmm(it.closes)}` : note, late: closedBy });
         t = start + mins + pace.buffer;
         if (hasCoords(it)) at = it;
     };
@@ -294,6 +305,8 @@ function buildTimeline(dayItems, pace, fixed, startPoint, dayStart) {
         const tr = travelBetween(at, it);
         const arrive = t + tr.min;
         if (it.bestTime === 'evening') {
+            if (!lunchDone && t > 11 * 60 + 30 && t < 15 * 60 + 30) meal('Lunch', LUNCH_MIN, 11 * 60 + 45, lunchMeal);
+            lunchDone = true;
             // Shows and night views happen after dark, with dinner first
             if (!dinnerDone) { meal('Dinner', DINNER_MIN, 18 * 60, dinnerMeal); dinnerDone = true; }
             visit(it, ['show', 'nightlife'].includes(it.kind) ? 19 * 60 : 17 * 60 + 30);
@@ -312,7 +325,7 @@ function buildTimeline(dayItems, pace, fixed, startPoint, dayStart) {
         visit(it);
     });
     if (sights.length || meals.length) {
-        if (!lunchDone && (t > 11 * 60 + 30 || lunchMeal)) { meal('Lunch', LUNCH_MIN, 11 * 60 + 45, lunchMeal); lunchDone = true; }
+        if (!lunchDone && ((t > 11 * 60 + 30 && t < 15 * 60 + 30) || lunchMeal)) { meal('Lunch', LUNCH_MIN, 11 * 60 + 45, lunchMeal); lunchDone = true; }
         // A named dinner place always gets its evening slot; a generic dinner break only on days that run into the evening
         if (dinnerMeal && !out.some(e => e.item === dinnerMeal)) meal('Dinner', DINNER_MIN, 18 * 60, dinnerMeal);
         else if (!dinnerDone && t >= 16 * 60 + 30) meal('Dinner', DINNER_MIN, 18 * 60 + 30, null);
@@ -633,7 +646,7 @@ function renderDayPlan() {
             return `${travel}
                 <div class="dp-row"><span class="dp-time">${escapeHTML(formatTime(hhmm(e.start)))}</span>
                     <div class="dp-main">
-                        <strong>${escapeHTML(it.name)}${e.note ? ` <span class="dp-meta">· ${escapeHTML(e.note)}</span>` : ''}</strong>
+                        <strong>${escapeHTML(it.name)}${e.note ? ` <span class="dp-meta${e.late ? ' dp-warn' : ''}">· ${escapeHTML(e.note)}</span>` : ''}</strong>
                         <div class="dp-controls">
                             <select aria-label="Time at ${escapeHTML(it.name)}" onchange="setDayPlanDuration('${sid}', this.value)">${durOptions(it.minutes)}</select>
                             <select aria-label="Day for ${escapeHTML(it.name)}" onchange="setDayPlanPin('${sid}', this.value)">${dayOptions(it.pinDay)}</select>

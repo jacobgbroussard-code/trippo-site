@@ -242,6 +242,21 @@ export function renderPlanner() {
     const colTripInfo = document.getElementById('planner-collapsed-trip-info');
     if (colTripInfo) colTripInfo.innerText = `${trip.name} • ${totalNights} Nights`;
 
+    // Empty trip: say what to do next instead of showing a blank list
+    if (trip.stops.length === 0) {
+        list.innerHTML = `
+            <div class="route-empty">
+                <strong>Where are you headed?</strong>
+                <span>Add the cities you'll visit, in order. You can drag to reorder them any time.</span>
+                <button type="button" class="save-btn" onclick="openCitySearchModal()">+ Add your first stop</button>
+                <button type="button" class="budget-link-btn" onclick="planEmptyTripWithAI()">${icon('sparkles')}Or let AI plan it</button>
+            </div>`;
+    }
+    const toolsRow = document.getElementById('planner-tools-row');
+    if (toolsRow) toolsRow.style.display = trip.stops.length >= 2 ? 'flex' : 'none';
+    const addNextBtn = document.getElementById('planner-add-next-btn');
+    if (addNextBtn) addNextBtn.style.display = trip.stops.length >= 1 ? '' : 'none';
+
     const allLocked = trip.stops.length > 0 && trip.stops.every(s => s.locked);
     const lockAllBtn = document.getElementById('toggle-lock-all-btn');
     if (lockAllBtn) {
@@ -609,6 +624,14 @@ export function searchCity(query) {
             }
         }
     }, 300);
+}
+
+// From the empty-trip card: open the AI planner with the trip's name as a starting idea
+export function planEmptyTripWithAI() {
+    const trip = getActiveTrip();
+    if (window.openAITripSearchModal) window.openAITripSearchModal();
+    const input = document.getElementById('ai-trip-input');
+    if (input && !input.value.trim() && trip && trip.name) input.value = trip.name;
 }
 
 export function addCityStop(name, lat, lon) {

@@ -25,6 +25,8 @@ import {
     safeGetStorage,
     safeSetStorage,
     toggleSidebar,
+    getDistance,
+    parseLocalDate,
 } from './state.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
@@ -117,7 +119,7 @@ export function findDestinationCoords(text) {
     for (const [key, coords] of Object.entries(POPULAR_DESTINATION_COORDS)) {
         if (lower.includes(key)) return coords;
     }
-    return { lat: 48.8566, lon: 2.3522, name: text };
+    return { lat: 48.8566, lon: 2.3522, name: text, unknown: true }; // caller should look it up
 }
 
 /**
@@ -408,6 +410,227 @@ export function resolveTripDestinations(prompt, totalDays) {
 }
 
 // --- SAVE AI GENERATED TRIP TO TRIPPO ---
+// --- AI plan helpers (v2 plans have "stops" with coordinates; older/template plans only "days") ---
+const AI_CATEGORY = { 'see & do': '● See & Do', 'food & drink': '🍽 Food & Drink', shopping: '🛍 Shopping', cafe: '☕ Cafe & Chill', nature: '● See & Do' };
+const SLOT_TIMES = { morning: '09:00', breakfast: '08:00', 'late morning': '11:00', lunch: '12:30', afternoon: '14:00', 'late afternoon': '16:30', evening: '19:00', dinner: '19:00', night: '21:00' };
+
+function validCoord(lat, lon) {
+    const la = Number(lat), lo = Number(lon);
+    return Number.isFinite(la) && Number.isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180 && !(la === 0 && lo === 0);
+}
+
+function normalizeAITime(t) {
+    const str = String(t || '').trim();
+    const m = str.match(/^(\d{1,2}):(\d{2})\s*([ap])?\.?\s*m?\.?$/i);
+    if (m) {
+        let h = Number(m[1]) % 24;
+        if (m[3]) h = (h % 12) + (m[3].toLowerCase() === 'p' ? 12 : 0);
+        return `${String(h).padStart(2, '0')}:${m[2]}`;
+    }
+    return SLOT_TIMES[str.toLowerCase()] || '';
+}
+
+function mapAICategory(cat, name) {
+    const key = String(cat || '').replace(/^[^a-z]+/i, '').trim().toLowerCase();
+    if (AI_CATEGORY[key]) return AI_CATEGORY[key];
+    if (/eat|food|drink|dinner|lunch|restaurant/i.test(`${cat} ${name}`)) return '🍽 Food & Drink';
+    if (/cafe|café|coffee|tea|dessert/i.test(`${cat} ${name}`)) return '☕ Cafe & Chill';
+    if (/shop|market|mall/i.test(`${cat} ${name}`)) return '🛍 Shopping';
+    return '● See & Do';
+}
+
+// Clean up whatever came back so the preview, library, compare view and save all get the same shape
+export function normalizeAIItinerary(plan) {
+    if (!plan || typeof plan !== 'object') return plan;
+    if (!Array.isArray(plan.days)) plan.days = [];
+    plan.days.forEach((d, i) => {
+        if (!d || typeof d !== 'object') return;
+        if (!d.day) d.day = i + 1;
+        if (!Array.isArray(d.activities)) d.activities = [];
+        d.activities.forEach(act => {
+            if (!act || typeof act !== 'object') return;
+            const clock = normalizeAITime(act.time);
+            if (clock) { act.slot = act.time; act.time = clock; }
+        });
+        d.activities.sort((x, y) => String(x.time || '99').localeCompare(String(y.time || '99')));
+    });
+    if (Array.isArray(plan.stops)) plan.stops = plan.stops.filter(st => st && typeof st.name === 'string' && st.name.trim());
+    if (!plan.durationDays) plan.durationDays = plan.days.length;
+    return plan;
+}
+
+const isDayTripTheme = theme => /^\s*(day\s*-?\s*trip|excursion|side trip)\b/i.test(String(theme || ''));
+
+function finishAITripSave(newTrip, label) {
+    trips.unshift(newTrip);
+    saveTrips();
+    closeModal('ai-trip-modal');
+    closeModal('ai-trip-search-modal');
+    setActiveTripId(newTrip.id);
+    setActivePlacesTripId(newTrip.id);
+    setActivePlacesStopIndex(0);
+    setActivePlacesDayIndex(0);
+    if (window.renderHome) window.renderHome();
+    if (window.switchTab) window.switchTab('planner');
+    if (window.renderPlanner) window.renderPlanner();
+    showNotification(`✨ Added "${newTrip.name}" (${label}) to your planner!`);
+    triggerHaptic('success');
+    fixMissingAIStopCoords(newTrip.id);
+}
+
+// Stops whose city Gemini/registry couldn't place get looked up on the map after saving
+async function fixMissingAIStopCoords(tripId) {
+    const trip = trips.find(t => t.id === tripId);
+    if (!trip) return;
+    const missing = trip.stops.map((st, i) => ({ st, i })).filter(x => x.st.needsGeocode);
+    for (const { st, i } of missing) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(st.geocodeQuery || st.name)}`, { headers: { 'Accept-Language': 'en' } });
+            const hit = res.ok ? (await res.json())[0] : null;
+            if (hit) {
+                const lat = Number(hit.lat), lon = Number(hit.lon);
+                const oldLat = st.lat, oldLon = st.lon;
+                st.lat = lat; st.lon = lon;
+                // Places that were only guessed around the old point move with the stop
+                (trip.places || []).forEach(pl => {
+                    if (pl.cityIndex === i && pl.approxLocation) { pl.lat = lat + (pl.lat - oldLat); pl.lon = lon + (pl.lon - oldLon); }
+                });
+            }
+        } catch (e) { /* stays where it is; the user can fix it on the map */ }
+        delete st.needsGeocode;
+        delete st.geocodeQuery;
+        await new Promise(r => setTimeout(r, 1100));
+    }
+    if (missing.length) {
+        saveTrips();
+        if (window.renderPlanner) window.renderPlanner();
+    }
+}
+
+function saveStructuredAITrip(plan) {
+    const now = Date.now();
+    const days = Array.isArray(plan.days) ? plan.days : [];
+    const inStops = plan.stops.slice(0, 15);
+    const key = v => String(v || '').toLowerCase().split(',')[0].trim();
+
+    // Which stop each day belongs to (day trips stay on their base city)
+    let current = 0;
+    const dayStop = days.map(d => {
+        let i = inStops.findIndex(st => key(st.name) === key(d.stop));
+        if (i < 0 && d.theme && !d.dayTrip && !isDayTripTheme(d.theme)) i = inStops.findIndex(st => key(st.name) === key(String(d.theme).split(':')[0]));
+        if (i >= 0 && !d.dayTrip) current = i;
+        return d.dayTrip || i < 0 ? current : i;
+    });
+
+    const stops = inStops.map((st, i) => {
+        const dayCount = dayStop.filter(x => x === i).length;
+        const nights = Math.max(1, dayCount, Math.min(30, Math.round(Number(st.nights) || 0)));
+        let lat = Number(st.lat), lon = Number(st.lon), needsGeocode = false;
+        if (!validCoord(lat, lon)) {
+            const acts = days.filter((d, di) => dayStop[di] === i && !d.dayTrip).flatMap(d => d.activities || []).filter(x => validCoord(x.lat, x.lon));
+            if (acts.length) {
+                lat = acts.reduce((sum, x) => sum + Number(x.lat), 0) / acts.length;
+                lon = acts.reduce((sum, x) => sum + Number(x.lon), 0) / acts.length;
+            } else {
+                const known = findDestinationCoords(st.name);
+                lat = known.lat; lon = known.lon; needsGeocode = Boolean(known.unknown);
+            }
+        }
+        const stop = {
+            id: `stop_${now}_${i + 1}`,
+            name: st.name.split(',')[0].trim(),
+            lat, lon, nights,
+            notes: Array(nights).fill(''),
+            transit: null, lodging: null, locked: false
+        };
+        if (needsGeocode) { stop.needsGeocode = true; stop.geocodeQuery = [st.name, st.country].filter(Boolean).join(', '); }
+        return stop;
+    });
+
+    // Day notes: the day's theme, plus where to stay and how you got here on the first day
+    const seen = stops.map(() => 0);
+    const places = [];
+    days.forEach((d, di) => {
+        const si = dayStop[di];
+        const stop = stops[si];
+        if (!stop) return;
+        const local = Math.min(seen[si]++, stop.nights - 1);
+        const theme = String(d.theme || '').replace(/^[^:]{1,40}:\s*/, '');
+        const lines = [d.dayTrip ? `Day trip: ${theme}` : theme];
+        if (local === 0) {
+            const src = inStops[si];
+            if (src.stayArea) lines.push(`Stay: ${src.stayArea}`);
+            const prev = inStops[si - 1] && inStops[si - 1].transitToNext;
+            if (prev && (prev.details || prev.method)) {
+                lines.push(`Getting here: ${[prev.details || prev.method, prev.durationMinutes ? `${prev.durationMinutes} min` : '', prev.costUSD ? `~$${prev.costUSD} pp` : ''].filter(Boolean).join(', ')}${prev.from ? ` (${prev.from} → ${prev.to || stop.name})` : ''}`);
+            }
+        }
+        stop.notes[local] = [stop.notes[local], ...lines].filter(Boolean).join('\n');
+
+        (d.activities || []).forEach((act, ai) => {
+            if (!act || !act.name) return;
+            const exact = validCoord(act.lat, act.lon) && getDistance(Number(act.lat), Number(act.lon), stop.lat, stop.lon) < (d.dayTrip ? 250 : 120);
+            const mins = Number(act.durationMinutes);
+            const cost = Number(act.costUSD);
+            const place = {
+                id: `poi_ai_${now}_${di}_${ai}`,
+                cityIndex: si,
+                dayIndex: local,
+                name: String(act.name).slice(0, 90),
+                category: mapAICategory(act.category, act.name),
+                address: act.address || act.location || stop.name,
+                notes: [act.description, Number.isFinite(cost) ? (cost > 0 ? `~$${Math.round(cost)} pp` : 'Free') : '', act.tip].filter(Boolean).join(' · '),
+                lat: exact ? Number(act.lat) : Number((stop.lat + (Math.random() - 0.5) * 0.02).toFixed(6)),
+                lon: exact ? Number(act.lon) : Number((stop.lon + (Math.random() - 0.5) * 0.02).toFixed(6)),
+                time: normalizeAITime(act.time)
+            };
+            if (mins >= 10 && mins <= 720) place.duration = Math.round(mins);
+            if (!exact) place.approxLocation = true;
+            places.push(place);
+        });
+    });
+
+    const start = /^\d{4}-\d{2}-\d{2}$/.test(String(plan.startDate || '')) && parseLocalDate(plan.startDate) >= new Date(new Date().toDateString()) ? plan.startDate : '';
+    const fallbackStart = new Date(); fallbackStart.setDate(fallbackStart.getDate() + 1);
+    const travelers = Math.round(Number(plan.travelers));
+    const totalNights = stops.reduce((n, st) => n + st.nights, 0);
+    const newTrip = {
+        id: 'trip_ai_' + now,
+        name: plan.title || 'AI Planned Trip',
+        startDate: start || formatLocalDate(fallbackStart),
+        isRoundTrip: false,
+        budgetTravelers: travelers >= 1 && travelers <= 20 ? travelers : 2,
+        stops,
+        places,
+        expenses: [],
+        isExample: false,
+        isAIGenerated: true,
+        createdAt: now
+    };
+
+    // Travel legs: the suggested train/flight shows on the map line and its cost goes into the Trip Budget plan
+    let nightsSoFar = 0;
+    stops.forEach((stop, i) => {
+        nightsSoFar += stop.nights;
+        const leg = inStops[i].transitToNext;
+        if (!leg || i >= stops.length - 1) return;
+        const how = `${leg.method || ''} ${leg.details || ''}`;
+        const method = /fl(y|ight)|plane|air/i.test(how) ? 'plane' : /bus|coach/i.test(how) ? 'bus' : /car|drive|taxi/i.test(how) ? 'car' : 'train';
+        const date = parseLocalDate(newTrip.startDate);
+        date.setDate(date.getDate() + nightsSoFar);
+        stop.transit = {
+            method, flightType: 'ow', bookingNumber: '',
+            date: formatLocalDate(date), returnDate: '',
+            depStation: String(leg.from || '').slice(0, 80), arrStation: String(leg.to || '').slice(0, 80),
+            depTime: '', arrTime: '',
+            notes: `AI suggestion: ${[leg.details || leg.method, leg.durationMinutes ? `about ${leg.durationMinutes} min` : ''].filter(Boolean).join(', ')}`
+        };
+        const pp = Number(leg.costUSD);
+        if (window.setTravelEstimate && Number.isFinite(pp) && pp > 0) window.setTravelEstimate(newTrip, i + 1, pp * newTrip.budgetTravelers);
+    });
+    finishAITripSave(newTrip, `${stops.length} ${stops.length === 1 ? 'city' : 'cities'}, ${totalNights} nights`);
+}
+
 export function saveAIGeneratedTrip() {
     if (!currentAIGeneratedItinerary) {
         showNotification("No generated itinerary available to save.");
@@ -415,6 +638,10 @@ export function saveAIGeneratedTrip() {
     }
 
     const plan = currentAIGeneratedItinerary;
+    if (Array.isArray(plan.stops) && plan.stops.some(st => st && st.name)) {
+        saveStructuredAITrip(plan);
+        return;
+    }
     const totalDays = Array.isArray(plan.days) ? plan.days.length : (plan.durationDays || 3);
     let resolved = resolveTripDestinations(plan.destination || plan.title || '', totalDays);
 
@@ -424,8 +651,10 @@ export function saveAIGeneratedTrip() {
         const discoveredCityDays = [];
         plan.days.forEach((d) => {
             let cityName = null;
-            if (d.theme && d.theme.includes(':')) {
+            if (d.theme && d.theme.includes(':') && !isDayTripTheme(d.theme)) {
                 cityName = d.theme.split(':')[0].trim();
+            } else if (isDayTripTheme(d.theme)) {
+                cityName = discoveredCityDays[discoveredCityDays.length - 1] || null;
             } else if (Array.isArray(d.activities) && d.activities.length > 0 && d.activities[0].location) {
                 const parts = d.activities[0].location.split(',');
                 if (parts.length > 1) cityName = parts[parts.length - 1].trim();
@@ -439,6 +668,7 @@ export function saveAIGeneratedTrip() {
                 const nightsCount = discoveredCityDays.filter(c => c === cName).length;
                 const coords = findDestinationCoords(cName);
                 return {
+                    unknown: Boolean(coords.unknown),
                     name: cName,
                     fullName: coords.name || cName,
                     lat: coords.lat,
@@ -476,7 +706,8 @@ export function saveAIGeneratedTrip() {
             notes: [`AI Planned Stop ${sIdx + 1}: ${st.nights} nights in ${st.name}`],
             transit: null,
             lodging: null,
-            locked: false
+            locked: false,
+            ...(st.unknown ? { needsGeocode: true } : {})
         }));
     } else {
         const destInfo = findDestinationCoords(plan.destination || plan.title);
@@ -526,7 +757,7 @@ export function saveAIGeneratedTrip() {
                             nameLower.includes('cafe') || nameLower.includes('bistro') || nameLower.includes('trattoria') ||
                             timeLower.includes('evening') || descLower.includes('savor') || descLower.includes('sample') ||
                             descLower.includes('feast') || descLower.includes('taste')) {
-                            category = '● Eat & Drink';
+                            category = '🍽 Food & Drink';
                         }
                     }
 
@@ -541,8 +772,9 @@ export function saveAIGeneratedTrip() {
                         id: `poi_ai_${Date.now()}_${dayIdx}_${actIdx}`,
                         cityIndex: stopIndex,
                         dayIndex: localDayIndex,
+                        approxLocation: true,
                         name: act.name || 'Activity',
-                        category: category,
+                        category: mapAICategory(category, act.name),
                         address: act.location || targetStop.name,
                         notes: act.description ? `[${act.time || 'Day'}] ${act.description}` : '',
                         lat: targetStop.lat + (Math.random() - 0.5) * 0.03,
@@ -567,22 +799,7 @@ export function saveAIGeneratedTrip() {
         createdAt: Date.now()
     };
 
-    trips.unshift(newTrip);
-    saveTrips();
-
-    closeModal('ai-trip-modal');
-    closeModal('ai-trip-search-modal');
-    setActiveTripId(newTripId);
-    setActivePlacesTripId(newTripId);
-    setActivePlacesStopIndex(0);
-    setActivePlacesDayIndex(0);
-
-    if (window.renderHome) window.renderHome();
-    if (window.switchTab) window.switchTab('planner');
-    if (window.renderPlanner) window.renderPlanner();
-
-    showNotification(`✨ Added "${newTrip.name}" (${stops.length} cities, ${totalDays} days) to your planner!`);
-    triggerHaptic('success');
+    finishAITripSave(newTrip, `${stops.length} ${stops.length === 1 ? 'city' : 'cities'}, ${totalDays} days`);
 }
 
 // Intelligent fallback generator when edge worker is not yet deployed or in local dev
@@ -836,47 +1053,50 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     try {
         if (getGeminiApiKey()) {
             console.log(`[AI Assistant] Bypassing Edge AI - hitting Gemini directly.`);
-            const systemPrompt = `You are the core AI travel assistant for Trippo, a modern travel planner web app.
-CRITICAL INSTRUCTIONS:
-1. STRICT DOMAIN CONSTRAINT: You are STRICTLY RESTRICTED to travel planning, vacations, itineraries, city guides, cultural landmarks, and activities.
-2. DURATION FIDELITY: If the user requests a specific number of days, you MUST generate an itinerary with EXACTLY that number of days in the "days" array, and set "durationDays" to that exact number.
-3. MULTI-CITY & REGIONAL CLARIFICATION: When the user asks for a region, country, or multi-city route, explicitly name and visit real, specific cities in the itinerary.
-4. GEOGRAPHIC CLUSTERING & REALISTIC PACING: Group activities each day by physical proximity or neighborhood.
-5. LOCATION SPECIFICITY: Every activity's "location" field MUST include a specific neighborhood, street, or landmark district.
-6. TRANSIT & CONNECTIVITY GUIDANCE: When an activity involves inter-city travel, briefly mention transit details in the description.
-7. Use Google Search Grounding to ensure all restaurants, hotels, and attractions are REAL, verified locations that actually exist!
-8. You MUST return a valid JSON object matching the following structure EXACTLY:
+            const systemPrompt = `You are the trip-planning engine inside Trippo, a travel planner app. Plan real, bookable trips.
+RULES
+1. Travel topics only. If the request isn't about travel, return {"error":"Trippo can only plan trips."}.
+2. Use exactly the number of days asked for. Default to 5 days if none is given.
+3. Name real cities. A multi-city route goes in "stops" in travel order; "nights" per stop must add up to the number of days.
+4. Day trips (e.g. Nara from Osaka) are NOT stops: keep "stop" as the base city and set "dayTrip": true.
+5. Moving between cities goes in "transitToNext" of the earlier stop (fastest practical option, e.g. high-speed rail), not as an activity. On a travel day, plan only what fits after arrival.
+6. Each day: 4-6 activities with realistic 24h clock times, including lunch and dinner at specific real restaurants or food streets. Cluster each day by neighbourhood and respect opening days for the travel month.
+7. Every activity needs accurate "lat"/"lon" (4 decimals), "durationMinutes", a typical "costUSD" per person (0 if free) and a one-line "tip" when useful.
+8. Use Google Search to check that places exist and are open. Do not invent places.
+9. If the request mentions a month or dates, set "startDate" (YYYY-MM-DD, the next such date after today); otherwise leave it "".
+Return ONLY this JSON:
 {
-  "title": "A captivating, concise title",
-  "destination": "Main Cities, Region or Country",
-  "durationDays": 7,
-  "summary": "A 2-3 sentence engaging summary highlighting the route, cultural vibe, food specialties, and practical tips.",
+  "title": "Short catchy title",
+  "destination": "Cities, Country",
+  "durationDays": 6,
+  "startDate": "",
+  "travelers": 2,
+  "summary": "2-3 sentences on the route, vibe and food.",
+  "stops": [
+    {"name": "Kyoto", "country": "Japan", "lat": 35.0116, "lon": 135.7681, "nights": 3,
+     "stayArea": "Gion / Higashiyama: walkable to the temples",
+     "transitToNext": {"method": "train", "from": "Kyoto Station", "to": "Osaka Station", "durationMinutes": 30, "costUSD": 5, "details": "JR Special Rapid, every 15 min"}}
+  ],
   "days": [
-    {
-      "day": 1,
-      "theme": "City Name: Theme or neighborhood",
-      "activities": [
-        {
-          "time": "Morning",
-          "name": "Shamian Island Heritage Walk",
-          "category": "● See & Do",
-          "description": "Explore colonial architecture, shaded banyan lanes, and riverside promenades.",
-          "location": "Shamian Island, Guangzhou"
-        }
-      ]
-    }
-  ]
-}`;
+    {"day": 1, "stop": "Kyoto", "dayTrip": false, "theme": "Kyoto: Higashiyama temples and Gion",
+     "activities": [
+       {"time": "09:00", "durationMinutes": 90, "name": "Kiyomizu-dera", "category": "See & Do", "description": "Wooden terrace over the city; go early before the crowds.", "location": "Higashiyama, Kyoto", "lat": 34.9949, "lon": 135.7850, "costUSD": 3, "tip": "Walk down Sannenzaka afterwards."}
+     ]}
+  ],
+  "tips": ["2-4 short practical tips: passes, bookings, money, etiquette"]
+}
+category is one of: "See & Do", "Food & Drink", "Shopping", "Cafe", "Nature".`;
             const explicitDuration = durationDays ? `\nREQUIREMENT: You MUST generate exactly ${durationDays} days.` : '';
-            const explicitCities = resolvedContext.stops && resolvedContext.stops.length > 0 
-                ? `\nREQUIREMENT: You MUST include stops in these cities: ${resolvedContext.stops.map(s => s.fullName).join(', ')}.` 
+            const explicitCities = resolvedContext.stops && resolvedContext.stops.length > 0
+                ? `\nREQUIREMENT: You MUST include stops in these cities: ${resolvedContext.stops.map(s => s.fullName).join(', ')}.`
                 : '';
-            const userContextPrompt = `Plan a travel itinerary for: "${promptText}"${explicitDuration}${explicitCities}`;
+            const userContextPrompt = `Today is ${formatLocalDate(new Date())}.\nPlan a trip for: "${promptText}"${explicitDuration}${explicitCities}`;
 
             const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true);
             const parsedItinerary = parseJsonReply(rawContent);
             clearTimeout(timeoutId);
-            return parsedItinerary;
+            if (parsedItinerary && parsedItinerary.error && !Array.isArray(parsedItinerary.days)) throw new Error(String(parsedItinerary.error));
+            return normalizeAIItinerary(parsedItinerary);
         }
 
         const response = await fetch(endpoint, {
@@ -907,7 +1127,7 @@ CRITICAL INSTRUCTIONS:
 
         const data = await response.json();
         if (data.itinerary) {
-            return data.itinerary;
+            return normalizeAIItinerary(data.itinerary);
         } else if (data.data) {
             return data.data;
         } else if (data.title && data.days) {
@@ -1003,10 +1223,10 @@ export function openAITripModal(itinerary) {
 
     if (statsEl) {
         // Detect distinct cities across days
-        const cityList = [];
-        if (Array.isArray(itinerary.days)) {
+        const cityList = Array.isArray(itinerary.stops) ? itinerary.stops.map(st => st.name) : [];
+        if (!cityList.length && Array.isArray(itinerary.days)) {
             itinerary.days.forEach(d => {
-                if (d.theme && d.theme.includes(':')) {
+                if (d.theme && d.theme.includes(':') && !isDayTripTheme(d.theme)) {
                     const c = d.theme.split(':')[0].trim();
                     if (!cityList.includes(c)) cityList.push(c);
                 }
@@ -1031,13 +1251,27 @@ export function openAITripModal(itinerary) {
     // Day-by-Day Timeline Cards
     if (timelineEl) {
         if (Array.isArray(itinerary.days) && itinerary.days.length > 0) {
-            timelineEl.innerHTML = itinerary.days.map((dayObj) => {
+            const routeHtml = Array.isArray(itinerary.stops) && itinerary.stops.length ? `
+                <div class="ai-route-card">
+                    ${itinerary.stops.map((st, i) => {
+                        const next = st.transitToNext;
+                        return `
+                        <div class="ai-route-stop"><strong>${escapeHTML(st.name)}</strong><span>${Number(st.nights) || '?'} night${Number(st.nights) === 1 ? '' : 's'}${st.stayArea ? ` · stay: ${escapeHTML(st.stayArea)}` : ''}</span></div>
+                        ${next && i < itinerary.stops.length - 1 ? `<div class="ai-route-leg"><svg class="ico" aria-hidden="true"><use href="#i-${/plane|fl/i.test(next.method) ? 'plane-departure' : /bus|coach/i.test(next.method) ? 'bus' : /car|drive/i.test(next.method) ? 'car' : 'train'}"></use></svg>${escapeHTML([next.details || next.method, next.durationMinutes ? `${next.durationMinutes} min` : '', next.costUSD ? `~$${next.costUSD} pp` : ''].filter(Boolean).join(' · '))}</div>` : ''}`;
+                    }).join('')}
+                </div>` : '';
+            const tipsHtml = Array.isArray(itinerary.tips) && itinerary.tips.length ? `
+                <div class="ai-tips-card"><strong>Good to know</strong><ul>${itinerary.tips.slice(0, 5).map(t => `<li>${escapeHTML(String(t))}</li>`).join('')}</ul></div>` : '';
+            timelineEl.innerHTML = routeHtml + itinerary.days.map((dayObj) => {
                 const dayNum = dayObj.day || 1;
                 const theme = dayObj.theme ? escapeHTML(dayObj.theme) : `Day ${dayNum} Exploration`;
                 const activities = Array.isArray(dayObj.activities) ? dayObj.activities : [];
 
                 const activitiesHtml = activities.map((act) => {
-                    const timeBadge = act.time ? `<span class="activity-time-badge">${escapeHTML(formatTime(act.time))}</span>` : '';
+                    const timeBadge = act.time ? `<span class="activity-time-badge">${escapeHTML(formatTime(act.time))}${Number(act.durationMinutes) >= 10 ? ` · ${Number(act.durationMinutes) >= 60 ? `${Math.floor(act.durationMinutes / 60)}h${act.durationMinutes % 60 ? ` ${act.durationMinutes % 60}m` : ''}` : `${act.durationMinutes}m`}` : ''}</span>` : '';
+                    const cost = Number(act.costUSD);
+                    const costBadge = Number.isFinite(cost) && act.costUSD !== '' && act.costUSD !== null ? `<span class="activity-loc-badge">${cost > 0 ? `~$${Math.round(cost)}` : 'Free'}</span>` : '';
+                    const tipLine = act.tip ? `<div class="ai-activity-tip">${escapeHTML(act.tip)}</div>` : '';
                     const locBadge = act.location ? `<span class="activity-loc-badge"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(act.location)}</span>` : '';
 
                     return `
@@ -1047,7 +1281,8 @@ export function openAITripModal(itinerary) {
                                 ${timeBadge}
                             </div>
                             <div class="ai-activity-desc">${escapeHTML(act.description || '')}</div>
-                            ${locBadge ? `<div class="ai-activity-footer">${locBadge}</div>` : ''}
+                            ${tipLine}
+                            ${locBadge || costBadge ? `<div class="ai-activity-footer">${locBadge}${costBadge}</div>` : ''}
                         </div>
                     `;
                 }).join('');
@@ -1063,7 +1298,7 @@ export function openAITripModal(itinerary) {
                         </div>
                     </div>
                 `;
-            }).join('');
+            }).join('') + tipsHtml;
         } else {
             timelineEl.innerHTML = `<p style="color:var(--text-muted); text-align:center;">No activities found.</p>`;
         }
