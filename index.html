@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.41">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.41">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.41">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.41">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.41">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.42">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.42">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.42">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.42">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.42">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.41">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.41">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.42">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.42">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -363,12 +363,6 @@
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openPackingModal()">
                 <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-briefcase"></use></svg></span> Smart Packing Checklist
             </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="printPocketItinerary()">
-                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-printer"></use></svg></span> Print / PDF Pocket Itinerary
-            </div>
-            <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="exportTripToICS()">
-                <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-calendar-event"></use></svg></span> Export to Calendar (.ics)
-            </div>
             <div class="sidebar-item" style="padding:11px 14px; font-size:13px;" onclick="openBudgetModal()">
                 <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-wallet"></use></svg></span> Trip Budget & Estimator
             </div>
@@ -445,7 +439,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.41</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.42</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -1844,7 +1838,7 @@
 
             <!-- Data Management, Backup & Export -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
-                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Data & Backups</div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-device-floppy"></use></svg>Data, Backups & Export</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="exportAppDataJSON()">
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -1859,6 +1853,20 @@
                             <div style="font-size:13px; font-weight:700;">Restore Backup (.json)</div>
                         </div>
                         <span>Restore Data ›</span>
+                    </button>
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="exportTripToICS()">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-calendar-event"></use></svg></span>
+                            <div style="font-size:13px; font-weight:700;">Export Trip to Calendar (.ics)</div>
+                        </div>
+                        <span>Download ›</span>
+                    </button>
+                    <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="closeModal('settings-modal'); printPocketItinerary();">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-printer"></use></svg></span>
+                            <div style="font-size:13px; font-weight:700;">Print / PDF Pocket Itinerary</div>
+                        </div>
+                        <span>Print ›</span>
                     </button>
                     <button type="button" class="partner-btn" style="margin:0; padding:10px 14px;" onclick="closeModal('settings-modal'); openShareTripModal();">
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -2071,6 +2079,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.41"></script>
+    <script type="module" src="js/app.js?v=2.4.42"></script>
 </body>
 </html>
