@@ -28,6 +28,7 @@ import {
     getDistance,
     parseLocalDate,
 } from './state.js';
+import { buildAviasalesFlightUrl } from './travel-payouts.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
 // worker, so nobody can run up the owner's quota; a self-hosted worker URL can still be set in
@@ -455,11 +456,18 @@ export function normalizeAIItinerary(plan) {
         });
         d.activities.sort((x, y) => String(x.time || '99').localeCompare(String(y.time || '99')));
     });
-    if (Array.isArray(plan.stops)) plan.stops = plan.stops.filter(st => st && typeof st.name === 'string' && st.name.trim());
+    if (Array.isArray(plan.stops)) {
+        plan.stops = plan.stops.filter(st => st && typeof st.name === 'string' && st.name.trim());
+        plan.stops.forEach(st => { st.hotels = Array.isArray(st.hotels) ? st.hotels.filter(h => h && typeof h.name === 'string' && h.name.trim()).slice(0, 3) : []; });
+    }
+    const out = plan.flights && plan.flights.outbound;
+    if (!out || !/^[A-Z]{3}$/i.test(String(out.from || '')) || !/^[A-Z]{3}$/i.test(String(out.to || ''))) plan.flights = null;
+    else if (plan.flights.return && !/^[A-Z]{3}$/i.test(String(plan.flights.return.from || ''))) plan.flights.return = null;
     if (!plan.durationDays) plan.durationDays = plan.days.length;
     return plan;
 }
 
+const fmtMinutes = m => { m = Math.round(Number(m)); return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}m`; };
 const TRAVEL_ACTIVITY = /^\s*((take (the )?)?(train|bus|flight|ferry|transfer|travel|return|head back)\s+(to|back|from)\b|check[ -]?(in|out)\b)/i;
 const isDayTripTheme = theme => /^\s*(day\s*-?\s*trip|excursion|side trip)\b/i.test(String(theme || ''));
 
@@ -546,6 +554,13 @@ function saveStructuredAITrip(plan) {
             transit: null, lodging: null, locked: false
         };
         if (needsGeocode) { stop.needsGeocode = true; stop.geocodeQuery = [st.name, st.country].filter(Boolean).join(', '); }
+        const ideas = (st.hotels || []).map(h => ({
+            name: String(h.name).slice(0, 80),
+            area: String(h.area || '').slice(0, 60),
+            tier: String(h.tier || '').slice(0, 12),
+            price: Math.round(Number(h.pricePerNightUSD)) || null
+        }));
+        if (ideas.length) stop.hotelIdeas = ideas;
         return stop;
     });
 
@@ -610,8 +625,12 @@ function saveStructuredAITrip(plan) {
         createdAt: now
     };
 
+    const fl = plan.flights && plan.flights.outbound ? plan.flights : null;
+    const overnightOut = Boolean(fl && fl.outbound.arrivesNextDay);
+    const cityLabel = `${stops.length} ${stops.length === 1 ? 'city' : 'cities'}, ${totalNights} nights`;
+
     // Travel legs: the suggested train/flight shows on the map line and its cost goes into the Trip Budget plan
-    let nightsSoFar = 0;
+    let nightsSoFar = overnightOut ? 1 : 0;
     stops.forEach((stop, i) => {
         nightsSoFar += stop.nights;
         const leg = inStops[i].transitToNext;
@@ -630,7 +649,63 @@ function saveStructuredAITrip(plan) {
         const pp = Number(leg.costUSD);
         if (window.setTravelEstimate && Number.isFinite(pp) && pp > 0) window.setTravelEstimate(newTrip, i + 1, pp * newTrip.budgetTravelers);
     });
-    finishAITripSave(newTrip, `${stops.length} ${stops.length === 1 ? 'city' : 'cities'}, ${totalNights} nights`);
+
+    // Hotel ideas: the first one's nightly price becomes the stay estimate
+    stops.forEach(stop => {
+        const price = stop.hotelIdeas && stop.hotelIdeas[0] && stop.hotelIdeas[0].price;
+        if (price > 0) {
+            if (!newTrip.budgetPlan) newTrip.budgetPlan = { style: 'mid', lines: {} };
+            newTrip.budgetPlan.lines[`${stop.id}:stay`] = { rate: price };
+        }
+    });
+
+    // Flights: the airport they leave from becomes the first stop (like a hand-made "Houston, 0 nights"),
+    // with the flight on its travel leg. An overnight flight gets that stop 1 night so hotel dates line up.
+    if (fl) {
+        const out = fl.outbound, back = fl.return || null;
+        let lat = Number(fl.departLat), lon = Number(fl.departLon), needsGeocode = false;
+        if (!validCoord(lat, lon)) {
+            const known = findDestinationCoords(fl.departCity || out.from);
+            lat = known.lat; lon = known.lon; needsGeocode = Boolean(known.unknown);
+        }
+        const legText = l => [
+            `${String(l.from).toUpperCase()} → ${String(l.to).toUpperCase()}`,
+            l.depTime ? `departs ${normalizeAITime(l.depTime) || l.depTime}` : '',
+            l.arrTime ? `lands ${normalizeAITime(l.arrTime) || l.arrTime}${l.arrivesNextDay ? ' next day' : ''}` : '',
+            l.airlines || '',
+            Number(l.durationMinutes) ? `about ${fmtMinutes(l.durationMinutes)}` : ''
+        ].filter(Boolean).join(', ');
+        const homeDate = parseLocalDate(newTrip.startDate);
+        homeDate.setDate(homeDate.getDate() + (overnightOut ? 1 : 0) + totalNights);
+        const dep = {
+            id: `stop_${now}_0`,
+            name: String(fl.departCity || out.from).split(',')[0].trim().slice(0, 60),
+            lat, lon,
+            nights: overnightOut ? 1 : 0,
+            notes: [[`Fly ${legText(out)}`, fl.driveNote || '', overnightOut ? 'Overnight on the plane' : ''].filter(Boolean).join('\n')],
+            transit: {
+                method: 'plane', flightType: 'rt', bookingNumber: '',
+                date: newTrip.startDate, returnDate: back ? formatLocalDate(homeDate) : '',
+                depStation: String(out.from).toUpperCase(), arrStation: String(out.to).toUpperCase(),
+                depTime: normalizeAITime(out.depTime), arrTime: normalizeAITime(out.arrTime),
+                notes: `AI suggestion, check real fares: ${legText(out)}${back ? `. Home: ${legText(back)}` : ''}`
+            },
+            lodging: null, locked: false
+        };
+        if (overnightOut) dep.overnightFlight = true;
+        if (needsGeocode) { dep.needsGeocode = true; dep.geocodeQuery = fl.departCity || out.from; }
+        if (back && stops.length) {
+            const last = stops[stops.length - 1];
+            const li = last.notes.length - 1;
+            const when = homeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            last.notes[li] = [last.notes[li], `Flight home ${when}: ${legText(back)}`].filter(Boolean).join('\n');
+        }
+        stops.unshift(dep);
+        places.forEach(pl => { pl.cityIndex += 1; });
+        const fare = Number(fl.fareUSDPerPerson);
+        if (window.setTravelEstimate && Number.isFinite(fare) && fare > 0) window.setTravelEstimate(newTrip, 1, fare * newTrip.budgetTravelers);
+    }
+    finishAITripSave(newTrip, cityLabel + (fl ? `, flights from ${fl.departAirport || fl.outbound.from}` : ''));
 }
 
 export function saveAIGeneratedTrip() {
@@ -1065,7 +1140,9 @@ RULES
 6. Each day: 4-6 activities with realistic 24h clock times, including lunch and dinner at specific real restaurants or food streets. Cluster each day by neighbourhood and respect opening days for the travel month.
 7. Every activity needs accurate "lat"/"lon" (4 decimals), "durationMinutes", a typical "costUSD" per person (0 if free) and a "tip" only when it really helps.
 8. Use Google Search to check that places exist and are open. Do not invent places.
-9. If the request mentions a month or dates, set "startDate" (YYYY-MM-DD, the next such date after today); otherwise leave it "".
+9. If the request mentions a month or dates, set "startDate" (YYYY-MM-DD, the next such date after today); otherwise leave it "". With flights, startDate is the day the outbound flight leaves.
+10. Flights: the traveller's home airport is given below. Unless the request says they're already there or it's an easy drive, plan the flight out and back. For long-haul or international trips, leave from the best big airport they could drive to in about 4 hours when it has better nonstop or one-stop options than the home airport (say so in "driveNote"); if the request names a departure city, use that. Name real airlines that fly the route, typical local departure and arrival times, flight time, and a typical round-trip economy fare per person for the travel month. Day 1 is the day they land; the flight home leaves the day after the last day. Use "flights": null when no flight is needed.
+11. For each stop give 3 real hotels in or near "stayArea" (budget, mid-range, upscale; the best match for the request first) with a typical price per room per night.
 Return ONLY this JSON:
 {
   "title": "Short catchy title",
@@ -1074,9 +1151,14 @@ Return ONLY this JSON:
   "startDate": "",
   "travelers": 2,
   "summary": "2-3 sentences on the route, vibe and food.",
+  "flights": {"departAirport": "IAH", "departCity": "Houston", "departLat": 29.9902, "departLon": -95.3368, "driveNote": "About 3 h drive from Lafayette; more nonstops than LFT",
+    "outbound": {"from": "IAH", "to": "KIX", "depTime": "10:55", "arrTime": "15:30", "arrivesNextDay": true, "airlines": "United via SFO", "durationMinutes": 930},
+    "return": {"from": "KIX", "to": "IAH", "depTime": "17:10", "arrTime": "16:20", "arrivesNextDay": false, "airlines": "United via SFO", "durationMinutes": 820},
+    "fareUSDPerPerson": 1150},
   "stops": [
     {"name": "Kyoto", "country": "Japan", "lat": 35.0116, "lon": 135.7681, "nights": 3,
      "stayArea": "Gion / Higashiyama: walkable to the temples",
+     "hotels": [{"name": "Hotel Kanra Kyoto", "area": "Karasuma", "tier": "mid", "pricePerNightUSD": 220}],
      "transitToNext": {"method": "train", "from": "Kyoto Station", "to": "Osaka Station", "durationMinutes": 30, "costUSD": 5, "details": "JR Special Rapid, every 15 min"}}
   ],
   "days": [
@@ -1093,7 +1175,8 @@ KEEP IT SHORT: "description" max 15 words, "tip" max 12 words, "summary" max 40 
             const explicitCities = resolvedContext.stops && resolvedContext.stops.length > 0
                 ? `\nREQUIREMENT: You MUST include stops in these cities: ${resolvedContext.stops.map(s => s.fullName).join(', ')}.`
                 : '';
-            const userContextPrompt = `Today is ${formatLocalDate(new Date())}.\nPlan a trip for: "${promptText}"${explicitDuration}${explicitCities}`;
+            const homeAirport = String(safeGetStorage('trippo_home_airport', 'LFT') || 'LFT').toUpperCase();
+            const userContextPrompt = `Today is ${formatLocalDate(new Date())}.\nHome airport: ${homeAirport}.\nPlan a trip for: "${promptText}"${explicitDuration}${explicitCities}`;
 
             const totalDays = durationDays || 5;
             const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true, null, {
@@ -1272,18 +1355,33 @@ export function openAITripModal(itinerary) {
     // Day-by-Day Timeline Cards
     if (timelineEl) {
         if (Array.isArray(itinerary.days) && itinerary.days.length > 0) {
+            const fl = itinerary.flights;
+            const flightLeg = (label, l) => `<div class="ai-flight-leg"><b>${label}</b>${escapeHTML([
+                `${l.from} → ${l.to}`,
+                l.depTime ? `${formatTime(normalizeAITime(l.depTime) || l.depTime)} → ${l.arrTime ? formatTime(normalizeAITime(l.arrTime) || l.arrTime) : '?'}${l.arrivesNextDay ? ' (+1 day)' : ''}` : '',
+                l.airlines, Number(l.durationMinutes) ? fmtMinutes(l.durationMinutes) : ''
+            ].filter(Boolean).join(' · '))}</div>`;
+            const startForLink = /^\d{4}-\d{2}-\d{2}$/.test(String(itinerary.startDate || '')) ? itinerary.startDate : '';
+            const flightHtml = fl ? `
+                <div class="ai-flight-card">
+                    <div class="ai-flight-head"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg><strong>Flights${fl.departCity ? ` from ${escapeHTML(fl.departCity)}` : ''}</strong>${Number(fl.fareUSDPerPerson) > 0 ? `<span>est. ~$${Math.round(fl.fareUSDPerPerson)} pp round trip</span>` : ''}</div>
+                    ${fl.driveNote ? `<div class="ai-flight-note">${escapeHTML(fl.driveNote)}</div>` : ''}
+                    ${flightLeg('Out', fl.outbound)}${fl.return ? flightLeg('Home', fl.return) : ''}
+                    <a class="ai-flight-link" href="${escapeHTML(buildAviasalesFlightUrl(fl.outbound.from, fl.outbound.to, startForLink))}" target="_blank" rel="noopener noreferrer">Check real fares ›</a>
+                </div>` : '';
             const routeHtml = Array.isArray(itinerary.stops) && itinerary.stops.length ? `
                 <div class="ai-route-card">
                     ${itinerary.stops.map((st, i) => {
                         const next = st.transitToNext;
                         return `
                         <div class="ai-route-stop"><strong>${escapeHTML(st.name)}</strong><span>${Number(st.nights) || '?'} night${Number(st.nights) === 1 ? '' : 's'}${st.stayArea ? ` · stay: ${escapeHTML(st.stayArea)}` : ''}</span></div>
+                        ${st.hotels && st.hotels.length ? `<div class="ai-route-hotels"><svg class="ico" aria-hidden="true"><use href="#i-bed"></use></svg>${st.hotels.map(h => escapeHTML(`${h.name}${Number(h.pricePerNightUSD) > 0 ? ` ~$${Math.round(h.pricePerNightUSD)}` : ''}`)).join(' · ')}</div>` : ''}
                         ${next && i < itinerary.stops.length - 1 ? `<div class="ai-route-leg"><svg class="ico" aria-hidden="true"><use href="#i-${/plane|fl/i.test(next.method) ? 'plane-departure' : /bus|coach/i.test(next.method) ? 'bus' : /car|drive/i.test(next.method) ? 'car' : 'train'}"></use></svg>${escapeHTML([next.details || next.method, next.durationMinutes ? `${next.durationMinutes} min` : '', next.costUSD ? `~$${next.costUSD} pp` : ''].filter(Boolean).join(' · '))}</div>` : ''}`;
                     }).join('')}
                 </div>` : '';
             const tipsHtml = Array.isArray(itinerary.tips) && itinerary.tips.length ? `
                 <div class="ai-tips-card"><strong>Good to know</strong><ul>${itinerary.tips.slice(0, 5).map(t => `<li>${escapeHTML(String(t))}</li>`).join('')}</ul></div>` : '';
-            timelineEl.innerHTML = routeHtml + itinerary.days.map((dayObj) => {
+            timelineEl.innerHTML = flightHtml + routeHtml + itinerary.days.map((dayObj) => {
                 const dayNum = dayObj.day || 1;
                 const theme = dayObj.theme ? escapeHTML(dayObj.theme) : `Day ${dayNum} Exploration`;
                 const activities = Array.isArray(dayObj.activities) ? dayObj.activities : [];

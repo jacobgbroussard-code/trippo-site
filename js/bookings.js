@@ -65,6 +65,19 @@ export function renderBookingsView() {
     renderBookingsList();
 }
 
+// Fill the stay form from an AI hotel idea; it only becomes a confirmed stay when the user saves it
+export function useHotelIdea(stopIndex, ideaIndex) {
+    const trip = getActiveTrip();
+    const stop = trip && trip.stops[stopIndex];
+    const idea = stop && Array.isArray(stop.hotelIdeas) && stop.hotelIdeas[ideaIndex];
+    if (!idea) return;
+    openLodgingModal(stopIndex);
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
+    set('hotel-name-input', idea.name);
+    set('hotel-address-input', [idea.area, stop.name].filter(Boolean).join(', '));
+    set('hotel-notes-input', `AI suggestion${idea.price ? `, typically ~$${idea.price}/night` : ''}. Add your confirmation number once booked.`);
+}
+
 export function renderBookingsList() {
     const selectEl = document.getElementById('booking-trip-select');
     const trip = trips.find(t => t.id === (selectEl ? selectEl.value : activeTripId));
@@ -87,6 +100,7 @@ export function renderBookingsList() {
         const checkIn = new Date(currentDate);
         currentDate.setDate(currentDate.getDate() + (Number(stop.nights) || 0));
         const checkOut = new Date(currentDate);
+        if (stop.overnightFlight) return; // the night on the plane, not a hotel stay
 
         const inStr = formatLocalDate(checkIn);
         const outStr = formatLocalDate(checkOut);
@@ -119,6 +133,19 @@ export function renderBookingsList() {
         }
 
         const hotelInfo = getHotelPricingInsights(safeStopName, inStr, outStr);
+        const ideas = Array.isArray(stop.hotelIdeas) ? stop.hotelIdeas : [];
+        const ideaPrices = ideas.map(h => Number(h.price)).filter(n => n > 0);
+        if (ideaPrices.length) hotelInfo.estimatedNightly = Math.min(...ideaPrices) === Math.max(...ideaPrices) ? `$${ideaPrices[0]}` : `$${Math.min(...ideaPrices)} - $${Math.max(...ideaPrices)}`;
+        const ideasHTML = ideas.length && !(stop.lodging && stop.lodging.name) ? `
+            <div class="hotel-ideas">
+                <div class="hotel-ideas-title">${icon('sparkles')}AI hotel ideas · typical prices, not live</div>
+                ${ideas.map((h, hi) => `
+                <div class="hotel-idea">
+                    <div class="hotel-idea-info"><strong>${escapeHTML(h.name)}</strong><span>${escapeHTML([h.area, h.tier, h.price ? `~$${h.price}/night` : ''].filter(Boolean).join(' · '))}</span></div>
+                    <a class="hotel-idea-btn" href="https://www.booking.com/searchresults.html?ss=${encodeURIComponent(`${h.name}, ${stop.name}`)}${hasDate ? `&checkin=${inStr}&checkout=${outStr}` : ''}" target="_blank" rel="noopener noreferrer">Rates</a>
+                    <button type="button" class="hotel-idea-btn primary" onclick="useHotelIdea(${index}, ${hi})">Use</button>
+                </div>`).join('')}
+            </div>` : '';
         const dateSubStr = hasDate
             ? `${checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${stop.nights} nights`
             : `Dates TBD • ${stop.nights} nights`;
@@ -131,6 +158,7 @@ export function renderBookingsList() {
             </div>
             <span style="color: #728481; font-size: 13px; display: block; margin-bottom: 16px;">${dateSubStr}</span>
             
+            ${ideasHTML}
             ${lodgingCardHTML}
 
             <div class="hotel-partner-row">

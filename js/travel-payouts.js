@@ -114,12 +114,13 @@ const GLOBAL_DEFAULT_DESTINATIONS = [
 /**
  * Builds Aviasales flight search URL with active affiliate marker
  */
-export function buildAviasalesFlightUrl(origin, destination, dateStr = '') {
+export function buildAviasalesFlightUrl(origin, destination, dateStr = '', returnStr = '') {
     const orig = (origin || 'LFT').toUpperCase();
     const dest = (destination || 'anywhere').toUpperCase();
     let url = `https://www.aviasales.com/search?marker=${TRAVELPAYOUTS_MARKER}&origin=${orig}&destination=${dest}`;
     if (dateStr && dateStr.trim()) {
         url += `&depart_date=${dateStr.trim()}`;
+        if (returnStr && returnStr.trim()) url += `&return_date=${returnStr.trim()}`;
     }
     url += '&currency=USD';
     return url;

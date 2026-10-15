@@ -76,7 +76,7 @@ check('tools.js exports packing list management functions and presets', () => {
 
 // 4. Printable / PDF Pocket Itinerary
 check('Printable pocket itinerary container, trigger, and print media CSS exist', () => {
-    assert(indexHtml.includes('onclick="printPocketItinerary()"'), 'printPocketItinerary onclick must exist in sidebar');
+    assert(indexHtml.includes("closeModal('settings-modal'); printPocketItinerary();"), 'printPocketItinerary button must exist in App Settings');
     assert(indexHtml.includes('id="printable-itinerary-container"'), '#printable-itinerary-container must exist');
     assert(componentsCss.includes('@media print'), '@media print query must exist in CSS');
     assert(componentsCss.includes('body > *:not(#printable-itinerary-container)'), 'Print CSS must hide app UI');
