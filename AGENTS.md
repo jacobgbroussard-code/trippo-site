@@ -13,7 +13,8 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   `wishlist.js`, `bookings.js` (Trip.com / Booking / Google Flights deep links),
   `travel-payouts.js`, `tools.js`, `weather.js`, `settings.js`, `collab.js` ("Plan with Friends"),
   `db.js` (Supabase auth), `sync.js` (offline-first cloud sync), `ai.js` (AI assistant/copilot),
-  `budget-estimator.js` (per-stop cost estimates in the Trip Budget modal)
+  `budget-estimator.js` (per-stop cost estimates in the Trip Budget modal), `budget-tracker.js`
+  (expenses tagged by stop/category, who paid, settle up, booking prices → `bk_*` expenses)
 - `styles/main.css`, `styles/components.css`
 - `sw.js` — service worker with a static-asset cache list
 - `worker/` — separate Cloudflare Worker (Gemini-backed "Edge AI"), deployed with wrangler

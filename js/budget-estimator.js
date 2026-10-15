@@ -6,9 +6,9 @@
    local transport), adjusted for each country's cost level and a travel style.
    Every line can be switched off or given your own amount; those choices are
    saved on the trip as trip.budgetPlan. Lives in the Trip Budget modal next to
-   the split-expenses tracker (js/tools.js).
+   the spending tracker (js/budget-tracker.js), which supplies spent-per-line.
    ========================================================================== */
-import { trips, saveTrips, escapeHTML, escapeJS, getDistance, showNotification, icon, triggerHaptic } from './state.js';
+import { trips, saveTrips, escapeHTML, escapeJS, getDistance, icon, triggerHaptic } from './state.js';
 import { getStopFlag } from './planner.js';
 
 // Mid-range prices in USD for a cost index of 1.0 (roughly the US average)
@@ -147,7 +147,7 @@ export function estimateTripBudget(trip) {
                 const method = out.method || guessMethod(km);
                 const perUnit = travelCost(method, km) * (plan.style === 'luxury' && method === 'plane' ? 2.5 : plan.style === 'budget' ? 0.85 : 1);
                 lines.push({
-                    key: key('return'), kind: 'travel', icon: method === 'plane' ? 'plane-departure' : method === 'train' ? 'train' : method === 'bus' ? 'bus' : 'car',
+                    key: key('return'), kind: 'return', icon: method === 'plane' ? 'plane-departure' : method === 'train' ? 'train' : method === 'bus' ? 'bus' : 'car',
                     label: `${METHOD_LABEL[method]} home to ${first.name}`,
                     detail: `${Math.round(km).toLocaleString('en-US')} km · ${method === 'car' ? 'fuel + tolls' : `${travelers} × ${formatMoney(perUnit)}`}`,
                     estimate: round5(perUnit * (method === 'car' ? 1 : travelers)),
@@ -177,7 +177,8 @@ function findTrip(tripId) {
 
 function changed(trip) {
     saveTrips();
-    renderBudgetEstimator(trip.id);
+    if (window.renderBudgetCalculator) window.renderBudgetCalculator();
+    else renderBudgetEstimator(trip.id);
 }
 
 export function setBudgetStyle(tripId, style) {
@@ -215,27 +216,6 @@ export function resetEstimateLine(tripId, key) {
     changed(trip);
 }
 
-// Copy the switched-on estimate lines into the split tracker as shared expenses.
-// Re-running updates those same expense rows instead of duplicating them.
-export function addEstimatesToExpenses(tripId) {
-    const trip = findTrip(tripId);
-    if (!trip) return;
-    const { groups } = estimateTripBudget(trip);
-    if (!Array.isArray(trip.expenses)) trip.expenses = [];
-    let added = 0, updated = 0;
-    groups.forEach(g => g.lines.forEach(l => {
-        const id = 'est_' + l.key;
-        const existing = trip.expenses.find(e => e.id === id);
-        if (!l.on) return;
-        const title = `${g.stop.name}: ${l.label} (est.)`;
-        if (existing) { existing.amount = l.amount; existing.title = title; updated++; }
-        else { trip.expenses.push({ id, title, amount: l.amount, splitType: 'split', fromEstimate: true }); added++; }
-    }));
-    saveTrips();
-    if (window.renderBudgetCalculator) window.renderBudgetCalculator();
-    showNotification(added || updated ? `Estimates in expenses: ${added} added, ${updated} updated` : 'Switch on at least one estimate line first');
-}
-
 export function renderBudgetEstimator(tripId) {
     const container = document.getElementById('budget-estimator-container');
     const trip = findTrip(tripId) || (window.getBudgetActiveTrip && window.getBudgetActiveTrip());
@@ -253,16 +233,23 @@ export function renderBudgetEstimator(tripId) {
         return;
     }
 
+    const spent = (window.budgetSpentByLine && window.budgetSpentByLine(trip)) || { lines: {}, otherByStop: {}, unassigned: 0 };
+    const spentTag = (amt, plan) => amt > 0
+        ? `<span class="budget-spent${plan && amt > plan ? ' over' : ''}">spent ${formatMoney(amt)}</span>` : '';
+
     const styles = Object.entries(BUDGET_STYLES).map(([id, s]) =>
         `<button type="button" class="budget-style-chip${est.style === id ? ' active' : ''}" onclick="setBudgetStyle('${safeTrip}', '${id}')">${s.label}</button>`).join('');
 
     container.innerHTML = `
         <div class="budget-style-row">${styles}</div>
-        ${est.groups.map(g => `
+        ${est.groups.map(g => {
+            const sk = g.stop.id || 'i' + g.index;
+            const stopSpent = g.lines.reduce((n, l) => n + (spent.lines[l.key] || 0), 0) + (spent.otherByStop[sk] || 0);
+            return `
             <div class="budget-stop">
                 <div class="budget-stop-head">
                     <span class="budget-stop-name">${escapeHTML(g.stop.name)}${g.country ? ` <span class="budget-country">${g.country}</span>` : ''}</span>
-                    <span class="budget-stop-sub">${formatMoney(g.subtotal)}</span>
+                    <span class="budget-stop-sub">${stopSpent ? `<span class="budget-stop-spent${stopSpent > g.subtotal ? ' over' : ''}">${formatMoney(stopSpent)} of</span> ` : ''}${formatMoney(g.subtotal)}</span>
                 </div>
                 ${g.lines.map(l => {
                     const k = escapeJS(l.key);
@@ -275,11 +262,15 @@ export function renderBudgetEstimator(tripId) {
                         <div class="budget-line-text">
                             <span class="budget-line-label">${escapeHTML(l.label)}</span>
                             <span class="budget-line-detail">${escapeHTML(l.detail)}${l.custom ? ` · <button type="button" class="budget-reset" onclick="resetEstimateLine('${safeTrip}', '${k}')">reset</button>` : ''}</span>
+                            ${spentTag(spent.lines[l.key] || 0, l.on ? l.amount : 0)}
                         </div>
                         <input class="budget-line-amount${l.custom ? ' custom' : ''}" inputmode="decimal" value="${Math.round(l.amount)}" aria-label="Amount for ${escapeHTML(l.label)}" onchange="setEstimateAmount('${safeTrip}', '${k}', this.value)" ${l.on ? '' : 'disabled'}>
                     </div>`;
                 }).join('')}
-            </div>`).join('')}
-        <button type="button" class="budget-to-expenses" onclick="addEstimatesToExpenses('${safeTrip}')">${icon('plus')}Add estimates to split expenses</button>
-        <p class="budget-note">Rough averages adjusted for each country and your travel style. Tap an amount to use your own number.</p>`;
+                ${spent.otherByStop[sk] ? `<div class="budget-line budget-line-extra">${icon('ticket', 'budget-line-ico')}<div class="budget-line-text"><span class="budget-line-label">Activities, shopping &amp; other</span><span class="budget-spent">spent ${formatMoney(spent.otherByStop[sk])}</span></div></div>` : ''}
+            </div>`;
+        }).join('')}
+        ${spent.unassigned ? `<div class="budget-stop"><div class="budget-stop-head"><span class="budget-stop-name">Whole trip</span><span class="budget-stop-sub"><span class="budget-stop-spent">${formatMoney(spent.unassigned)} spent</span></span></div></div>` : ''}
+        <button type="button" class="budget-to-expenses" onclick="showBudgetPane('expenses')">${icon('plus')}Log an expense</button>
+        <p class="budget-note">Rough averages adjusted for each country and your travel style. Tap an amount to use your own number. Expenses tagged with a stop show up here as spent.</p>`;
 }

@@ -35,6 +35,8 @@ export function encodeTripPayload(trip) {
             startDate: trip.startDate || '',
             isRoundTrip: Boolean(trip.isRoundTrip),
             budgetTravelers: Number(trip.budgetTravelers) || 2,
+            budgetPeople: Array.isArray(trip.budgetPeople) ? trip.budgetPeople : undefined,
+            budgetPlan: trip.budgetPlan || undefined,
             stops: Array.isArray(trip.stops) ? trip.stops.map(s => ({
                 id: s.id,
                 name: s.name,
@@ -61,7 +63,12 @@ export function encodeTripPayload(trip) {
                 id: e.id,
                 title: e.title,
                 amount: e.amount,
-                splitType: e.splitType
+                splitType: e.splitType,
+                category: e.category,
+                stopId: e.stopId,
+                paidBy: e.paidBy,
+                splitWith: e.splitWith,
+                date: e.date
             })) : []
         };
         const jsonStr = JSON.stringify(clean);
@@ -364,7 +371,9 @@ export function broadcastTripUpdate(trip) {
                         stops: trip.stops,
                         places: trip.places,
                         expenses: trip.expenses,
-                        budgetTravelers: trip.budgetTravelers
+                        budgetTravelers: trip.budgetTravelers,
+                        budgetPeople: trip.budgetPeople,
+                        budgetPlan: trip.budgetPlan
                     }
                 }
             });
@@ -393,6 +402,8 @@ function handleIncomingCollabDelta(payload) {
     localTrip.places = payload.tripData.places || localTrip.places;
     localTrip.expenses = payload.tripData.expenses || localTrip.expenses;
     localTrip.budgetTravelers = payload.tripData.budgetTravelers || localTrip.budgetTravelers;
+    if (payload.tripData.budgetPeople) localTrip.budgetPeople = payload.tripData.budgetPeople;
+    if (payload.tripData.budgetPlan) localTrip.budgetPlan = payload.tripData.budgetPlan;
     localTrip.lastSyncedAt = Date.now();
     normalizeTrip(localTrip);
 
@@ -539,6 +550,8 @@ export function confirmImportTrip(asPrivateCopy = false) {
         startDate: data.startDate || '',
         isRoundTrip: Boolean(data.isRoundTrip),
         budgetTravelers: Number(data.budgetTravelers) || 2,
+        budgetPeople: Array.isArray(data.budgetPeople) ? data.budgetPeople : undefined,
+        budgetPlan: data.budgetPlan && typeof data.budgetPlan === 'object' ? data.budgetPlan : undefined,
         stops: Array.isArray(data.stops) ? data.stops : [],
         places: Array.isArray(data.places) ? data.places : [],
         expenses: Array.isArray(data.expenses) ? data.expenses : [],

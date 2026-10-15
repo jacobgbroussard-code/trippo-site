@@ -19,9 +19,10 @@ import * as settings from './settings.js';
 import * as collab from './collab.js';
 import * as ai from './ai.js';
 import * as budgetEstimator from './budget-estimator.js';
+import * as budgetTracker from './budget-tracker.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.32';
+const CURRENT_VERSION = '2.4.33';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -69,7 +70,8 @@ Object.assign(window, {
     ...settings,
     ...collab,
     ...ai,
-    ...budgetEstimator
+    ...budgetEstimator,
+    ...budgetTracker
 });
 
 // Replay any early calls queued before module finished loading

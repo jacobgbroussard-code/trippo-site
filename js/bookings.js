@@ -225,6 +225,8 @@ export function openLodgingModal(index) {
     if (notesInput) notesInput.value = l.notes || '';
     if (latInput) latInput.value = l.lat || stop.lat;
     if (lonInput) lonInput.value = l.lon || stop.lon;
+    const priceInput = document.getElementById('hotel-price-input');
+    if (priceInput) priceInput.value = window.getBookingPrice ? window.getBookingPrice(trip, 'stay', index) : '';
 
     const svCard = document.getElementById('hotel-streetview-preview');
     const svImg = document.getElementById('hotel-streetview-img');
@@ -337,6 +339,9 @@ export function saveLodgingBooking() {
         lat: lat,
         lon: lon
     };
+    if (window.syncBookingExpense) {
+        window.syncBookingExpense(trip, 'stay', activeLodgingStopIndex, document.getElementById('hotel-price-input')?.value, `${name} (${stop.name})`);
+    }
 
     saveTrips();
     closeModal('hotel-booking-modal');
@@ -352,6 +357,7 @@ export function deleteLodgingBooking() {
     if (!confirm(`Are you sure you want to remove ${hotelName} from your trip?`)) return;
     triggerHaptic('warning');
     trip.stops[activeLodgingStopIndex].lodging = null;
+    if (window.syncBookingExpense) window.syncBookingExpense(trip, 'stay', activeLodgingStopIndex, 0);
     saveTrips();
     closeModal('hotel-booking-modal');
     renderBookingsList();
@@ -605,6 +611,8 @@ export function openTransitBookingModal(index) {
     if (depTimeInput) depTimeInput.value = transit.depTime || '';
     if (arrTimeInput) arrTimeInput.value = transit.arrTime || '';
     if (notesInput) notesInput.value = transit.notes || '';
+    const priceInput = document.getElementById('transit-price-input');
+    if (priceInput) priceInput.value = window.getBookingPrice ? window.getBookingPrice(trip, 'travel', index) : '';
 
     // Flight mode default: round-trip if 2-stop trip and trip.isRoundTrip, else one-way
     const isRound = (trip.isRoundTrip && trip.stops.length === 2) || (Array.isArray(trip.roundTripSegments) && trip.roundTripSegments.includes(index));
@@ -661,6 +669,13 @@ export function saveTransitBooking() {
         arrTime: document.getElementById('transit-arr-time')?.value || '',
         notes: document.getElementById('transit-notes')?.value.trim() || ''
     };
+    const t = trip.stops[activeTransitIndex].transit;
+    const next = trip.stops[activeTransitIndex + 1];
+    if (window.syncBookingExpense) {
+        const kind = { plane: 'Flight', train: 'Train', bus: 'Bus', car: 'Drive' }[t.method] || 'Transport';
+        window.syncBookingExpense(trip, 'travel', activeTransitIndex, document.getElementById('transit-price-input')?.value,
+            `${kind} ${trip.stops[activeTransitIndex].name} → ${next ? next.name : ''}${t.flightType === 'rt' ? ' (round trip)' : ''}`);
+    }
     saveTrips();
     closeModal('transit-booking-modal');
     const plannerView = document.getElementById('planner-view');
@@ -676,6 +691,7 @@ export function deleteTransitBooking() {
     if (!confirm('Are you sure you want to remove this transit booking?')) return;
     triggerHaptic('warning');
     trip.stops[activeTransitIndex].transit = null;
+    if (window.syncBookingExpense) window.syncBookingExpense(trip, 'travel', activeTransitIndex, 0);
     saveTrips();
     closeModal('transit-booking-modal');
     const plannerView = document.getElementById('planner-view');

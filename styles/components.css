@@ -4455,3 +4455,58 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .expense-split-toggle button .ico { margin-right: 0; width: 13px; height: 13px; }
 .expense-split-toggle button.on { background: var(--primary); color: #fff; }
 .expense-share-note { display: block; font-size: 11px; color: var(--text-light, #64748b); margin-top: 3px; }
+
+/* Budget tracker: people, progress, pace, categories, expense rows, settle up */
+.label-hint { font-weight: 500; font-size: 11px; color: var(--text-light, #64748b); text-transform: none; letter-spacing: 0; }
+.budget-people { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.budget-person { width: auto; min-width: 0; flex: 1 1 88px; max-width: 150px; height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--text); font: inherit; font-size: 16px; font-weight: 700; text-align: center; }
+.budget-person:focus { outline: none; border-color: var(--primary); }
+.budget-progress { margin: -4px 0 14px; }
+.budget-bar { height: 8px; border-radius: 999px; background: var(--border-subtle); overflow: hidden; }
+.budget-bar span { display: block; height: 100%; border-radius: 999px; background: var(--primary); transition: width 0.3s; }
+.budget-bar.over span { background: var(--accent, #e11d48); }
+.budget-bar-text { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; color: var(--text-light, #64748b); margin-top: 4px; }
+.budget-pace { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--text); margin-top: 8px; }
+.budget-pace .ico { margin-right: 0; width: 15px; height: 15px; color: var(--primary); }
+.budget-cat-bar { display: flex; height: 6px; border-radius: 999px; overflow: hidden; margin-top: 10px; gap: 2px; }
+.budget-cat-bar span { display: block; min-width: 3px; }
+.budget-cat-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 11px; color: var(--text-light, #64748b); }
+.budget-cat-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: 0; }
+.budget-spent { font-size: 11px; font-weight: 700; color: var(--primary); }
+.budget-spent.over, .budget-stop-spent.over { color: var(--accent, #e11d48); }
+.budget-stop-spent { font-size: 12px; font-weight: 700; color: var(--text-light, #64748b); }
+.budget-line-extra { padding-left: 26px; }
+.budget-h3 { font-size: 15px; margin: 16px 0 8px; }
+.budget-link-btn { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--primary); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; flex: none; }
+.budget-link-btn .ico { margin-right: 0; width: 14px; height: 14px; }
+.budget-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--text-light, #64748b); cursor: pointer; flex: none; }
+.budget-icon-btn .ico { width: 15px; height: 15px; }
+.budget-icon-btn.danger { color: var(--accent, #e11d48); }
+.expense-form .form-row { gap: 8px; }
+.expense-form .form-group { margin-bottom: 8px; }
+.expense-split-with { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.expense-split-with:empty { display: none; }
+.expense-split-label { font-size: 12px; font-weight: 700; color: var(--text-light, #64748b); margin-right: 2px; }
+.split-chip { height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--text-light, #64748b); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.split-chip.on { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.expense-row { display: flex; align-items: flex-start; gap: 10px; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+.expense-row.editing { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+.expense-cat { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; color: var(--cat); background: color-mix(in srgb, var(--cat) 14%, transparent); }
+.expense-cat .ico { width: 17px; height: 17px; }
+.expense-body { flex: 1; min-width: 0; }
+.expense-main { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.expense-main strong { font-size: 14px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.expense-meta { font-size: 11.5px; color: var(--text-light, #64748b); margin-top: 1px; }
+.expense-right { flex: none; display: flex; align-items: center; gap: 8px; }
+.expense-right strong { font-size: 15px; color: var(--primary); }
+.settle-people { display: grid; gap: 8px; }
+.settle-person { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name bal" "sub bal"; align-items: center; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 10px 14px; }
+.settle-name { grid-area: name; font-size: 14px; font-weight: 800; color: var(--text); }
+.settle-sub { grid-area: sub; font-size: 11.5px; color: var(--text-light, #64748b); }
+.settle-bal { grid-area: bal; font-size: 13px; font-weight: 800; color: var(--text-light, #64748b); }
+.settle-bal.pos { color: #16a34a; }
+.settle-bal.neg { color: var(--accent, #e11d48); }
+.settle-transfer { display: flex; align-items: center; gap: 10px; background: var(--primary-light); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; font-size: 13.5px; color: var(--text); }
+.settle-transfer > span { flex: 1; min-width: 0; }
+.settle-transfer.muted { background: var(--card-bg); color: var(--text-light, #64748b); }
+.settle-amt { font-size: 15px; color: var(--primary); }

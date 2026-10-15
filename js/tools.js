@@ -400,169 +400,7 @@ export function syncSelectedTrip(tripId, origin) {
     else if (origin === 'transit') renderTransitList();
 }
 
-/* --- SMART SPLIT BUDGET TRACKER LOGIC --- */
-export function getBudgetActiveTrip() {
-    const selectEl = document.getElementById('budget-trip-select');
-    const tripId = selectEl ? selectEl.value : activeTripId;
-    return trips.find(t => t.id === tripId) || getActiveTrip();
-}
-
-export function handleBudgetTripChange(tripId) {
-    const trip = trips.find(t => t.id === tripId);
-    if (trip) {
-        if (!trip.budgetTravelers) trip.budgetTravelers = 2;
-        const countEl = document.getElementById('budget-travelers-count');
-        if (countEl) countEl.value = trip.budgetTravelers;
-    }
-    renderBudgetCalculator();
-}
-
-export function openBudgetModal() {
-    toggleSidebar(false);
-    const selectEl = document.getElementById('budget-trip-select');
-    if (selectEl) {
-        selectEl.innerHTML = trips.map(t => `<option value="${escapeHTML(String(t.id))}" ${t.id === activeTripId ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('');
-    }
-
-    const trip = getBudgetActiveTrip();
-    if (trip) {
-        if (!trip.budgetTravelers) trip.budgetTravelers = 2;
-        if (!trip.expenses) trip.expenses = [];
-        const countEl = document.getElementById('budget-travelers-count');
-        if (countEl) countEl.value = trip.budgetTravelers;
-    }
-    renderBudgetCalculator();
-    const modal = document.getElementById('budget-modal');
-    if (modal) modal.style.display = 'flex';
-}
-
-export function updateTravelersCount(val) {
-    const trip = getBudgetActiveTrip();
-    if (!trip) return;
-    trip.budgetTravelers = Math.max(1, parseInt(val, 10) || 1);
-    saveTrips();
-    renderBudgetCalculator();
-}
-
-export function addTripExpense() {
-    const trip = getBudgetActiveTrip();
-    if (!trip) return;
-    const title = document.getElementById('expense-title-input')?.value.trim();
-    const amount = parseFloat(document.getElementById('expense-amount-input')?.value);
-    const splitType = document.getElementById('expense-split-type')?.value || 'split';
-
-    if (!title || isNaN(amount) || amount <= 0) {
-        showNotification("Please enter a valid expense name and amount.");
-        return;
-    }
-
-    if (!trip.expenses) trip.expenses = [];
-    trip.expenses.push({
-        id: 'exp_' + Date.now(),
-        title,
-        amount: Number(amount) || 0,
-        splitType
-    });
-
-    saveTrips();
-    const titleInput = document.getElementById('expense-title-input');
-    const amountInput = document.getElementById('expense-amount-input');
-    if (titleInput) titleInput.value = '';
-    if (amountInput) amountInput.value = '';
-    renderBudgetCalculator();
-    showNotification("Expense added!");
-}
-
-// Flip an expense between shared (split across travelers) and personal
-export function setExpenseSplitType(expId, splitType) {
-    const trip = getBudgetActiveTrip();
-    const exp = trip && (trip.expenses || []).find(e => e.id === expId);
-    if (!exp || (splitType !== 'split' && splitType !== 'individual') || exp.splitType === splitType) return;
-    exp.splitType = splitType;
-    triggerHaptic('light');
-    saveTrips();
-    renderBudgetCalculator();
-}
-
-export function deleteTripExpense(expId) {
-    const trip = getBudgetActiveTrip();
-    if (!trip || !trip.expenses) return;
-    const exp = trip.expenses.find(e => e.id === expId);
-    const title = exp ? exp.title : 'this expense';
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
-    triggerHaptic('warning');
-    trip.expenses = trip.expenses.filter(e => e.id !== expId);
-    saveTrips();
-    renderBudgetCalculator();
-    showNotification("Expense removed.");
-}
-
-export function showBudgetPane(pane) {
-    ['estimate', 'expenses'].forEach(p => {
-        const el = document.getElementById(`budget-pane-${p}`);
-        const tab = document.getElementById(`budget-tab-${p}`);
-        if (el) el.style.display = p === pane ? '' : 'none';
-        if (tab) { tab.classList.toggle('active', p === pane); tab.setAttribute('aria-selected', String(p === pane)); }
-    });
-}
-
-export function renderBudgetCalculator() {
-    const trip = getBudgetActiveTrip();
-    if (!trip) return;
-
-    const travelers = Math.max(1, parseInt(trip.budgetTravelers, 10) || 1);
-    const expenses = trip.expenses || [];
-
-    let totalCombined = 0;
-    let splitPool = 0;
-
-    expenses.forEach(e => {
-        const amt = Number(e.amount) || 0;
-        totalCombined += amt;
-        if (e.splitType === 'split') {
-            splitPool += amt;
-        }
-    });
-
-    const perPersonSplit = travelers > 0 ? (splitPool / travelers) : splitPool;
-
-    const combinedEl = document.getElementById('budget-total-combined');
-    const perPersonEl = document.getElementById('budget-per-person');
-    if (combinedEl) combinedEl.innerText = `$${totalCombined.toFixed(2)}`;
-    if (perPersonEl) perPersonEl.innerText = `$${perPersonSplit.toFixed(2)} / person (shared ÷ ${travelers})`;
-    if (window.renderBudgetEstimator) window.renderBudgetEstimator(trip.id);
-
-    const container = document.getElementById('expenses-list-container');
-    if (!container) return;
-    if (expenses.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#8fa09c; font-size:13px; margin:20px 0;">No expenses recorded for this trip yet.</p>`;
-        return;
-    }
-
-    container.innerHTML = expenses.map(e => {
-        const amt = Number(e.amount) || 0;
-        const safeTitle = escapeHTML(e.title);
-        const safeId = escapeJS(e.id);
-        const isSplit = e.splitType === 'split';
-        const toggle = `<div class="expense-split-toggle" role="group" aria-label="How this cost is shared">
-                <button type="button" class="${isSplit ? 'on' : ''}" aria-pressed="${isSplit}" onclick="setExpenseSplitType('${safeId}', 'split')">${icon('users')}Shared</button>
-                <button type="button" class="${isSplit ? '' : 'on'}" aria-pressed="${!isSplit}" onclick="setExpenseSplitType('${safeId}', 'individual')">${icon('user')}Personal</button>
-            </div>`;
-        const shareNote = isSplit ? `<span class="expense-share-note">${travelers > 1 ? `$${(amt / travelers).toFixed(2)} each` : ''}</span>` : '';
-
-        return `
-        <div style="background:var(--card-bg); border:1px solid var(--border-subtle); border-radius:14px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <strong style="font-size:14px; display:block; margin-bottom:3px;">${safeTitle}</strong>
-                ${toggle}${shareNote}
-            </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-                <strong style="font-size:15px; color:var(--primary);">$${amt.toFixed(2)}</strong>
-                <button onclick="deleteTripExpense('${safeId}')" style="background:#fff0f2; border:1px solid #ffd4d9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; color:var(--accent);"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
-            </div>
-        </div>`;
-    }).join('');
-}
+/* Trip Budget modal: js/budget-tracker.js */
 
 /* --- CURRENCY CONVERTER LOGIC --- */
 const mockExchangeRates = {
@@ -626,7 +464,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.32",
+        trippoVersion: "2.4.33",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -672,7 +510,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.32",
+        version: "2.4.33",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

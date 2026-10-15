@@ -274,8 +274,16 @@ export function normalizeTrip(trip) {
         p.dayIndex = toNumber(p.dayIndex, 0);
     });
     (Array.isArray(trip.expenses) ? trip.expenses : []).forEach(e => {
-        if (e && typeof e === 'object') e.amount = toNumber(e.amount, 0);
+        if (!e || typeof e !== 'object') return;
+        e.amount = toNumber(e.amount, 0);
+        if (e.splitWith !== undefined && !Array.isArray(e.splitWith)) delete e.splitWith;
+        ['title', 'category', 'stopId', 'paidBy', 'date'].forEach(k => { if (e[k] !== undefined && e[k] !== null && typeof e[k] !== 'string') e[k] = String(e[k]); });
     });
+    if (trip.budgetPeople !== undefined) {
+        trip.budgetPeople = (Array.isArray(trip.budgetPeople) ? trip.budgetPeople : [])
+            .filter(p => p && typeof p === 'object' && p.id)
+            .map(p => ({ id: String(p.id), name: String(p.name || 'Traveler').slice(0, 24) }));
+    }
     if (trip.budgetTravelers !== undefined) trip.budgetTravelers = toNumber(trip.budgetTravelers, 2);
     return trip;
 }
@@ -333,7 +341,7 @@ if (trips.length === 0) {
 
 // Sample trip v2: hotels, transit, more daily stops and budget items so every tab has something
 // to show. Only ever ADDS to the built-in sample (never removes or overwrites), once per trip.
-const SAMPLE_TRIP_VERSION = 2;
+const SAMPLE_TRIP_VERSION = 3;
 const SAMPLE_EXTRAS = {
     lodging: {
         s2: { name: 'The Peninsula Shanghai', address: '32 Zhongshan East 1st Rd, Huangpu, Shanghai', checkInTime: '3:00 PM', bookingNumber: 'PEN-48213', url: 'https://www.peninsula.com/en/shanghai', notes: 'River-view room, breakfast included', lat: 31.2427, lon: 121.4893 },
@@ -371,8 +379,31 @@ const SAMPLE_EXTRAS = {
     ]
 };
 
+// v3: budget tracker tags (stop, category, who paid) on the sample expenses
+const SAMPLE_EXPENSE_TAGS = {
+    exp_1: { stopId: 's2', category: 'travel', paidBy: 'p1' },
+    exp_2: { stopId: 's2', category: 'stay', paidBy: 'p1' },
+    exp_3: { stopId: 's3', category: 'stay', paidBy: 'p1' },
+    exp_4: { stopId: 's3', category: 'travel', paidBy: 'p2' },
+    exp_5: { stopId: 's3', category: 'activities', paidBy: 'p2' },
+    exp_6: { stopId: 's3', category: 'shopping', paidBy: 'p2' }
+};
+
 function upgradeSampleTrip(trip) {
-    if (!trip || trip.id !== 'sample-trip-asia-2026' || (trip.sampleVersion || 1) >= SAMPLE_TRIP_VERSION) return false;
+    if (!trip || trip.id !== 'sample-trip-asia-2026') return false;
+    const version = trip.sampleVersion || 1;
+    if (version >= SAMPLE_TRIP_VERSION) return false;
+    if (version < 2) addSampleExtras(trip);
+    (Array.isArray(trip.expenses) ? trip.expenses : []).forEach(e => {
+        const tags = e && SAMPLE_EXPENSE_TAGS[e.id];
+        if (tags) Object.keys(tags).forEach(k => { if (e[k] === undefined) e[k] = tags[k]; });
+    });
+    if (!Array.isArray(trip.budgetPeople)) trip.budgetPeople = [{ id: 'p1', name: 'You' }, { id: 'p2', name: 'Sam' }];
+    trip.sampleVersion = SAMPLE_TRIP_VERSION;
+    return true;
+}
+
+function addSampleExtras(trip) {
     const stops = Array.isArray(trip.stops) ? trip.stops : [];
     stops.forEach(s => {
         if (!s.lodging && SAMPLE_EXTRAS.lodging[s.id]) s.lodging = { ...SAMPLE_EXTRAS.lodging[s.id] };
@@ -388,8 +419,6 @@ function upgradeSampleTrip(trip) {
     if (!Array.isArray(trip.expenses)) trip.expenses = [];
     const haveExpenses = new Set(trip.expenses.map(e => e.id));
     SAMPLE_EXTRAS.expenses.forEach(e => { if (!haveExpenses.has(e.id)) trip.expenses.push({ ...e }); });
-    trip.sampleVersion = SAMPLE_TRIP_VERSION;
-    return true;
 }
 
 if (trips.map(upgradeSampleTrip).some(Boolean)) safeSetStorage('myTrips', JSON.stringify(trips));

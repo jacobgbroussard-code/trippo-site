@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.32">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.32">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.32">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.32">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.32">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.33">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.33">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.33">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.33">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.33">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.32">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.32">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.33">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.33">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -445,7 +445,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.32</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.33</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -752,8 +752,8 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('budget-modal')">✕</button>
             <h2 style="margin: 0 0 16px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-wallet"></use></svg>Trip Budget</h2>
-            
-            <div class="form-row" style="margin-bottom: 14px;">
+
+            <div class="form-row" style="margin-bottom: 10px;">
                 <div class="form-group">
                     <label>Select Trip</label>
                     <select id="budget-trip-select" class="form-control" onchange="handleBudgetTripChange(this.value)"></select>
@@ -763,6 +763,7 @@
                     <input type="number" id="budget-travelers-count" class="form-control" value="2" min="1" max="20" onchange="updateTravelersCount(this.value)">
                 </div>
             </div>
+            <div id="budget-people" class="budget-people"></div>
 
             <div class="budget-summary">
                 <div class="budget-summary-col">
@@ -776,10 +777,12 @@
                     <span id="budget-per-person" class="budget-summary-sub">$0.00</span>
                 </div>
             </div>
+            <div id="budget-progress" class="budget-progress"></div>
 
             <div class="budget-tabs" role="tablist">
-                <button type="button" id="budget-tab-estimate" class="budget-tab active" role="tab" aria-selected="true" onclick="showBudgetPane('estimate')"><svg class="ico" aria-hidden="true"><use href="#i-calendar-event"></use></svg>Estimate</button>
-                <button type="button" id="budget-tab-expenses" class="budget-tab" role="tab" aria-selected="false" onclick="showBudgetPane('expenses')"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg>Expenses &amp; Split</button>
+                <button type="button" id="budget-tab-estimate" class="budget-tab active" role="tab" aria-selected="true" onclick="showBudgetPane('estimate')"><svg class="ico" aria-hidden="true"><use href="#i-calendar-event"></use></svg>Plan</button>
+                <button type="button" id="budget-tab-expenses" class="budget-tab" role="tab" aria-selected="false" onclick="showBudgetPane('expenses')"><svg class="ico" aria-hidden="true"><use href="#i-coins"></use></svg>Expenses</button>
+                <button type="button" id="budget-tab-settle" class="budget-tab" role="tab" aria-selected="false" onclick="showBudgetPane('settle')"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg>Settle up</button>
             </div>
 
             <div id="budget-pane-estimate">
@@ -787,25 +790,50 @@
             </div>
 
             <div id="budget-pane-expenses" style="display:none;">
-            <h3 style="font-size: 15px; margin: 0 0 10px 0;">Add Expense Item</h3>
-            <div class="form-group">
-                <input type="text" id="expense-title-input" class="form-control" placeholder="Expense name (e.g. Airbnb, Dinner, Shinkansen)...">
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <input type="number" step="0.01" id="expense-amount-input" class="form-control" placeholder="Amount ($)">
+                <div id="expense-form" class="expense-form">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1.6;">
+                            <input type="text" id="expense-title-input" class="form-control" placeholder="What was it? (Dinner, taxi, tickets)">
+                        </div>
+                        <div class="form-group">
+                            <input type="number" step="0.01" min="0" inputmode="decimal" id="expense-amount-input" class="form-control" placeholder="Amount ($)">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <select id="expense-category" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <select id="expense-stop" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="align-items:center;">
+                        <div class="form-group">
+                            <select id="expense-paid-by" class="form-control" aria-label="Paid by"></select>
+                        </div>
+                        <div class="form-group">
+                            <select id="expense-split-type" class="form-control" style="font-weight:700;" onchange="renderExpenseSplitWith()">
+                                <option value="split">Shared</option>
+                                <option value="individual">Personal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="expense-split-with" class="expense-split-with"></div>
+                    <div style="display:flex; gap:8px; margin: 4px 0 18px;">
+                        <button class="save-btn" id="expense-save-btn" onclick="addTripExpense()" style="margin:0; flex:1;">+ Add Expense</button>
+                        <button type="button" class="btn-secondary" id="expense-cancel-btn" onclick="cancelExpenseEdit()" style="display:none; margin:0;">Cancel</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <select id="expense-split-type" class="form-control" style="font-weight:700;">
-                        <option value="split">Shared (split evenly)</option>
-                        <option value="individual">Personal (just one person)</option>
-                    </select>
-                </div>
-            </div>
-            <button class="save-btn" onclick="addTripExpense()" style="margin-bottom: 20px;">+ Add Expense Line</button>
 
-            <h3 style="font-size: 15px; margin: 0 0 10px 0;">Recorded Expenses</h3>
-            <div id="expenses-list-container"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin: 0 0 10px;">
+                    <h3 style="font-size: 15px; margin: 0;">Recorded Expenses</h3>
+                    <button type="button" class="budget-link-btn" onclick="exportExpensesCSV()"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg>CSV</button>
+                </div>
+                <div id="expenses-list-container"></div>
+            </div>
+
+            <div id="budget-pane-settle" style="display:none;">
+                <div id="budget-settle-container"></div>
             </div>
         </div>
     </div>
@@ -1033,6 +1061,11 @@
                     <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#287dfa; justify-content:center;" onclick="searchHotelOnTripCom()"><svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>Search Trip.com</button>
                     <button type="button" class="partner-btn" style="padding:7px 12px; font-size:12px; margin:0; flex:1; color:#003580; justify-content:center;" onclick="searchHotelOnBookingCom()"><svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>Search Booking.com</button>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Total Price ($) <span class="label-hint">counts toward Trip Budget</span></label>
+                <input type="number" step="0.01" min="0" inputmode="decimal" id="hotel-price-input" class="form-control" placeholder="e.g. 640">
             </div>
 
             <div class="form-group">
@@ -1517,6 +1550,11 @@
             </div>
 
             <div class="form-group">
+                <label>Total Price ($) <span class="label-hint">all travelers, counts toward Trip Budget</span></label>
+                <input type="number" step="0.01" min="0" inputmode="decimal" id="transit-price-input" class="form-control" placeholder="e.g. 1450">
+            </div>
+
+            <div class="form-group">
                 <label>Notes & Terminal Info</label>
                 <textarea id="transit-notes" class="form-control" style="height: 65px;" placeholder="Seat number, luggage limit, terminal..."></textarea>
             </div>
@@ -1983,6 +2021,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.32"></script>
+    <script type="module" src="js/app.js?v=2.4.33"></script>
 </body>
 </html>
