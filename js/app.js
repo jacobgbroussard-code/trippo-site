@@ -20,11 +20,12 @@ import * as collab from './collab.js';
 import * as ai from './ai.js';
 import * as aiPlans from './ai-plans.js';
 import * as dayPlanner from './day-planner.js';
+import * as dayTrips from './day-trips.js';
 import * as budgetEstimator from './budget-estimator.js';
 import * as budgetTracker from './budget-tracker.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.38';
+const CURRENT_VERSION = '2.4.39';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -74,6 +75,7 @@ Object.assign(window, {
     ...ai,
     ...aiPlans,
     ...dayPlanner,
+    ...dayTrips,
     ...budgetEstimator,
     ...budgetTracker
 });

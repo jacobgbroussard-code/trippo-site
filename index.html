@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.38">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.38">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.38">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.38">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.38">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.39">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.39">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.39">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.39">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.39">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.38">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.38">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.39">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.39">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -445,7 +445,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.38</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.39</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -584,7 +584,10 @@
                 <div id="places-day-tabs" style="display: flex; overflow-x: auto; gap: 8px; margin: 12px 0 16px 0; padding-bottom: 6px; scrollbar-width: none;"></div>
                 
                 <p style="text-align:center; font-size:11px; color:#8fa39f; margin: 10px 0 6px 0; font-weight:600;">Drag your hotel to the top to lock it as the starting point. Tap any line on the map for walking directions.</p>
-                <button class="optimize-btn" onclick="optimizeCityRoute()"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Auto-Optimize from Base</button>
+                <div class="places-tool-row">
+                    <button class="optimize-btn" onclick="optimizeCityRoute()"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>Auto-Optimize</button>
+                    <button type="button" class="optimize-btn" onclick="openDayTrips()" title="Day trips and 1-night stopovers from this city"><svg class="ico" aria-hidden="true"><use href="#i-route"></use></svg>Day trips</button>
+                </div>
                 <div id="saved-places-container"></div>
                 
                 <button onclick="openPlaceSearchModal()" class="dashed-add-btn" style="margin-top: 10px;">+ Add Stop</button>
@@ -1508,6 +1511,17 @@
         </div>
     </div>
 
+    <!-- Day trips & stopovers from the current Daily stop (js/day-trips.js) -->
+    <div id="day-trips-modal" class="modal ai-fullscreen" role="dialog" aria-modal="true" aria-label="Day trips">
+        <div class="modal-content day-plan-page" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="closeDayTrips()" aria-label="Close day trips">✕</button>
+            <h2 id="day-trips-title" class="day-plan-title">Day trips</h2>
+            <p id="day-trips-sub" class="day-plan-sub"></p>
+            <div id="day-trips-filters" class="budget-style-row"></div>
+            <div id="day-trips-body" class="day-plan-body"></div>
+        </div>
+    </div>
+
     <!-- Transit Booking Modal -->
     <div id="transit-booking-modal" class="modal" onclick="handleModalBackdropClick(event, 'transit-booking-modal')">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -2056,6 +2070,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.38"></script>
+    <script type="module" src="js/app.js?v=2.4.39"></script>
 </body>
 </html>

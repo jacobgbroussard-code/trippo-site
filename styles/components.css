@@ -4665,3 +4665,28 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .dp-done strong { font-size: 17px; }
 .dp-done span { font-size: 13px; color: var(--text-light, #64748b); max-width: 420px; }
 .dp-free { margin: 2px 0 2px 76px; padding: 6px 10px; border-radius: 9px; background: var(--bg); font-size: 11.5px; color: var(--text-light, #64748b); }
+
+/* Daily tab tool row + Day trips page (js/day-trips.js) */
+.places-tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.places-tool-row .optimize-btn { margin-bottom: 0; padding: 11px 10px; white-space: nowrap; }
+.dt-card { border: 1px solid var(--border-subtle); border-radius: 16px; background: var(--card-bg); padding: 12px 14px; margin-bottom: 12px; }
+.dt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.dt-head strong { display: block; font-size: 16px; }
+.dt-area { display: block; font-size: 12px; color: var(--text-light, #64748b); }
+.dt-badge { flex: none; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: var(--primary-light); color: var(--primary); }
+.dt-badge.night { background: rgba(139, 92, 246, 0.12); color: #7c3aed; }
+.dt-travel { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; font-size: 12.5px; line-height: 1.4; color: var(--text); }
+.dt-travel .ico { flex: none; margin: 1px 0 0; width: 16px; height: 16px; color: var(--primary); }
+.dt-why { font-size: 13px; line-height: 1.45; margin: 8px 0 0; }
+.dt-highlights { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.dt-highlights span { font-size: 11.5px; padding: 3px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border-subtle); }
+.dt-tip { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; color: var(--text-light, #64748b); margin: 8px 0 0; }
+.dt-tip .ico { flex: none; width: 14px; height: 14px; margin: 1px 0 0; }
+.dt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); }
+.dt-actions select { height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
+.dt-actions a.budget-link-btn { text-decoration: none; }
+.dt-message { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 40px 12px; }
+.dt-message > .ico { width: 36px; height: 36px; color: var(--primary); }
+.dt-message strong { font-size: 16px; }
+.dt-message span { font-size: 13px; color: var(--text-light, #64748b); max-width: 420px; line-height: 1.45; }
+.dt-message .save-btn { width: auto; padding: 10px 18px; margin-top: 6px; }

@@ -2040,12 +2040,13 @@ class GeminiKeyError extends Error {
 // grounding); take the outermost {...} block.
 // One-off JSON question for other features (e.g. the smart day planner in js/day-planner.js).
 // Throws NoAIKeyError when there's no Gemini key, so callers can fall back to local estimates.
-export async function askGeminiJSON(systemInstruction, userText, timeoutMs = 30000) {
+// options.search: let Gemini use Google Search for current facts (slower; JSON is then parsed from text)
+export async function askGeminiJSON(systemInstruction, userText, timeoutMs = 30000, options = {}) {
     if (!getGeminiApiKey()) throw new NoAIKeyError();
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-        const raw = await callGeminiDirectly(systemInstruction, [{ role: 'user', content: userText }], false, ctrl.signal);
+        const raw = await callGeminiDirectly(systemInstruction, [{ role: 'user', content: userText }], Boolean(options.search), ctrl.signal);
         return parseJsonReply(raw);
     } finally {
         clearTimeout(timer);
