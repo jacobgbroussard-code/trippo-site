@@ -22,7 +22,7 @@ import * as budgetEstimator from './budget-estimator.js';
 import * as budgetTracker from './budget-tracker.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.35';
+const CURRENT_VERSION = '2.4.36';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -192,6 +192,8 @@ document.querySelectorAll('.modal-content').forEach(content => {
         const diffY = e.changedTouches[0].clientY - modalTouchStartY;
         if (isTopScrolled && diffY > 120) {
             const modal = content.closest('.modal');
+            // Full-page AI screens only close with their X, so a swipe can't wipe a half-written prompt
+            if (modal && modal.classList.contains('ai-fullscreen')) return;
             if (modal) state.closeModal(modal.id);
         }
     }, { passive: true });

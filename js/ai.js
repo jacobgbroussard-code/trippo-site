@@ -22,6 +22,9 @@ import {
     escapeJS,
     formatLocalDate,
     formatTime,
+    safeGetStorage,
+    safeSetStorage,
+    toggleSidebar,
 } from './state.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
@@ -568,6 +571,7 @@ export function saveAIGeneratedTrip() {
     saveTrips();
 
     closeModal('ai-trip-modal');
+    closeModal('ai-trip-search-modal');
     setActiveTripId(newTripId);
     setActivePlacesTripId(newTripId);
     setActivePlacesStopIndex(0);
@@ -758,7 +762,7 @@ export async function submitAITripSearch() {
         const itinerary = await fetchItineraryFromCloudflareWorker(query);
         currentAIGeneratedItinerary = itinerary;
         setAILoadingState(false);
-        closeModal('ai-trip-search-modal');
+        rememberAIPlan(query, itinerary);
         openAITripModal(itinerary);
         triggerHaptic('success');
     } catch (err) {
@@ -1074,8 +1078,57 @@ export function openAITripModal(itinerary) {
 /**
  * Open the AI Trip Generator search modal from Trip Tools in the sidebar
  */
+// --- PLANNER HISTORY: last generated plan + recent prompts (kept across closes and reloads) ---
+const AI_RECENT_KEY = 'trippo_ai_recent_prompts';
+const AI_LAST_PLAN_KEY = 'trippo_ai_last_plan';
+
+function readJSON(key, fallback) {
+    try { const v = JSON.parse(safeGetStorage(key) || 'null'); return v ?? fallback; } catch (e) { return fallback; }
+}
+
+function rememberAIPlan(query, itinerary) {
+    const recent = readJSON(AI_RECENT_KEY, []).filter(q => typeof q === 'string' && q.toLowerCase() !== query.toLowerCase());
+    recent.unshift(query);
+    safeSetStorage(AI_RECENT_KEY, JSON.stringify(recent.slice(0, 6)));
+    safeSetStorage(AI_LAST_PLAN_KEY, JSON.stringify({ query, itinerary }));
+    renderAIPlannerHistory();
+}
+
+export function reopenLastAIPlan() {
+    const last = readJSON(AI_LAST_PLAN_KEY, null);
+    if (!last || !last.itinerary) return;
+    currentAIGeneratedItinerary = last.itinerary;
+    openAITripModal(last.itinerary);
+}
+
+export function useRecentAIPrompt(index) {
+    const q = readJSON(AI_RECENT_KEY, [])[Number(index)];
+    const input = document.getElementById('ai-trip-input');
+    if (!q || !input) return;
+    input.value = q;
+    input.focus();
+    triggerHaptic('light');
+}
+
+export function renderAIPlannerHistory() {
+    const box = document.getElementById('ai-planner-history');
+    if (!box) return;
+    const recent = readJSON(AI_RECENT_KEY, []).filter(q => typeof q === 'string');
+    const last = readJSON(AI_LAST_PLAN_KEY, null);
+    const plan = last && last.itinerary;
+    box.innerHTML = (plan ? `
+        <button type="button" class="ai-last-plan" onclick="reopenLastAIPlan()">
+            <span class="ai-last-plan-label">Your last plan</span>
+            <strong>${escapeHTML(plan.title || plan.destination || last.query)}</strong>
+            <span class="ai-last-plan-sub">${escapeHTML(last.query)}${Array.isArray(plan.days) ? ` · ${plan.days.length} days` : ''}</span>
+        </button>` : '') +
+        (recent.length ? `<div class="ai-recent-title">Recent ideas</div>` + recent.map((q, i) =>
+            `<button type="button" class="ai-recent-item" onclick="useRecentAIPrompt(${i})">${escapeHTML(q)}</button>`).join('') : '');
+}
+
 export function openAITripSearchModal() {
     toggleSidebar(false);
+    renderAIPlannerHistory();
     const modal = document.getElementById('ai-trip-search-modal');
     if (modal) {
         modal.style.display = 'flex';
@@ -1098,13 +1151,7 @@ export function initAITripGenerator() {
     updateAIOfflineStatus();
 
     // 2. Form submission listener
-    const form = document.getElementById('ai-trip-form');
-    if (form) {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            submitAITripSearch();
-        });
-    }
+    // (The form's inline onsubmit handles submit; a second listener here sent every prompt twice.)
 
     // 3. Clear button if present
     const clearBtn = document.getElementById('ai-trip-clear-btn');

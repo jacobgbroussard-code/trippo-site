@@ -74,6 +74,15 @@ function guessMethod(km) {
 }
 
 const round5 = n => Math.round(n / 5) * 5;
+const plural = (n, word, many) => `${n} ${n === 1 ? word : (many || word + 's')}`;
+
+// Price per person for public transport, per car for driving
+function travelRate(method, km, perUnit, travelers) {
+    const dist = `${Math.round(km).toLocaleString('en-US')} km ·`;
+    return method === 'car'
+        ? { pre: `${dist} fuel + tolls`, rate: perUnit, units: 1, unit: '' }
+        : { pre: `${dist} ${plural(travelers, 'person', 'people')} ×`, rate: perUnit, units: travelers, unit: '/person' };
+}
 export const formatMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString('en-US');
 
 function getPlan(trip) {
@@ -105,33 +114,28 @@ export function estimateTripBudget(trip) {
             const km = getDistance(Number(prev.lat), Number(prev.lon), Number(stop.lat), Number(stop.lon)) || 0;
             const method = (prev.transit && prev.transit.method) || guessMethod(km);
             const perUnit = travelCost(method, km) * (plan.style === 'luxury' && method === 'plane' ? 2.5 : plan.style === 'budget' ? 0.85 : 1);
-            const units = method === 'car' ? 1 : travelers;
             lines.push({
                 key: key('travel'), kind: 'travel', icon: method === 'plane' ? 'plane-departure' : method === 'train' ? 'train' : method === 'bus' ? 'bus' : 'car',
                 label: `${METHOD_LABEL[method]} from ${prev.name}`,
-                detail: `${Math.round(km).toLocaleString('en-US')} km · ${method === 'car' ? 'fuel + tolls' : `${travelers} × ${formatMoney(perUnit)}`}`,
-                estimate: round5(perUnit * units)
+                ...travelRate(method, km, perUnit, travelers)
             });
         }
         if (nights > 0) {
             const rate = BASE.hotelPerRoomNight * k;
             lines.push({
                 key: key('stay'), kind: 'stay', icon: 'bed', label: stop.lodging && stop.lodging.name ? stop.lodging.name : 'Hotel',
-                detail: `${nights} night${nights === 1 ? '' : 's'} × ${rooms} room${rooms === 1 ? '' : 's'} × ${formatMoney(rate)}`,
-                estimate: round5(rate * nights * rooms)
+                pre: `${plural(nights, 'night')} × ${plural(rooms, 'room')} ×`, rate, units: nights * rooms, unit: '/night'
             });
         }
         const food = BASE.foodPerPersonDay * k;
         lines.push({
             key: key('food'), kind: 'food', icon: 'coins', label: 'Food & drinks',
-            detail: `${days} day${days === 1 ? '' : 's'} × ${travelers} × ${formatMoney(food)}`,
-            estimate: round5(food * days * travelers)
+            pre: `${plural(days, 'day')} × ${plural(travelers, 'person', 'people')} ×`, rate: food, units: days * travelers, unit: '/person/day'
         });
         const local = BASE.localPerPersonDay * Math.max(0.5, index) * (plan.style === 'luxury' ? 2 : 1);
         lines.push({
             key: key('local'), kind: 'local', icon: 'bus', label: 'Getting around',
-            detail: `${days} day${days === 1 ? '' : 's'} × ${travelers} × ${formatMoney(local)}`,
-            estimate: round5(local * days * travelers)
+            pre: `${plural(days, 'day')} × ${plural(travelers, 'person', 'people')} ×`, rate: local, units: days * travelers, unit: '/person/day'
         });
 
         // A short first stop is usually where you leave from (home), so its day costs start unchecked
@@ -149,8 +153,7 @@ export function estimateTripBudget(trip) {
                 lines.push({
                     key: key('return'), kind: 'return', icon: method === 'plane' ? 'plane-departure' : method === 'train' ? 'train' : method === 'bus' ? 'bus' : 'car',
                     label: `${METHOD_LABEL[method]} home to ${first.name}`,
-                    detail: `${Math.round(km).toLocaleString('en-US')} km · ${method === 'car' ? 'fuel + tolls' : `${travelers} × ${formatMoney(perUnit)}`}`,
-                    estimate: round5(perUnit * (method === 'car' ? 1 : travelers)),
+                    ...travelRate(method, km, perUnit, travelers),
                     defaultOn: out.flightType === 'rt'
                 });
             }
@@ -159,6 +162,10 @@ export function estimateTripBudget(trip) {
         let subtotal = 0;
         lines.forEach(l => {
             const saved = plan.lines[l.key] || {};
+            l.customRate = Number.isFinite(saved.rate);
+            if (l.customRate) l.rate = saved.rate;
+            l.estimate = l.customRate ? Math.round(l.rate * l.units) : round5(l.rate * l.units);
+            l.detail = `${l.pre} ${formatMoney(l.rate)}${l.unit}`;
             l.on = typeof saved.on === 'boolean' ? saved.on : l.defaultOn !== false;
             l.custom = Number.isFinite(saved.amount);
             l.amount = l.custom ? saved.amount : l.estimate;
@@ -244,7 +251,20 @@ export function resetEstimateLine(tripId, key) {
     const trip = findTrip(tripId);
     if (!trip) return;
     const lines = getPlan(trip).lines;
-    if (lines[key]) delete lines[key].amount;
+    if (lines[key]) { delete lines[key].amount; delete lines[key].rate; }
+    changed(trip);
+}
+
+// Nightly hotel rate, per-person daily food / transport, or per-person fare
+export function setEstimateRate(tripId, key, value) {
+    const trip = findTrip(tripId);
+    if (!trip) return;
+    const lines = getPlan(trip).lines;
+    const n = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+    const entry = { ...(lines[key] || {}) };
+    if (Number.isFinite(n) && n >= 0) entry.rate = Math.round(n * 100) / 100; else delete entry.rate;
+    delete entry.amount;
+    lines[key] = entry;
     changed(trip);
 }
 
@@ -293,7 +313,7 @@ export function renderBudgetEstimator(tripId) {
                         ${icon(l.icon, 'budget-line-ico')}
                         <div class="budget-line-text">
                             <span class="budget-line-label">${escapeHTML(l.label)}</span>
-                            <span class="budget-line-detail">${escapeHTML(l.detail)}${l.custom ? ` · <button type="button" class="budget-reset" onclick="resetEstimateLine('${safeTrip}', '${k}')">reset</button>` : ''}</span>
+                            <span class="budget-line-detail">${escapeHTML(l.pre)} <span class="budget-rate-wrap"><label class="budget-rate${l.customRate ? ' custom' : ''}">$<input inputmode="decimal" value="${Math.round(l.rate)}" aria-label="Rate for ${escapeHTML(l.label)}" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()" onchange="setEstimateRate('${safeTrip}', '${k}', this.value)" ${l.on ? '' : 'disabled'}></label>${escapeHTML(l.unit)}</span>${l.custom || l.customRate ? ` · <button type="button" class="budget-reset" onclick="resetEstimateLine('${safeTrip}', '${k}')">reset</button>` : ''}</span>
                             ${spentTag(spent.lines[l.key] || 0, l.on ? l.amount : 0)}
                         </div>
                         <input class="budget-line-amount${l.custom ? ' custom' : ''}" inputmode="decimal" value="${Math.round(l.amount)}" aria-label="Amount for ${escapeHTML(l.label)}" onchange="setEstimateAmount('${safeTrip}', '${k}', this.value)" ${l.on ? '' : 'disabled'}>
@@ -304,5 +324,5 @@ export function renderBudgetEstimator(tripId) {
         }).join('')}
         ${spent.unassigned ? `<div class="budget-stop"><div class="budget-stop-head"><span class="budget-stop-name">Whole trip</span><span class="budget-stop-sub"><span class="budget-stop-spent">${formatMoney(spent.unassigned)} spent</span></span></div></div>` : ''}
         <button type="button" class="budget-to-expenses" onclick="showBudgetPane('expenses')">${icon('plus')}Log an expense</button>
-        <p class="budget-note">Rough averages adjusted for each country and your travel style. Tap an amount to use your own number. Expenses tagged with a stop show up here as spent.</p>`;
+        <p class="budget-note">Rough averages adjusted for each country and your travel style. Tap a rate (per night, per person) or a total to use your own numbers. Expenses tagged with a stop show up here as spent.</p>`;
 }

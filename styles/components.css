@@ -4531,3 +4531,41 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .leg-cost-card input { font-size: 16px; font-weight: 700; }
 .leg-cost-hint { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--text-light, #64748b); }
 .leg-cost-hint .ico { flex: none; width: 14px; height: 14px; margin: 1px 0 0; color: var(--primary); }
+/* Editable rate inside an estimate line ("4 nights × 1 room × [$150]/night") */
+.budget-line-detail { line-height: 1.9; }
+.budget-rate { display: inline-flex; align-items: center; height: 24px; padding: 0 2px 0 6px; margin: 0 1px; border: 1px solid var(--border-subtle); border-radius: 7px; background: var(--bg); color: var(--text); font-weight: 700; vertical-align: middle; }
+.budget-rate input { width: 46px; height: 22px; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; font-size: 16px; font-weight: 700; transform-origin: left center; }
+.budget-rate input:focus { outline: none; }
+.budget-rate:focus-within { border-color: var(--primary); }
+.budget-rate.custom { border-color: var(--primary); color: var(--primary); }
+.budget-rate input:disabled { opacity: 0.5; }
+
+/* Full-page AI screens (planner, plan preview, copilot chat). Closed only by their X / Back,
+   never by a tap outside or a swipe, so a half-written prompt or chat isn't lost. */
+.modal.ai-fullscreen { align-items: stretch; justify-content: center; padding: 0; }
+.modal.ai-fullscreen > .modal-content {
+    width: 100%; max-width: 100% !important; height: 100% !important; max-height: none !important;
+    border-radius: 0 !important; margin: 0; box-shadow: none;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    display: flex; flex-direction: column;
+}
+.modal.ai-fullscreen > .modal-content > .close-modal { top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; width: 36px; height: 36px; font-size: 18px; }
+.modal.ai-fullscreen > .ai-copilot-modal-content { padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) !important; }
+#ai-trip-modal.ai-fullscreen #ai-modal-timeline { max-height: none !important; }
+@media (min-width: 768px) {
+    .modal.ai-fullscreen { padding: 20px; }
+    .modal.ai-fullscreen > .modal-content { max-width: 960px !important; border-radius: 22px !important; box-shadow: var(--shadow-lg); }
+}
+.ai-planner-page { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.ai-planner-page > * { width: 100%; max-width: 640px; margin-left: auto; margin-right: auto; }
+.ai-planner-page > .close-modal { width: 36px; margin: 0; }
+.ai-planner-history { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+.ai-planner-history:empty { display: none; }
+.ai-last-plan { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--primary); background: var(--primary-light); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ai-last-plan-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--primary); }
+.ai-last-plan strong { font-size: 15px; }
+.ai-last-plan-sub { font-size: 12px; color: var(--text-light, #64748b); }
+.ai-recent-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light, #64748b); margin: 8px 0 0; }
+.ai-recent-item { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--text); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.ai-recent-item:active { background: var(--primary-light); }
+.budget-rate-wrap { white-space: nowrap; }
