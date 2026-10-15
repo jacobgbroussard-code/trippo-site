@@ -447,6 +447,7 @@ export function normalizeAIItinerary(plan) {
         if (!d || typeof d !== 'object') return;
         if (!d.day) d.day = i + 1;
         if (!Array.isArray(d.activities)) d.activities = [];
+        d.activities = d.activities.filter(act => !(act && TRAVEL_ACTIVITY.test(String(act.name || ''))));
         d.activities.forEach(act => {
             if (!act || typeof act !== 'object') return;
             const clock = normalizeAITime(act.time);
@@ -459,6 +460,7 @@ export function normalizeAIItinerary(plan) {
     return plan;
 }
 
+const TRAVEL_ACTIVITY = /^\s*((take (the )?)?(train|bus|flight|ferry|transfer|travel|return|head back)\s+(to|back|from)\b|check[ -]?(in|out)\b)/i;
 const isDayTripTheme = theme => /^\s*(day\s*-?\s*trip|excursion|side trip)\b/i.test(String(theme || ''));
 
 function finishAITripSave(newTrip, label) {
@@ -993,7 +995,7 @@ export async function submitAITripSearch() {
 
         // Friendly error notification without crashing the client app
         if (err.name === 'AbortError') {
-            showNotification("⏱️ Edge AI request timed out. Please check your connection and try again.");
+            showNotification("AI request timed out. Please check your connection and try again.");
         } else if (!checkIsOnline()) {
             showNotification("AI generation requires an internet connection, but your saved trips are available offline.");
             updateAIOfflineStatus();
@@ -1044,11 +1046,11 @@ async function fetchItineraryFromCloudflareWorker(promptText) {
     const durationDays = extractDurationDays(promptText);
     const resolvedContext = resolveTripDestinations(promptText, durationDays);
 
-    // Search-grounded multi-day plans can take a while to generate
+    // Long multi-city plans take a while; the loading screen shows which day Gemini is on
     aiFetchAbortController = new AbortController();
     const timeoutId = setTimeout(() => {
         if (aiFetchAbortController) aiFetchAbortController.abort();
-    }, 60000);
+    }, getGeminiApiKey() ? 150000 : 60000);
 
     try {
         if (getGeminiApiKey()) {
@@ -1061,7 +1063,7 @@ RULES
 4. Day trips (e.g. Nara from Osaka) are NOT stops: keep "stop" as the base city and set "dayTrip": true.
 5. Moving between cities goes in "transitToNext" of the earlier stop (fastest practical option, e.g. high-speed rail), not as an activity. On a travel day, plan only what fits after arrival.
 6. Each day: 4-6 activities with realistic 24h clock times, including lunch and dinner at specific real restaurants or food streets. Cluster each day by neighbourhood and respect opening days for the travel month.
-7. Every activity needs accurate "lat"/"lon" (4 decimals), "durationMinutes", a typical "costUSD" per person (0 if free) and a one-line "tip" when useful.
+7. Every activity needs accurate "lat"/"lon" (4 decimals), "durationMinutes", a typical "costUSD" per person (0 if free) and a "tip" only when it really helps.
 8. Use Google Search to check that places exist and are open. Do not invent places.
 9. If the request mentions a month or dates, set "startDate" (YYYY-MM-DD, the next such date after today); otherwise leave it "".
 Return ONLY this JSON:
@@ -1085,14 +1087,25 @@ Return ONLY this JSON:
   ],
   "tips": ["2-4 short practical tips: passes, bookings, money, etiquette"]
 }
-category is one of: "See & Do", "Food & Drink", "Shopping", "Cafe", "Nature".`;
+category is one of: "See & Do", "Food & Drink", "Shopping", "Cafe", "Nature".
+KEEP IT SHORT: "description" max 15 words, "tip" max 12 words, "summary" max 40 words, each of "tips" max 25 words. "location" is just "Neighbourhood, City". Output compact JSON without indentation.`;
             const explicitDuration = durationDays ? `\nREQUIREMENT: You MUST generate exactly ${durationDays} days.` : '';
             const explicitCities = resolvedContext.stops && resolvedContext.stops.length > 0
                 ? `\nREQUIREMENT: You MUST include stops in these cities: ${resolvedContext.stops.map(s => s.fullName).join(', ')}.`
                 : '';
             const userContextPrompt = `Today is ${formatLocalDate(new Date())}.\nPlan a trip for: "${promptText}"${explicitDuration}${explicitCities}`;
 
-            const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true);
+            const totalDays = durationDays || 5;
+            const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true, null, {
+                thinking: 'low',
+                onProgress: text => {
+                    const dayNums = text.match(/"day"\s*:\s*\d+/g);
+                    const titleEl = document.getElementById('ai-loading-title');
+                    if (!titleEl) return;
+                    if (dayNums) titleEl.textContent = `Planning day ${Math.min(dayNums.length, totalDays)} of ${totalDays}…`;
+                    else if (/"stops"/.test(text)) titleEl.textContent = 'Choosing the route…';
+                }
+            });
             const parsedItinerary = parseJsonReply(rawContent);
             clearTimeout(timeoutId);
             if (parsedItinerary && parsedItinerary.error && !Array.isArray(parsedItinerary.days)) throw new Error(String(parsedItinerary.error));
@@ -1146,6 +1159,12 @@ category is one of: "See & Do", "Food & Drink", "Shopping", "Cafe", "Nature".`;
         // Seamless Resilience: If the remote edge worker fails, times out, is blocked, or is not yet deployed,
         // seamlessly generate the structured travel itinerary locally so the user never encounters a failure.
         console.warn('[AI Assistant] Remote edge worker unavailable or returned error. Generating intelligent travel itinerary...', fetchErr);
+        if (getGeminiApiKey()) {
+            if (fetchErr instanceof GeminiKeyError) throw fetchErr;
+            throw new Error(fetchErr && fetchErr.name === 'AbortError'
+                ? 'Gemini took too long to answer. Try again, or plan fewer days at a time.'
+                : 'Gemini’s answer came back incomplete. Please try again.');
+        }
         try {
             // Flag it so the result is labelled as a template, not AI output.
             if (fetchErr instanceof GeminiKeyError) showNotification(fetchErr.message, 6000);
@@ -1188,6 +1207,8 @@ function setAILoadingState(isLoading, queryText = '') {
         if (isLoading) {
             if (queryEl) queryEl.innerText = `"${queryText}"`;
             loadingOverlay.style.display = 'flex';
+            const titleEl = document.getElementById('ai-loading-title');
+            if (titleEl) titleEl.textContent = 'Generating itinerary…';
         } else {
             loadingOverlay.style.display = 'none';
         }
@@ -2213,7 +2234,7 @@ const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 // skip search for the rest of the session.
 let geminiSearchUnavailable = false;
 
-async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch, signalOverride = null) {
+async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch, signalOverride = null, opts = {}) {
     const apiKey = getGeminiApiKey();
     const contents = conversationMessages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
@@ -2221,14 +2242,17 @@ async function callGeminiDirectly(systemInstruction, conversationMessages, enabl
     }));
     const signal = signalOverride || aiFetchAbortController?.signal || copilotAbortController?.signal;
 
+    let thinking = opts.thinking || null;
+    const stream = typeof opts.onProgress === 'function';
     const request = (model, withSearch) => {
-        const generationConfig = { temperature: 0.35, topP: 0.9 };
+        const generationConfig = { temperature: 0.35, topP: 0.9, maxOutputTokens: 16384 };
+        if (thinking) generationConfig.thinkingConfig = { thinkingLevel: thinking };
         // Gemini rejects JSON mode combined with search grounding; with search on, the prompt
         // asks for JSON and parseJsonReply() extracts it.
         if (!withSearch) generationConfig.responseMimeType = 'application/json';
         const payload = { systemInstruction: { parts: [{ text: systemInstruction }] }, contents, generationConfig };
         if (withSearch) payload.tools = [{ googleSearch: {} }];
-        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:${stream ? 'streamGenerateContent?alt=sse' : 'generateContent'}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify(payload),
@@ -2240,6 +2264,11 @@ async function callGeminiDirectly(systemInstruction, conversationMessages, enabl
     for (const model of GEMINI_MODELS) {
         const useSearch = enableSearch && !geminiSearchUnavailable;
         res = await request(model, useSearch);
+        if (res.status === 400 && thinking) {
+            // Older models don't take a thinking level
+            thinking = null;
+            res = await request(model, useSearch);
+        }
         if (res.status === 429 && useSearch) {
             geminiSearchUnavailable = true;
             res = await request(model, false);
@@ -2250,10 +2279,38 @@ async function callGeminiDirectly(systemInstruction, conversationMessages, enabl
         const errText = await res.text();
         throw new GeminiKeyError(res.status, errText);
     }
+    if (stream) return readGeminiStream(res, opts.onProgress);
     const json = await res.json();
     const parts = json.candidates?.[0]?.content?.parts;
     if (!Array.isArray(parts) || parts.length === 0) throw new Error('No response candidates returned from Gemini.');
     return parts.map(p => p.text || '').join('');
+}
+
+// Server-sent events: each "data:" line is a partial response; join the text parts as they arrive
+async function readGeminiStream(res, onProgress) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '', text = '';
+    const handleLine = line => {
+        if (!line.startsWith('data:')) return;
+        try {
+            const chunk = JSON.parse(line.slice(5));
+            const parts = chunk.candidates?.[0]?.content?.parts || [];
+            text += parts.filter(p => !p.thought).map(p => p.text || '').join('');
+        } catch (e) { /* partial or keep-alive line */ }
+    };
+    for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        lines.forEach(l => handleLine(l.trim()));
+        try { onProgress(text); } catch (e) { /* progress is cosmetic */ }
+    }
+    handleLine(buffer.trim());
+    if (!text) throw new Error('No response candidates returned from Gemini.');
+    return text;
 }
 
 // Gemini errors the user can fix (bad key, quota) get a readable message.
