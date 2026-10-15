@@ -22,7 +22,7 @@ import * as budgetEstimator from './budget-estimator.js';
 import * as budgetTracker from './budget-tracker.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.33';
+const CURRENT_VERSION = '2.4.34';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);

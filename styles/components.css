@@ -4510,3 +4510,19 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .settle-transfer > span { flex: 1; min-width: 0; }
 .settle-transfer.muted { background: var(--card-bg); color: var(--text-light, #64748b); }
 .settle-amt { font-size: 15px; color: var(--primary); }
+/* Inline expense editing */
+.expense-row { flex-wrap: wrap; }
+.expense-inline { width: 100%; min-width: 0; padding: 2px 4px; margin: -2px -4px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text); font: inherit; font-size: 16px; font-weight: 700; text-overflow: ellipsis; }
+.expense-inline:hover { border-color: var(--border-subtle); }
+.expense-inline:focus { outline: none; border-color: var(--primary); background: var(--bg); }
+.expense-inline-amount { display: inline-flex; align-items: center; font-size: 15px; font-weight: 800; color: var(--primary); }
+.expense-inline-amount .expense-inline { width: 78px; margin: -2px 0 -2px 1px; text-align: right; color: var(--primary); font-weight: 800; }
+.expense-meta-btn { display: inline-flex; align-items: center; gap: 3px; max-width: 100%; padding: 0; margin-top: 1px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.expense-meta-btn .expense-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.expense-chev { width: 13px; height: 13px; flex: none; color: var(--text-light, #64748b); transition: transform 0.2s; }
+.expense-meta-btn[aria-expanded="true"] .expense-chev { transform: rotate(180deg); }
+.expense-details { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--border-subtle); }
+.expense-edit-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.expense-edit-field span { font-size: 11px; font-weight: 700; color: var(--text-light, #64748b); }
+.expense-edit-field .form-control { height: 38px; padding: 0 10px; font-size: 16px; }
+.expense-details .expense-split-with { grid-column: 1 / -1; margin: 0; }

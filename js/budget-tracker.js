@@ -35,7 +35,7 @@ const KEYWORDS = [
     ['shopping', /souvenir|shop|gift|cloth|market|mall/i]
 ];
 
-let editingExpenseId = null;
+let expandedExpenseId = null; // expense row showing its category / stop / paid-by editors
 let formSplitWith = null; // null = everyone
 
 const stopKey = (stop, i) => (stop && stop.id) || 'i' + i;
@@ -303,7 +303,7 @@ export function toggleExpenseSplitPerson(personId) {
 }
 
 function resetExpenseForm() {
-    editingExpenseId = null;
+    expandedExpenseId = null;
     formSplitWith = null;
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
     set('expense-title-input', '');
@@ -311,40 +311,60 @@ function resetExpenseForm() {
     set('expense-category', '');
     set('expense-stop', '');
     set('expense-split-type', 'split');
-    const btn = document.getElementById('expense-save-btn');
-    if (btn) btn.textContent = '+ Add Expense';
-    const cancel = document.getElementById('expense-cancel-btn');
-    if (cancel) cancel.style.display = 'none';
 }
 
-export function cancelExpenseEdit() {
-    resetExpenseForm();
-    renderBudgetCalculator();
-}
-
-export function editTripExpense(expId) {
+/* --- Editing expenses in place in the list --- */
+function findExpense(expId) {
     const trip = getBudgetActiveTrip();
     const e = trip && (trip.expenses || []).find(x => x.id === expId);
-    if (!e) return;
-    editingExpenseId = expId;
-    showBudgetPane('expenses');
-    fillExpenseForm(trip);
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    set('expense-title-input', e.title || '');
-    set('expense-amount-input', Number(e.amount) || '');
-    set('expense-category', EXPENSE_CATEGORIES[e.category] ? e.category : '');
-    const stop = typeof e.stopId === 'string' ? (e.stopId || NO_STOP) : '';
-    set('expense-stop', stop);
-    set('expense-paid-by', payerOf(e, getPeople(trip)));
-    set('expense-split-type', e.splitType === 'split' ? 'split' : 'individual');
-    formSplitWith = Array.isArray(e.splitWith) && e.splitWith.length ? [...e.splitWith] : null;
-    renderExpenseSplitWith();
-    const btn = document.getElementById('expense-save-btn');
-    if (btn) btn.textContent = 'Save changes';
-    const cancel = document.getElementById('expense-cancel-btn');
-    if (cancel) cancel.style.display = '';
+    return e ? { trip, e } : null;
+}
+
+export function updateExpenseField(expId, field, value) {
+    const found = findExpense(expId);
+    if (!found) return;
+    const { trip, e } = found;
+    const people = getPeople(trip);
+    if (field === 'title') {
+        const t = String(value || '').trim().slice(0, 80);
+        if (t) e.title = t;
+    } else if (field === 'amount') {
+        const n = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+        if (Number.isFinite(n) && n > 0) e.amount = Math.round(n * 100) / 100;
+        else showNotification('Enter an amount above $0');
+    } else if (field === 'category') {
+        if (EXPENSE_CATEGORIES[value]) e.category = value;
+    } else if (field === 'stopId') {
+        e.stopId = value === NO_STOP ? '' : String(value);
+    } else if (field === 'paidBy') {
+        if (people.some(p => p.id === value)) e.paidBy = value;
+    }
+    saveTrips();
     renderBudgetCalculator();
-    document.getElementById('expense-form')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+export function toggleExpenseDetails(expId) {
+    expandedExpenseId = expandedExpenseId === expId ? null : expId;
+    triggerHaptic('light');
+    renderBudgetCalculator();
+}
+
+export function toggleExpenseRowSplit(expId, personId) {
+    const found = findExpense(expId);
+    if (!found) return;
+    const { trip, e } = found;
+    const ids = getPeople(trip).map(p => p.id);
+    const set = new Set(shareOf(e, getPeople(trip)));
+    if (set.has(personId)) { if (set.size > 1) set.delete(personId); } else set.add(personId);
+    if (set.size === ids.length) delete e.splitWith; else e.splitWith = ids.filter(id => set.has(id));
+    saveTrips();
+    renderBudgetCalculator();
+}
+
+// Enter saves (blurs) the inline field, Escape puts the old value back
+export function expenseInlineKey(ev, el) {
+    if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); }
+    else if (ev.key === 'Escape') { el.value = el.defaultValue; el.blur(); }
 }
 
 export function addTripExpense() {
@@ -373,18 +393,11 @@ export function addTripExpense() {
     if (splitType === 'split' && formSplitWith) fields.splitWith = [...formSplitWith];
 
     if (!Array.isArray(trip.expenses)) trip.expenses = [];
-    const existing = editingExpenseId && trip.expenses.find(e => e.id === editingExpenseId);
-    if (existing) {
-        Object.assign(existing, fields);
-        if (!fields.splitWith) delete existing.splitWith;
-    } else {
-        trip.expenses.push({ id: 'exp_' + Date.now(), ...fields, date: new Date().toISOString().slice(0, 10) });
-    }
-    const wasEditing = Boolean(existing);
+    trip.expenses.push({ id: 'exp_' + Date.now(), ...fields, date: new Date().toISOString().slice(0, 10) });
     saveTrips();
     resetExpenseForm();
     renderBudgetCalculator();
-    showNotification(wasEditing ? "Expense updated" : `Added to ${EXPENSE_CATEGORIES[category].label}`);
+    showNotification(`Added to ${EXPENSE_CATEGORIES[category].label}`);
 }
 
 // Flip an expense between shared (split across travelers) and personal
@@ -406,7 +419,7 @@ export function deleteTripExpense(expId) {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
     triggerHaptic('warning');
     trip.expenses = trip.expenses.filter(e => e.id !== expId);
-    if (editingExpenseId === expId) resetExpenseForm();
+    if (expandedExpenseId === expId) expandedExpenseId = null;
     saveTrips();
     renderBudgetCalculator();
     showNotification("Expense removed.");
@@ -570,20 +583,39 @@ export function renderBudgetCalculator() {
         const shareNote = isSplit && parts.length > 1
             ? `<span class="expense-share-note">${money2(amt / parts.length)} each${parts.length < travelers ? ` · ${parts.map(id => escapeHTML(personName(people, id))).join(', ')}` : ''}</span>` : '';
 
+        const open = expandedExpenseId === e.id;
+        const sel = (field, opts, current, label) => `<label class="expense-edit-field"><span>${label}</span>
+            <select class="form-control" onchange="updateExpenseField('${safeId}', '${field}', this.value)">${opts.map(([v, l]) =>
+                `<option value="${escapeHTML(v)}"${v === current ? ' selected' : ''}>${escapeHTML(l)}</option>`).join('')}</select></label>`;
+        const curStop = expenseStop(trip, e) || NO_STOP;
+        const stopOpts = (trip.stops || []).map((s, i) => [stopKey(s, i), s.name])
+            .concat((trip.stops || []).length > 1 ? [[RETURN_STOP, 'Trip home']] : [], [[NO_STOP, 'Whole trip']]);
+        const details = open ? `
+            <div class="expense-details">
+                ${sel('category', Object.entries(EXPENSE_CATEGORIES).map(([id, c]) => [id, c.label]), expenseCategory(e), 'Category')}
+                ${sel('stopId', stopOpts, curStop, 'Stop')}
+                ${travelers > 1 ? sel('paidBy', people.map(p => [p.id, p.name]), payerOf(e, people), 'Paid by') : ''}
+                ${isSplit && travelers > 1 ? `<div class="expense-split-with"><span class="expense-split-label">Split with</span>${people.map(p =>
+                    `<button type="button" class="split-chip${parts.includes(p.id) ? ' on' : ''}" aria-pressed="${parts.includes(p.id)}" onclick="toggleExpenseRowSplit('${safeId}', '${escapeJS(p.id)}')">${escapeHTML(p.name)}</button>`).join('')}</div>` : ''}
+            </div>` : '';
+
         return `
-        <div class="expense-row${editingExpenseId === e.id ? ' editing' : ''}">
+        <div class="expense-row${open ? ' editing' : ''}">
             <span class="expense-cat" style="--cat:${cat.color}">${icon(cat.icon, 'ico-only')}</span>
             <div class="expense-body">
-                <button type="button" class="expense-main" onclick="editTripExpense('${safeId}')" aria-label="Edit ${escapeHTML(e.title)}">
-                    <strong>${escapeHTML(e.title)}</strong>
-                    <span class="expense-meta">${escapeHTML(meta.filter(Boolean).join(' · '))}</span>
+                <input class="expense-inline expense-inline-title" value="${escapeHTML(e.title)}" maxlength="80" aria-label="Expense name"
+                    onkeydown="expenseInlineKey(event, this)" onchange="updateExpenseField('${safeId}', 'title', this.value)">
+                <button type="button" class="expense-meta-btn" aria-expanded="${open}" onclick="toggleExpenseDetails('${safeId}')">
+                    <span class="expense-meta">${escapeHTML(meta.filter(Boolean).join(' · '))}</span>${icon('chevron-down', 'ico-only expense-chev')}
                 </button>
                 ${toggle}${shareNote}
             </div>
             <div class="expense-right">
-                <strong>${money2(amt)}</strong>
+                <label class="expense-inline-amount">$<input class="expense-inline" inputmode="decimal" value="${amt.toFixed(2)}" aria-label="Amount"
+                    onfocus="this.select()" onkeydown="expenseInlineKey(event, this)" onchange="updateExpenseField('${safeId}', 'amount', this.value)"></label>
                 <button type="button" class="budget-icon-btn danger" aria-label="Delete expense" onclick="deleteTripExpense('${safeId}')">${icon('trash', 'ico-only')}</button>
             </div>
+            ${details}
         </div>`;
     }).join('');
 }
