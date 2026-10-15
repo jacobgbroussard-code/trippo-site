@@ -98,6 +98,10 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 - Don't delete `google493bf46685196747.html` — it keeps Google Search Console ownership verified.
   `robots.txt`, `sitemap.xml` and `og-image.jpg` are also served on purpose.
 - Check mobile layout (iPhone safe areas) for UI changes — most users are on phones.
+- Search-as-you-type boxes use `searchOSM()` in js/state.js (Photon, works in mainland China). Never call
+  nominatim.openstreetmap.org on every keystroke — its usage policy forbids it; one-off lookups are fine.
+- Adding a stop mid-route goes through `insertStop()` in js/planner.js (places, round-trip legs and a booked
+  leg follow along); new cities go before the trip's flight home (`endsAtHome()`).
 
 ## Working with two AI tools
 The user switches between Claude Code and Antigravity on this same folder. Git is the handoff:
