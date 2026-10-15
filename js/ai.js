@@ -29,6 +29,7 @@ import {
     parseLocalDate,
 } from './state.js';
 import { buildAviasalesFlightUrl } from './travel-payouts.js';
+import { getTravelProfileText } from './travel-profile.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
 // worker, so nobody can run up the owner's quota; a self-hosted worker URL can still be set in
@@ -1176,7 +1177,8 @@ KEEP IT SHORT: "description" max 15 words, "tip" max 12 words, "summary" max 40 
                 ? `\nREQUIREMENT: You MUST include stops in these cities: ${resolvedContext.stops.map(s => s.fullName).join(', ')}.`
                 : '';
             const homeAirport = String(safeGetStorage('trippo_home_airport', 'LFT') || 'LFT').toUpperCase();
-            const userContextPrompt = `Today is ${formatLocalDate(new Date())}.\nHome airport: ${homeAirport}.\nPlan a trip for: "${promptText}"${explicitDuration}${explicitCities}`;
+            const profileText = getTravelProfileText();
+            const userContextPrompt = `Today is ${formatLocalDate(new Date())}.\nHome airport: ${homeAirport}.${profileText ? `\n${profileText}` : ''}\nPlan a trip for: "${promptText}"${explicitDuration}${explicitCities}`;
 
             const totalDays = durationDays || 5;
             const rawContent = await callGeminiDirectly(systemPrompt, [{ role: "user", content: userContextPrompt }], true, null, {
@@ -1298,10 +1300,117 @@ function setAILoadingState(isLoading, queryText = '') {
     }
 }
 
+// --- EDIT A PLAN BY CHAT (before saving) ---
+let refineUndo = [];
+let refineBusy = false;
+
+function setRefineStatus(html) {
+    const status = document.getElementById('ai-refine-status');
+    if (!status) return;
+    status.style.display = html ? '' : 'none';
+    status.innerHTML = html || '';
+}
+
+function mergePlanChanges(plan, res) {
+    const next = JSON.parse(JSON.stringify(plan));
+    if (Array.isArray(res.days) && res.days.length) {
+        next.days = res.days;
+    } else if (Array.isArray(res.replaceDays)) {
+        res.replaceDays.forEach(d => {
+            if (!d || !Number(d.day)) return;
+            const i = next.days.findIndex(x => Number(x.day) === Number(d.day));
+            if (i >= 0) next.days[i] = d; else next.days.push(d);
+        });
+        next.days.sort((a, b) => Number(a.day) - Number(b.day));
+    }
+    ['stops', 'flights', 'title', 'summary', 'tips', 'destination', 'startDate', 'travelers'].forEach(k => {
+        if (Object.prototype.hasOwnProperty.call(res, k)) next[k] = res[k];
+    });
+    next.durationDays = next.days.length;
+    return normalizeAIItinerary(next);
+}
+
+export function setAIRefinePrompt(text) {
+    const input = document.getElementById('ai-refine-input');
+    if (input) input.value = text;
+    refineAIPlan();
+}
+
+export async function refineAIPlan() {
+    const input = document.getElementById('ai-refine-input');
+    const btn = document.getElementById('ai-refine-btn');
+    const instruction = (input?.value || '').trim();
+    const plan = currentAIGeneratedItinerary;
+    if (refineBusy || !plan) return;
+    if (!instruction) { if (input) input.focus(); return; }
+    if (!getGeminiApiKey()) { showNotification('Editing a plan by chat needs your Gemini key (Settings → AI).', 4000); return; }
+    if (!checkIsOnline()) { showNotification('Editing a plan needs an internet connection.'); return; }
+
+    refineBusy = true;
+    if (btn) btn.disabled = true;
+    if (input) input.disabled = true;
+    setRefineStatus('<span class="ai-btn-spinner"></span> Updating the plan…');
+    const clean = JSON.parse(JSON.stringify(plan, (k, v) => (k.startsWith('_') || k === 'slot' || k === 'isTemplate' ? undefined : v)));
+    const profile = getTravelProfileText();
+    const system = `You edit an existing trip plan in Trippo, a travel planner. Apply the requested change and keep everything else the same unless the change needs it.
+Follow the same rules as the plan: real places that exist, accurate "lat"/"lon" (4 decimals), realistic 24h times, lunch and dinner at real places, day trips stay on their base stop with "dayTrip": true, travel between cities goes in "transitToNext", 3 real hotels per stop, nights per stop add up to the number of days.
+Return ONLY JSON with just what changed:
+{"summaryOfChanges": "One short sentence on what you changed",
+ "replaceDays": [complete day objects that changed, same shape as the plan, each with its "day" number],
+ "days": [every day, only when the number or order of days changes],
+ "stops": [the complete stops array, only if stops, nights, stay areas, hotels or transport changed],
+ "flights": {the complete flights object, only if flights changed},
+ "title": "", "summary": "", "tips": [] (only if they should change)}
+If the request has nothing to do with this trip, return {"error": "short reason"}.
+KEEP IT SHORT: "description" max 15 words, "tip" max 12 words. Output compact JSON without indentation.${profile ? `\n${profile}` : ''}`;
+    const user = `Today is ${formatLocalDate(new Date())}.\nCurrent plan JSON:\n${JSON.stringify(clean)}\n\nRequested change: "${instruction}"`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 120000);
+    try {
+        const raw = await callGeminiDirectly(system, [{ role: 'user', content: user }], false, ctrl.signal, {
+            thinking: 'low',
+            onProgress: text => {
+                const n = (text.match(/"day"\s*:\s*\d+/g) || []).length;
+                if (n) setRefineStatus(`<span class="ai-btn-spinner"></span> Rewriting day ${n}…`);
+            }
+        });
+        const res = parseJsonReply(raw);
+        if (res && res.error && !res.replaceDays && !res.days) throw new Error(String(res.error));
+        const next = mergePlanChanges(plan, res || {});
+        refineUndo.push(plan);
+        if (refineUndo.length > 10) refineUndo.shift();
+        openAITripModal(next, true);
+        if (window.updateAIPlanInLibrary) window.updateAIPlanInLibrary(next, instruction);
+        if (input) input.value = '';
+        setRefineStatus(`<svg class="ico" aria-hidden="true"><use href="#i-check"></use></svg><span>${escapeHTML((res && res.summaryOfChanges) || 'Plan updated.')}</span><button type="button" class="ai-refine-undo" onclick="undoAIPlanRefine()">Undo</button>`);
+        triggerHaptic('success');
+    } catch (e) {
+        setRefineStatus(escapeHTML(e && e.name === 'AbortError' ? 'That took too long. Please try again.' : (e && e.message) || 'Couldn’t update the plan. Please try again.'));
+    } finally {
+        clearTimeout(timer);
+        refineBusy = false;
+        if (btn) btn.disabled = false;
+        if (input) input.disabled = false;
+    }
+}
+
+export function undoAIPlanRefine() {
+    const prev = refineUndo.pop();
+    if (!prev) return;
+    openAITripModal(prev, true);
+    if (window.updateAIPlanInLibrary) window.updateAIPlanInLibrary(prev, null);
+    setRefineStatus(refineUndo.length ? 'Undone. <button type="button" class="ai-refine-undo" onclick="undoAIPlanRefine()">Undo again</button>' : 'Undone.');
+}
+
 // --- RENDER ITINERARY PREVIEW MODAL ---
-export function openAITripModal(itinerary) {
+export function openAITripModal(itinerary, keepEdits = false) {
     if (!itinerary) return;
     currentAIGeneratedItinerary = itinerary;
+    if (!keepEdits) {
+        refineUndo = [];
+        const status = document.getElementById('ai-refine-status');
+        if (status) { status.style.display = 'none'; status.innerHTML = ''; }
+    }
 
     const modal = document.getElementById('ai-trip-modal');
     if (!modal) return;
@@ -2083,7 +2192,7 @@ Current Context:
 - Trip: ${tripName}
 - Already Scheduled Places for Day ${day}: ${existingPlaces}
 ${context.date ? `- Date: ${context.date} (think about season, weather, opening days and holidays)\n` : ''}${context.route ? `- Whole trip route: ${context.route}\n` : ''}${context.hotel ? `- Staying at: ${context.hotel} (prefer places that are easy to reach from here; mention rough travel time)\n` : ''}${context.otherDays ? `- Already planned on other days in ${city} (don't repeat these): ${context.otherDays}\n` : ''}${context.group ? `- Group: ${context.group}\n` : ''}
-CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
+${getTravelProfileText() ? `${getTravelProfileText()}\n` : ''}CRITICAL INSTRUCTIONS & SAFETY CONSTRAINTS:
 1. STRICT IMMUTABILITY & NO-DELETION RESTRICTION: You are strictly an ADDITIVE recommendation assistant. You do NOT have any authority, ability, or permission to delete, modify, clear, remove, or overwrite existing trips, itineraries, stops, or places.
 2. If the user asks you to delete, cancel, wipe, clear, remove, or replace any trips, cities, days, stops, or places, you MUST decline politely and explain:
    {"reply": "I am designed to suggest and add new travel ideas without altering or deleting your existing plans. To remove or edit any existing places, stops, or trips, you can safely use the trash icon 🗑️ or edit buttons directly in the planner.", "suggestions": []}
@@ -2336,7 +2445,7 @@ async function callGeminiDirectly(systemInstruction, conversationMessages, enabl
     const apiKey = getGeminiApiKey();
     const contents = conversationMessages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
+        parts: Array.isArray(m.parts) && m.parts.length ? m.parts : [{ text: m.content }]
     }));
     const signal = signalOverride || aiFetchAbortController?.signal || copilotAbortController?.signal;
 
@@ -2436,7 +2545,11 @@ export async function askGeminiJSON(systemInstruction, userText, timeoutMs = 300
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-        const raw = await callGeminiDirectly(systemInstruction, [{ role: 'user', content: userText }], Boolean(options.search), ctrl.signal);
+        const parts = Array.isArray(options.attachments) && options.attachments.length
+            ? [...options.attachments.map(a => ({ inlineData: { mimeType: a.mimeType, data: a.data } })), { text: userText }]
+            : null;
+        const raw = await callGeminiDirectly(systemInstruction, [{ role: 'user', content: userText, parts }], Boolean(options.search), ctrl.signal,
+            { thinking: options.thinking || null, onProgress: options.onProgress });
         return parseJsonReply(raw);
     } finally {
         clearTimeout(timer);

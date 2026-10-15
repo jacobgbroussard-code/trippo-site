@@ -17,6 +17,7 @@ import {
     setActivePlacesTripId, setActivePlacesStopIndex, setActivePlacesDayIndex
 } from './state.js';
 import { askGeminiJSON, getGeminiApiKey } from './ai.js';
+import { getProfilePace } from './travel-profile.js';
 
 export const DAY_PACES = {
     relaxed: { label: 'Relaxed', start: 600, end: 1110, buffer: 20 },  // 10:00–18:30
@@ -504,7 +505,7 @@ export async function openSmartDayPlan(stopIndex) {
         if (box) box.focus();
         return;
     }
-    const pace = DAY_PACES[safeGetStorage(PACE_KEY)] ? safeGetStorage(PACE_KEY) : 'balanced';
+    const pace = DAY_PACES[safeGetStorage(PACE_KEY)] ? safeGetStorage(PACE_KEY) : (getProfilePace() || 'balanced');
     const token = ++runToken;
     dp = { tripId: trip.id, stopIndex, items, pace, plan: null, writeNotes: true, done: false };
     const modal = document.getElementById('day-plan-modal');

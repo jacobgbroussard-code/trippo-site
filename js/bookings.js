@@ -78,6 +78,14 @@ export function useHotelIdea(stopIndex, ideaIndex) {
     set('hotel-notes-input', `AI suggestion${idea.price ? `, typically ~$${idea.price}/night` : ''}. Add your confirmation number once booked.`);
 }
 
+// "Fill from confirmation" inside the stay and travel-leg forms
+export function fillStayFromConfirmation() {
+    if (window.openBookingImport && activeLodgingStopIndex !== null) window.openBookingImport('stay', activeLodgingStopIndex);
+}
+export function fillLegFromConfirmation() {
+    if (window.openBookingImport && activeTransitIndex !== null) window.openBookingImport('travel', activeTransitIndex);
+}
+
 export function renderBookingsList() {
     const selectEl = document.getElementById('booking-trip-select');
     const trip = trips.find(t => t.id === (selectEl ? selectEl.value : activeTripId));

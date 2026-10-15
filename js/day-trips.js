@@ -17,6 +17,7 @@ import {
     showNotification, icon, triggerHaptic, getDistance, parseLocalDate, safeGetStorage, safeSetStorage, closeModal
 } from './state.js';
 import { askGeminiJSON, getGeminiApiKey, NoAIKeyError } from './ai.js';
+import { getTravelProfileText } from './travel-profile.js';
 
 const CACHE_KEY = 'trippo_daytrips_v1';
 const CACHE_CITIES = 8;
@@ -75,7 +76,7 @@ Rules:
 - Mix types (water towns, nature, history, food cities) and order by how worthwhile they are.
 Return ONLY JSON:
 {"options":[{"name":"Suzhou","area":"Jiangsu, China","type":"day","lat":31.2990,"lon":120.5853,"travelMinutes":30,"transport":"High-speed train from Shanghai Hongqiao to Suzhou","frequency":"every 10-15 min","farePerPersonUSD":6,"why":"Classical gardens and canals, an easy half or full day","highlights":["Humble Administrator's Garden","Pingjiang Road","Tiger Hill"],"timeNeeded":"Full day","tip":"Book trains on Trip.com or 12306; bring your passport"}]}
-type is "day" or "overnight". travelMinutes is one way, door to door.`;
+type is "day" or "overnight". travelMinutes is one way, door to door.${getTravelProfileText() ? `\n${getTravelProfileText()}` : ''}`;
     const user = `Base: ${stop.name}${hasCoords(stop) ? ` (${stop.lat.toFixed(3)}, ${stop.lon.toFixed(3)})` : ''}
 Dates there: ${dates || 'not set'} (${Math.max(1, Number(stop.nights) || 1)} nights)
 Travelers: ${Number(trip.budgetTravelers) || 2}${style ? `, ${style === 'mid' ? 'mid-range' : style} budget` : ''}`;

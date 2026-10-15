@@ -59,7 +59,21 @@ export function saveAIPlanToLibrary(query, itinerary) {
     recent.unshift(String(query));
     safeSetStorage(RECENT_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
     const plans = getAIPlans();
-    plans.unshift({ id: 'plan_' + Date.now().toString(36), query: String(query), createdAt: Date.now(), itinerary });
+    const id = 'plan_' + Date.now().toString(36);
+    itinerary._libId = id;
+    plans.unshift({ id, query: String(query), createdAt: Date.now(), itinerary });
+    writePlans(plans);
+    renderAIPlanLibrary();
+}
+
+// Chat edits replace the saved plan instead of adding a new one each time
+export function updateAIPlanInLibrary(itinerary, instruction) {
+    if (!itinerary || !itinerary._libId) return;
+    const plans = getAIPlans();
+    const p = plans.find(x => x.id === itinerary._libId);
+    if (!p) return;
+    p.itinerary = itinerary;
+    if (instruction) p.edits = [...(Array.isArray(p.edits) ? p.edits : []), String(instruction).slice(0, 120)].slice(-8);
     writePlans(plans);
     renderAIPlanLibrary();
 }
@@ -67,6 +81,7 @@ export function saveAIPlanToLibrary(query, itinerary) {
 export function openSavedAIPlan(id) {
     const p = findPlan(id);
     if (!p) return;
+    p.itinerary._libId = p.id;
     if (window.setCurrentAIItinerary) window.setCurrentAIItinerary(p.itinerary);
     if (window.openAITripModal) window.openAITripModal(p.itinerary);
 }
