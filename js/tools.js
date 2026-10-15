@@ -465,7 +465,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.45",
+        trippoVersion: "2.4.46",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -511,7 +511,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.45",
+        version: "2.4.46",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
@@ -1302,7 +1302,7 @@ export async function renderFlightHubDeals(origin, dateStr = '') {
                     <span class="flight-deal-airline">${escapeHTML(deal.airline)}</span>
                 </div>
                 <div class="flight-deal-price-badge">
-                    <span>From ${Number(deal.price) || 0}</span>
+                    <span title="${deal.typical ? 'Typical round-trip fare, not a live price' : 'Recent fare found on Aviasales'}">${deal.typical ? 'About' : 'From'} $${Number(deal.price) || 0}</span>
                     <span style="font-size:9px;">↗</span>
                 </div>
             </a>

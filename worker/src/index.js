@@ -12,6 +12,52 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_PROMPT_CHARS = 2000;
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_MESSAGES = 8; // the chat handler only ever uses the last 8
+const TP_MARKER = "581802"; // Travelpayouts partner marker (public; it's in every affiliate link)
+const IATA = /^[A-Z]{3}$/;
+const MONTH_OR_DAY = /^\d{4}-\d{2}(-\d{2})?$/;
+
+// Real recent fares from the Travelpayouts Data API (cached Aviasales searches, not live seat inventory).
+// The API has no CORS, and the token must stay secret, so the app asks this worker.
+async function flightPrices(url, env) {
+  const origin = String(url.searchParams.get("origin") || "").toUpperCase();
+  const destination = String(url.searchParams.get("destination") || "").toUpperCase();
+  const depart = String(url.searchParams.get("depart") || "");
+  const ret = String(url.searchParams.get("return") || "");
+  if (!IATA.test(origin) || !IATA.test(destination)) return { status: 400, body: { success: false, error: "Use 3-letter airport codes." } };
+  const api = new URL("https://api.travelpayouts.com/aviasales/v3/prices_for_dates");
+  api.searchParams.set("origin", origin);
+  api.searchParams.set("destination", destination);
+  if (MONTH_OR_DAY.test(depart)) api.searchParams.set("departure_at", depart);
+  if (MONTH_OR_DAY.test(ret)) api.searchParams.set("return_at", ret);
+  api.searchParams.set("one_way", MONTH_OR_DAY.test(ret) ? "false" : "true");
+  api.searchParams.set("currency", "usd");
+  api.searchParams.set("sorting", "price");
+  api.searchParams.set("limit", "5");
+  const res = await fetch(api.toString(), { headers: { "X-Access-Token": env.TP_TOKEN }, cf: { cacheTtl: 1800, cacheEverything: true } });
+  if (!res.ok) return { status: 502, body: { success: false, error: `Flight prices are unavailable right now (${res.status}).` } };
+  const json = await res.json();
+  const fares = (Array.isArray(json.data) ? json.data : []).slice(0, 5).map((f) => ({
+    price: f.price,
+    airline: f.airline,
+    flightNumber: f.flight_number,
+    departAt: f.departure_at,
+    returnAt: f.return_at || null,
+    transfers: f.transfers,
+    returnTransfers: f.return_transfers,
+    durationMinutes: f.duration_to || f.duration || null,
+    link: f.link ? `https://www.aviasales.com${f.link}${String(f.link).includes("?") ? "&" : "?"}marker=${TP_MARKER}` : null,
+  }));
+  return { status: 200, body: { success: true, currency: "usd", fares } };
+}
+
+// Cheapest recent fares from one airport to anywhere (the sidebar's "Top Getaways")
+async function flightDeals(url, env) {
+  const origin = String(url.searchParams.get("origin") || "").toUpperCase();
+  if (!IATA.test(origin)) return { status: 400, body: { success: false, error: "Use a 3-letter airport code." } };
+  const res = await fetch(`https://api.travelpayouts.com/v1/prices/cheap?origin=${origin}&currency=usd`, { headers: { "X-Access-Token": env.TP_TOKEN }, cf: { cacheTtl: 3600, cacheEverything: true } });
+  if (!res.ok) return { status: 502, body: { success: false, error: `Flight deals are unavailable right now (${res.status}).` } };
+  return { status: 200, body: await res.json() };
+}
 
 function isAllowedOrigin(origin) {
   return ALLOWED_ORIGINS.has(origin) || LOCAL_DEV_ORIGIN.test(origin);
@@ -52,6 +98,22 @@ export default {
     }
 
     const url = new URL(request.url);
+
+    if (request.method === "GET" && (url.pathname === "/flight-prices" || url.pathname === "/flight-deals")) {
+      if (!isAllowedOrigin(origin)) return reject(403, "Flight prices only work from trippo.top.");
+      if (env.RATE_LIMITER) {
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        const { success } = await env.RATE_LIMITER.limit({ key: ip });
+        if (!success) return reject(429, "Too many requests. Please wait a minute.");
+      }
+      if (!env.TP_TOKEN) return reject(503, "Flight prices aren't set up yet.");
+      try {
+        const out = url.pathname === "/flight-prices" ? await flightPrices(url, env) : await flightDeals(url, env);
+        return new Response(JSON.stringify(out.body), { status: out.status, headers: { ...corsHeaders, "Cache-Control": "public, max-age=1800" } });
+      } catch (e) {
+        return reject(502, "Flight prices are unavailable right now.");
+      }
+    }
 
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
       return new Response(

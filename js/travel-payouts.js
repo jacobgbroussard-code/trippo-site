@@ -145,6 +145,43 @@ export function esimLink(country) {
 }
 
 /**
+ * Real recent fares go through Trippo's Cloudflare worker, which keeps the Travelpayouts token
+ * secret (the Travelpayouts API also can't be called from a web page). Empty = not set up yet,
+ * and the app shows Gemini's typical-fare estimates instead.
+ */
+export const FLIGHT_PRICES_URL = '';
+
+function flightWorkerBase() {
+    let custom = '';
+    try { custom = (window.localStorage.getItem('trippoCloudflareWorkerUrl') || '').trim(); } catch (e) { /* storage blocked */ }
+    return (custom || FLIGHT_PRICES_URL).replace(/\/+$/, '');
+}
+
+export function hasLiveFlightPrices() {
+    return Boolean(flightWorkerBase());
+}
+
+export async function getLiveFares(origin, destination, depart = '', ret = '') {
+    const base = flightWorkerBase();
+    if (!base || !/^[A-Z]{3}$/i.test(String(origin || '')) || !/^[A-Z]{3}$/i.test(String(destination || ''))) return null;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 9000);
+    try {
+        const q = new URLSearchParams({ origin: String(origin).toUpperCase(), destination: String(destination).toUpperCase() });
+        if (depart) q.set('depart', depart);
+        if (ret) q.set('return', ret);
+        const res = await fetch(`${base}/flight-prices?${q}`, { signal: ctrl.signal });
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json && json.success && Array.isArray(json.fares) ? json.fares.filter(f => Number(f.price) > 0) : null;
+    } catch (e) {
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
  * Builds Aviasales flight search URL with active affiliate marker
  */
 export function buildAviasalesFlightUrl(origin, destination, dateStr = '', returnStr = '') {
@@ -178,13 +215,16 @@ export async function getCheapFlightDeals(origin, dateStr = '') {
     const code = (origin || 'LFT').toUpperCase();
     const token = getTravelPayoutsToken();
 
-    // If user provided a Travelpayouts Data API token, attempt live price lookup
-    if (token) {
+    // Live prices come through Trippo's worker (the Travelpayouts API blocks calls from web pages)
+    const workerBase = flightWorkerBase();
+    if (workerBase || token) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2500);
-            
-            const apiUrl = `https://api.travelpayouts.com/v1/prices/cheap?origin=${code}&currency=USD&token=${token}`;
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            const apiUrl = workerBase
+                ? `${workerBase}/flight-deals?origin=${code}`
+                : `https://api.travelpayouts.com/v1/prices/cheap?origin=${code}&currency=USD&token=${token}`;
             const res = await fetch(apiUrl, { signal: controller.signal });
             clearTimeout(timeoutId);
 
@@ -214,10 +254,11 @@ export async function getCheapFlightDeals(origin, dateStr = '') {
         }
     }
 
-    // Default to high-accuracy curated matrix
+    // No live prices: typical fares, labelled as such
     const catalog = AIRPORT_CATALOG[code] || GLOBAL_DEFAULT_DESTINATIONS;
     return catalog.map(item => ({
         ...item,
+        typical: true,
         link: buildAviasalesFlightUrl(code, item.code, dateStr)
     }));
 }

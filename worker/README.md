@@ -18,6 +18,22 @@ A serverless Edge AI backend for **Trippo** powered by **Cloudflare Workers AI**
     └── index.js       # Worker entrypoint handling CORS, Prompt Injection & Llama-3 inference
 ```
 
+## Real flight prices (Travelpayouts)
+
+`GET /flight-prices?origin=IAH&destination=PVG&depart=2027-04-01&return=2027-04-10` and
+`GET /flight-deals?origin=LFT` proxy the Travelpayouts Data API, which can't be called from a
+web page and needs a secret token. One-time setup (the token is typed into wrangler, never committed):
+
+```bash
+npx wrangler login
+npx wrangler secret put TP_TOKEN
+npx wrangler deploy
+```
+
+Then put the worker's URL (e.g. `https://trippo-ai-worker.<account>.workers.dev`) in
+`FLIGHT_PRICES_URL` in `js/travel-payouts.js`. Fares are what Aviasales users found recently
+(cached up to a few days), not live seat inventory.
+
 ## Quick Start & Local Testing
 
 1. Navigate to the worker directory:

@@ -29,7 +29,7 @@ import * as tripCheckup from './trip-checkup.js';
 import * as today from './today.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.45';
+const CURRENT_VERSION = '2.4.46';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);

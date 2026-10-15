@@ -17,7 +17,11 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   `day-planner.js` ("Plan my days" in a stop's Planner sheet: only ever ADDS places, never edits/removes),
   `day-trips.js` (Daily tab "Day trips": Gemini + Search ideas, cached per city; can insert a 1-night stop),
   `budget-estimator.js` (per-stop cost estimates in the Trip Budget modal), `budget-tracker.js`
-  (expenses tagged by stop/category, who paid, settle up, booking prices → `bk_*` expenses)
+  (expenses tagged by stop/category, who paid, settle up, booking prices → `bk_*` expenses),
+  `travel-profile.js` (AI travel profile used by every AI prompt), `booking-import.js` (Gemini reads a pasted
+  confirmation / screenshot / PDF and fills a stay or travel-leg form for review), `trip-checkup.js` (quick checks +
+  Gemini review, book-ahead .ics, before-you-go list), `today.js` (Day view / Today: now-next, running late,
+  rainy-day swaps, driver cards, home Today card)
 - `styles/main.css`, `styles/components.css`
 - `sw.js` — service worker with a static-asset cache list
 - `worker/` — separate Cloudflare Worker (Gemini-backed "Edge AI"), deployed with wrangler
@@ -62,6 +66,11 @@ needs offline, add it to `STATIC_ASSETS` in `sw.js`.
 - The `tp-em.com` tracking script only loads on booking/flight screens (`loadPartnerTracking()` in
   js/state.js) because it gets full page access; keep it that way.
 - The account has no payout method yet; only the owner can add it.
+- Partner links (Klook, Tiqets, Airalo) go through `partnerLink()` in js/travel-payouts.js: paste one generated
+  Travelpayouts link per program into `PARTNER_LINK_TEMPLATES` with the destination replaced by `{URL}`.
+- Real flight prices: the Travelpayouts API has no CORS and needs a secret token, so it goes through the worker
+  (`GET /flight-prices`, `/flight-deals`, token in the `TP_TOKEN` wrangler secret). Set `FLIGHT_PRICES_URL` in
+  js/travel-payouts.js to the deployed worker URL; empty = AI estimates only. See worker/README.md.
 
 ## Rules
 - **Never commit secrets.** `.env`, `site-credentials-and-services.csv`, `SITE_MANAGEMENT_DIRECTORY.md`,

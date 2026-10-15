@@ -4864,3 +4864,9 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .driver-local { font-size: clamp(34px, 11vw, 56px); font-weight: 800; line-height: 1.2; word-break: break-word; }
 .driver-address { font-size: 20px; margin-top: 12px; line-height: 1.35; }
 .driver-english { font-size: 14px; color: var(--text-light, #64748b); margin: 16px 0 8px; }
+
+/* Real recent fares under the AI flight estimate */
+.ai-live-fares { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-subtle); font-size: 12.5px; }
+.ai-live-fares a { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; color: var(--text); text-decoration: none; }
+.ai-live-fares a span:first-child { font-weight: 800; color: var(--primary); min-width: 56px; }
+.ai-live-fares small { display: block; color: var(--text-light, #64748b); font-size: 11px; margin-top: 2px; }

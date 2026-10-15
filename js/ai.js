@@ -28,7 +28,7 @@ import {
     getDistance,
     parseLocalDate,
 } from './state.js';
-import { buildAviasalesFlightUrl, ticketLink } from './travel-payouts.js';
+import { buildAviasalesFlightUrl, ticketLink, getLiveFares, hasLiveFlightPrices } from './travel-payouts.js';
 import { getTravelProfileText } from './travel-profile.js';
 
 // Real AI runs on each user's own Gemini API key (Settings → AI). There is no shared default
@@ -1302,6 +1302,25 @@ function setAILoadingState(isLoading, queryText = '') {
     }
 }
 
+// Real recent fares (through the worker) under the AI's estimate
+async function showLiveFares(fl, start) {
+    const out = fl.outbound, back = fl.return;
+    let ret = '';
+    if (start && back && Array.isArray(currentAIGeneratedItinerary?.stops)) {
+        const d = parseLocalDate(start);
+        d.setDate(d.getDate() + (out.arrivesNextDay ? 1 : 0) + currentAIGeneratedItinerary.stops.reduce((n, s) => n + (Number(s.nights) || 0), 0));
+        ret = formatLocalDate(d);
+    }
+    const fares = await getLiveFares(out.from, out.to, start || '', back && back.from === out.to ? ret : '');
+    const el = document.getElementById('ai-live-fares');
+    if (!el || !fares || !fares.length) return;
+    el.innerHTML = `<div class="ai-live-fares"><strong>Real recent fares</strong>${fares.slice(0, 3).map(f => `
+        <a href="${escapeHTML(f.link || buildAviasalesFlightUrl(out.from, out.to, start))}" target="_blank" rel="noopener noreferrer">
+            <span>$${Math.round(f.price)}</span>
+            <span>${escapeHTML([f.airline, f.departAt ? new Date(f.departAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '', Number(f.transfers) === 0 ? 'nonstop' : `${f.transfers} stop${Number(f.transfers) === 1 ? '' : 's'}`].filter(Boolean).join(' · '))}</span>
+        </a>`).join('')}<small>Prices other travellers found recently on Aviasales, per person. Check before booking.</small></div>`;
+}
+
 // --- EDIT A PLAN BY CHAT (before saving) ---
 let refineUndo = [];
 let refineBusy = false;
@@ -1478,8 +1497,10 @@ export function openAITripModal(itinerary, keepEdits = false) {
                     <div class="ai-flight-head"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg><strong>Flights${fl.departCity ? ` from ${escapeHTML(fl.departCity)}` : ''}</strong>${Number(fl.fareUSDPerPerson) > 0 ? `<span>est. ~$${Math.round(fl.fareUSDPerPerson)} pp round trip</span>` : ''}</div>
                     ${fl.driveNote ? `<div class="ai-flight-note">${escapeHTML(fl.driveNote)}</div>` : ''}
                     ${flightLeg('Out', fl.outbound)}${fl.return ? flightLeg('Home', fl.return) : ''}
+                    <div id="ai-live-fares"></div>
                     <a class="ai-flight-link" href="${escapeHTML(buildAviasalesFlightUrl(fl.outbound.from, fl.outbound.to, startForLink))}" target="_blank" rel="noopener noreferrer">Check real fares ›</a>
                 </div>` : '';
+            if (fl && hasLiveFlightPrices()) showLiveFares(fl, startForLink);
             const routeHtml = Array.isArray(itinerary.stops) && itinerary.stops.length ? `
                 <div class="ai-route-card">
                     ${itinerary.stops.map((st, i) => {
