@@ -485,6 +485,15 @@ export function deleteTripExpense(expId) {
     showNotification("Expense removed.");
 }
 
+export function showBudgetPane(pane) {
+    ['estimate', 'expenses'].forEach(p => {
+        const el = document.getElementById(`budget-pane-${p}`);
+        const tab = document.getElementById(`budget-tab-${p}`);
+        if (el) el.style.display = p === pane ? '' : 'none';
+        if (tab) { tab.classList.toggle('active', p === pane); tab.setAttribute('aria-selected', String(p === pane)); }
+    });
+}
+
 export function renderBudgetCalculator() {
     const trip = getBudgetActiveTrip();
     if (!trip) return;
@@ -508,7 +517,8 @@ export function renderBudgetCalculator() {
     const combinedEl = document.getElementById('budget-total-combined');
     const perPersonEl = document.getElementById('budget-per-person');
     if (combinedEl) combinedEl.innerText = `$${totalCombined.toFixed(2)}`;
-    if (perPersonEl) perPersonEl.innerText = `$${perPersonSplit.toFixed(2)} (Split portion across ${travelers} people)`;
+    if (perPersonEl) perPersonEl.innerText = `$${perPersonSplit.toFixed(2)} / person (shared ÷ ${travelers})`;
+    if (window.renderBudgetEstimator) window.renderBudgetEstimator(trip.id);
 
     const container = document.getElementById('expenses-list-container');
     if (!container) return;
@@ -522,8 +532,8 @@ export function renderBudgetCalculator() {
         const safeTitle = escapeHTML(e.title);
         const safeId = escapeJS(e.id);
         const badge = e.splitType === 'split'
-            ? `<span style="background:var(--primary-light); color:var(--primary); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;">👥 Split (÷${travelers} = $${(amt / travelers).toFixed(2)}/ea)</span>`
-            : `<span style="background:#fff0f2; color:var(--accent); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;">👤 Individual</span>`;
+            ? `<span style="background:var(--primary-light); color:var(--primary); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg>Split (÷${travelers} = $${(amt / travelers).toFixed(2)}/ea)</span>`
+            : `<span style="background:#fff0f2; color:var(--accent); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg>Individual</span>`;
 
         return `
         <div style="background:var(--card-bg); border:1px solid var(--border-subtle); border-radius:14px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
@@ -601,7 +611,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.30",
+        trippoVersion: "2.4.31",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -647,7 +657,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.30",
+        version: "2.4.31",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
