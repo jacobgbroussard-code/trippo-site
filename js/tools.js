@@ -28,6 +28,7 @@ import {
     escapeJS,
     loadPartnerTracking,
     formatTime,
+    icon,
 } from './state.js';
 
 import { initPlannerMap, safeInvalidate, plannerMap } from './maps.js';
@@ -472,6 +473,17 @@ export function addTripExpense() {
     showNotification("Expense added!");
 }
 
+// Flip an expense between shared (split across travelers) and personal
+export function setExpenseSplitType(expId, splitType) {
+    const trip = getBudgetActiveTrip();
+    const exp = trip && (trip.expenses || []).find(e => e.id === expId);
+    if (!exp || (splitType !== 'split' && splitType !== 'individual') || exp.splitType === splitType) return;
+    exp.splitType = splitType;
+    triggerHaptic('light');
+    saveTrips();
+    renderBudgetCalculator();
+}
+
 export function deleteTripExpense(expId) {
     const trip = getBudgetActiveTrip();
     if (!trip || !trip.expenses) return;
@@ -531,15 +543,18 @@ export function renderBudgetCalculator() {
         const amt = Number(e.amount) || 0;
         const safeTitle = escapeHTML(e.title);
         const safeId = escapeJS(e.id);
-        const badge = e.splitType === 'split'
-            ? `<span style="background:var(--primary-light); color:var(--primary); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg>Split (÷${travelers} = $${(amt / travelers).toFixed(2)}/ea)</span>`
-            : `<span style="background:#fff0f2; color:var(--accent); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg>Individual</span>`;
+        const isSplit = e.splitType === 'split';
+        const toggle = `<div class="expense-split-toggle" role="group" aria-label="How this cost is shared">
+                <button type="button" class="${isSplit ? 'on' : ''}" aria-pressed="${isSplit}" onclick="setExpenseSplitType('${safeId}', 'split')">${icon('users')}Shared</button>
+                <button type="button" class="${isSplit ? '' : 'on'}" aria-pressed="${!isSplit}" onclick="setExpenseSplitType('${safeId}', 'individual')">${icon('user')}Personal</button>
+            </div>`;
+        const shareNote = isSplit ? `<span class="expense-share-note">${travelers > 1 ? `$${(amt / travelers).toFixed(2)} each` : ''}</span>` : '';
 
         return `
         <div style="background:var(--card-bg); border:1px solid var(--border-subtle); border-radius:14px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <strong style="font-size:14px; display:block; margin-bottom:3px;">${safeTitle}</strong>
-                ${badge}
+                ${toggle}${shareNote}
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
                 <strong style="font-size:15px; color:var(--primary);">$${amt.toFixed(2)}</strong>
@@ -611,7 +626,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.31",
+        trippoVersion: "2.4.32",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -657,7 +672,7 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.31",
+        version: "2.4.32",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,

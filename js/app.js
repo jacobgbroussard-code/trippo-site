@@ -21,7 +21,7 @@ import * as ai from './ai.js';
 import * as budgetEstimator from './budget-estimator.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.31';
+const CURRENT_VERSION = '2.4.32';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
