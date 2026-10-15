@@ -16,7 +16,7 @@ import {
     escapeJS,
     triggerHaptic,
     normalizeTrip,
-    formatTempF, isReducedMotion, icon,
+    formatTempF, isReducedMotion, icon, searchOSM,
 } from './state.js';
 
 import { drawPlannerMapRoute, plannerMap, pMarkers, hasCoords, highlightPlannerLeg } from './maps.js';
@@ -402,8 +402,13 @@ export function updateNights(index, delta) {
     if (stop.notes.length < Math.max(1, stop.nights)) {
         stop.notes.push(...Array(Math.max(1, stop.nights) - stop.notes.length).fill(''));
     }
+    // Places planned on a day that no longer exists move to the new last day instead of vanishing from Daily
+    const days = Math.max(1, stop.nights);
+    const orphaned = (trip.places || []).filter(p => p.cityIndex === index && Number.isInteger(p.dayIndex) && p.dayIndex >= days);
+    orphaned.forEach(p => { p.dayIndex = days - 1; });
     saveTrips();
     renderPlanner();
+    if (orphaned.length) showNotification(`${orphaned.length} planned stop${orphaned.length === 1 ? '' : 's'} moved to Day ${days} in ${stop.name}`);
 }
 
 export function focusStopOnMap(event, index) {
@@ -448,9 +453,14 @@ export function focusSegmentOnMap(event, idx1, idx2) {
 export function deleteStop(index) {
     const trip = getActiveTrip();
     if (!trip || !trip.stops || !trip.stops[index]) return;
-    if (confirm(`Remove ${trip.stops[index].name} from itinerary?`)) {
+    const planned = (trip.places || []).filter(p => p.cityIndex === index).length;
+    if (confirm(`Remove ${trip.stops[index].name} from itinerary?${planned ? `\n\nIts ${planned} planned stop${planned === 1 ? '' : 's'} on the Daily tab ${planned === 1 ? 'goes' : 'go'} too.` : ''}`)) {
         triggerHaptic('warning');
         trip.stops.splice(index, 1);
+        // Round-trip legs after the removed stop move up one
+        if (Array.isArray(trip.roundTripSegments)) {
+            trip.roundTripSegments = trip.roundTripSegments.filter(i => i !== index).map(i => (i > index ? i - 1 : i));
+        }
         if (Array.isArray(trip.places)) {
             trip.places = trip.places
                 .filter(p => p.cityIndex !== index)
@@ -601,10 +611,11 @@ export function searchCity(query) {
     citySearchTimeout = setTimeout(async () => {
         try {
             citySearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
-                signal: citySearchAbortController.signal
-            });
-            const data = await res.json();
+            // Cities near the end of the route come first
+            const trip = getActiveTrip();
+            const stops = (trip && trip.stops) || [];
+            const near = stops[stops.length - (endsAtHome(trip) ? 2 : 1)] || null;
+            const data = await searchOSM(query, { cities: true, limit: 5, near, signal: citySearchAbortController.signal });
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
                     const rawName = item.name || item.display_name.split(',')[0];
@@ -637,6 +648,63 @@ export function planEmptyTripWithAI() {
     if (input && !input.value.trim() && trip && trip.name) input.value = trip.name;
 }
 
+// A trip that ends back where it started (the flight home), so new cities go before that last stop
+export function endsAtHome(trip) {
+    const stops = (trip && trip.stops) || [];
+    if (stops.length < 3) return false;
+    const first = stops[0], last = stops[stops.length - 1];
+    if (hasCoords(first) && hasCoords(last)) return getDistance(Number(first.lat), Number(first.lon), Number(last.lat), Number(last.lon)) < 25;
+    return String(first.name || '').trim().toLowerCase() === String(last.name || '').trim().toLowerCase();
+}
+
+// The travel form pre-fills the date and stations, so only a booking number, times or a paid price mean it's booked
+const isBookedLeg = (trip, stop) => {
+    const t = stop && stop.transit;
+    if (!t) return false;
+    if (t.bookingNumber || t.depTime || t.arrTime) return true;
+    return (trip.expenses || []).some(e => e.id === `bk_travel_${stop.id}` && Number(e.amount) > 0);
+};
+
+// Put a new stop into the route right after stop afterIdx (-1 = first). The trip's places, round-trip
+// legs and the travel leg that left the stop before all follow along. Returns false if the user cancels.
+export function insertStop(trip, newStop, afterIdx) {
+    if (!Array.isArray(trip.stops)) trip.stops = [];
+    if (!Array.isArray(trip.places)) trip.places = [];
+    afterIdx = Math.max(-1, Math.min(trip.stops.length - 1, afterIdx));
+    const prev = afterIdx >= 0 ? trip.stops[afterIdx] : null;
+    const next = trip.stops[afterIdx + 1] || null;
+    const booked = isBookedLeg(trip, prev);
+    if (prev && next && booked &&
+        !confirm(`Your booked ${prev.transit.method === 'plane' ? 'flight' : prev.transit.method || 'transport'} from ${prev.name} to ${next.name} will move to the ${newStop.name} → ${next.name} leg, so check its date and station.\n\nAdd ${newStop.name} after ${prev.name}?`)) return false;
+
+    const originalStops = [...trip.stops];
+    trip.stops.splice(afterIdx + 1, 0, newStop);
+    // Places follow their stop (same as drag-reordering stops)
+    trip.places.forEach(p => {
+        const target = originalStops[p.cityIndex];
+        if (target) p.cityIndex = trip.stops.indexOf(target);
+    });
+    if (Array.isArray(trip.roundTripSegments)) {
+        const from = prev ? afterIdx : 0;
+        trip.roundTripSegments = trip.roundTripSegments.map(i => (i >= from ? i + 1 : i));
+    }
+    // A booked leg now leaves the new stop, toward the same next city; an unbooked one just keeps
+    // its way of travel on both new legs (its pre-filled date and stations belonged to the old leg)
+    if (prev && next && prev.transit) {
+        if (booked) {
+            newStop.transit = prev.transit;
+            prev.transit = null;
+            const moved = prev.id && (trip.expenses || []).find(e => e.id === `bk_travel_${prev.id}`);
+            if (moved) moved.id = `bk_travel_${newStop.id}`;
+        } else {
+            const way = { method: prev.transit.method, flightType: prev.transit.flightType || 'ow' };
+            prev.transit = { ...way };
+            newStop.transit = { ...way };
+        }
+    }
+    return true;
+}
+
 export function addCityStop(name, lat, lon) {
     const trip = getActiveTrip();
     if (!trip) {
@@ -644,8 +712,7 @@ export function addCityStop(name, lat, lon) {
         return;
     }
     if (!Array.isArray(trip.stops)) trip.stops = [];
-    if (!Array.isArray(trip.places)) trip.places = [];
-    trip.stops.push({
+    const newStop = {
         id: `stop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         name,
         lat: parseFloat(lat) || 0,
@@ -655,11 +722,14 @@ export function addCityStop(name, lat, lon) {
         transit: null,
         lodging: null,
         locked: false
-    });
+    };
+    // Added at the end of the route, but before the trip's return home
+    const home = endsAtHome(trip);
+    if (!insertStop(trip, newStop, trip.stops.length - (home ? 2 : 1))) return;
     closeModal('city-search-modal');
     saveTrips();
     renderPlanner();
-    showNotification(`Added ${name} to itinerary!`);
+    showNotification(home ? `Added ${name} before ${trip.stops[trip.stops.length - 1].name}` : `Added ${name} to itinerary!`);
 }
 
 export function exportTripICS() {

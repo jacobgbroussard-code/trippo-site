@@ -24,6 +24,7 @@ import {
     loadPartnerTracking,
     formatTime,
     icon,
+    searchOSM,
 } from './state.js';
 
 import { openPlacesCityView } from './places.js';
@@ -303,10 +304,8 @@ export function searchHotelAddress(query) {
     hotelSearchTimeout = setTimeout(async () => {
         try {
             hotelSearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
-                signal: hotelSearchAbortController.signal
-            });
-            const data = await res.json();
+            const stop = getActiveTrip()?.stops?.[activeLodgingStopIndex] || null;
+            const data = await searchOSM(query, { limit: 5, near: stop, signal: hotelSearchAbortController.signal });
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
                     const rawName = item.name || item.display_name.split(',')[0];
@@ -761,10 +760,10 @@ export function searchTransitStation(query, type) {
     transitSearchTimeouts[type] = setTimeout(async () => {
         try {
             transitSearchAbortControllers[type] = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
-                signal: transitSearchAbortControllers[type].signal
-            });
-            const data = await res.json();
+            // Departure stations near this stop, arrival stations near the next one
+            const stops = getActiveTrip()?.stops || [];
+            const near = activeTransitIndex === null ? null : stops[activeTransitIndex + (type === 'arr' ? 1 : 0)] || null;
+            const data = await searchOSM(query, { limit: 5, near, signal: transitSearchAbortControllers[type].signal });
             if (data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
                     const rawName = item.name || item.display_name.split(',')[0];

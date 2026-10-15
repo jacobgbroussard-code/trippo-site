@@ -29,10 +29,12 @@ import {
     activePlacesStopIndex,
     activePlacesDayIndex,
     activeTripId,
-    icon
+    icon,
+    searchOSM
 } from './state.js';
 
 import { initWishlistMap, wishlistMap, safeInvalidate, wMarkers, hasCoords, applyDefaultMapView } from './maps.js';
+import { endsAtHome, insertStop } from './planner.js';
 
 let droppedTempMarker = null;
 export let wishlistSearchTimeout = null;
@@ -273,10 +275,7 @@ export function searchWishlistLocation(query) {
     wishlistSearchTimeout = setTimeout(async () => {
         try {
             wishlistSearchAbortController = new AbortController();
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`, {
-                signal: wishlistSearchAbortController.signal
-            });
-            const data = await res.json();
+            const data = await searchOSM(query, { limit: 6, signal: wishlistSearchAbortController.signal });
             if (data && data.length > 0) {
                 resultsDiv.innerHTML = data.map(item => {
                     const rawName = item.name || item.display_name.split(',')[0];
@@ -625,8 +624,7 @@ function defaultAddPinMode(trip, pin) {
 function bestInsertAfter(trip, pin) {
     const stops = trip.stops || [];
     if (!stops.length) return -1;
-    const first = stops[0], last = stops[stops.length - 1];
-    const returnsHome = stops.length > 2 && hasCoords(first) && hasCoords(last) && getDistance(first.lat, first.lon, last.lat, last.lon) < 25;
+    const returnsHome = endsAtHome(trip);
     const fallback = returnsHome ? stops.length - 2 : stops.length - 1;
     if (!hasCoords(pin)) return fallback;
     const d = (a, b) => (hasCoords(a) && hasCoords(b) ? getDistance(Number(a.lat), Number(a.lon), Number(b.lat), Number(b.lon)) : 0);
@@ -902,12 +900,6 @@ function addWishlistPinAsStop(pin) {
         !confirm(`${name} is already a stop on ${trip.name}. Add it again?`)) return;
 
     const prev = afterIdx >= 0 ? trip.stops[afterIdx] : null;
-    const next = trip.stops[afterIdx + 1] || null;
-    const booked = t => !!t && Boolean(t.bookingNumber || t.date || t.depTime || t.arrTime || t.depStation || t.price);
-    if (prev && next && booked(prev.transit) &&
-        !confirm(`Your booked ${prev.transit.method === 'plane' ? 'flight' : prev.transit.method || 'transport'} from ${prev.name} to ${next.name} will move to the ${name} → ${next.name} leg, so check its date and station.\n\nAdd ${name} after ${prev.name}?`)) return;
-
-    const originalStops = [...trip.stops];
     const newStop = {
         id: `stop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         name,
@@ -919,27 +911,7 @@ function addWishlistPinAsStop(pin) {
         lodging: null,
         locked: false
     };
-    trip.stops.splice(afterIdx + 1, 0, newStop);
-    // Places follow their stop (same as drag-reordering stops)
-    trip.places.forEach(p => {
-        const target = originalStops[p.cityIndex];
-        if (target) p.cityIndex = trip.stops.indexOf(target);
-    });
-    if (Array.isArray(trip.roundTripSegments)) {
-        const from = prev ? afterIdx : 0;
-        trip.roundTripSegments = trip.roundTripSegments.map(i => (i >= from ? i + 1 : i));
-    }
-    // The leg that left the stop before now leaves the new one, toward the same next city
-    if (prev && next && prev.transit) {
-        newStop.transit = prev.transit;
-        if (booked(prev.transit)) {
-            prev.transit = null;
-            const moved = prev.id && (trip.expenses || []).find(e => e.id === `bk_travel_${prev.id}`);
-            if (moved) moved.id = `bk_travel_${newStop.id}`;
-        } else {
-            prev.transit = { method: prev.transit.method };
-        }
-    }
+    if (!insertStop(trip, newStop, afterIdx)) return;
 
     saveTrips();
     if (typeof window.renderPlanner === 'function') window.renderPlanner();

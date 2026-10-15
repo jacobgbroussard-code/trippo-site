@@ -4773,6 +4773,14 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .dp-undo span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dp-undo button { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.16); color: #6ee7b7; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .dp-actions .save-btn:disabled { opacity: 0.55; }
+/* Daily: stop times on cards, place suggestions in the add / edit forms */
+.place-time { display: inline-flex; align-items: center; gap: 4px; margin: 2px 0 2px; font-size: 12px; font-weight: 800; color: var(--primary); }
+.place-time .ico { width: 13px; height: 13px; margin: 0; }
+.place-suggest { position: relative; z-index: 5; }
+.search-result-typed strong { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.search-result-typed strong .ico { width: 15px; height: 15px; margin: 0; color: var(--primary); }
+.edit-poi-when { gap: 8px; }
+.edit-poi-when .form-control { padding-left: 10px; padding-right: 6px; }
 
 /* Daily tab tool row + Day trips page (js/day-trips.js) */
 .places-tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }

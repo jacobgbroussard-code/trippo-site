@@ -919,13 +919,15 @@ const acCache = new Map();
 let acTimer = null;
 let acSeq = 0;
 
-async function searchPlacesNear(q, stop) {
+export async function searchPlacesNear(q, stop) {
     const key = `${stop.name}|${q}`.toLowerCase();
     if (acCache.has(key)) return acCache.get(key);
     const near = hasCoords(stop);
     const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lang=en${near ? `&lat=${stop.lat}&lon=${stop.lon}` : ''}`);
     const data = res.ok ? await res.json() : null;
-    const seen = new Set();
+    // The same place is often several map objects (a street, its square, a building): show it once
+    const kept = [];
+    const isDupe = r => kept.some(k => k.name.toLowerCase() === r.name.toLowerCase() && (getDistance(k.lat, k.lon, r.lat, r.lon) || 0) < 0.6);
     let list = ((data && data.features) || []).map(f => {
         const p = f.properties || {};
         const [lon, lat] = (f.geometry && f.geometry.coordinates) || [];
@@ -933,7 +935,7 @@ async function searchPlacesNear(q, stop) {
         const sub = [...new Set(parts.filter(Boolean))].slice(0, 3).join(', ');
         return { name: p.name || p.street || '', sub, address: sub, lat: Number(lat), lon: Number(lon), type: `${p.osm_value || ''} ${p.osm_key || ''}` };
     }).filter(r => r.name && Number.isFinite(r.lat) && Number.isFinite(r.lon))
-        .filter(r => { const k = `${r.name.toLowerCase()}|${r.lat.toFixed(3)},${r.lon.toFixed(3)}`; if (seen.has(k)) return false; seen.add(k); return true; });
+        .filter(r => { if (isDupe(r)) return false; kept.push(r); return true; });
     if (near) {
         const close = list.filter(r => getDistance(r.lat, r.lon, stop.lat, stop.lon) < 80);
         if (close.length) list = close;

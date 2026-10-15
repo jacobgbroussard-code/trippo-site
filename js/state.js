@@ -660,3 +660,38 @@ if (typeof window !== 'undefined') {
     window.calculateTransitEstimate = calculateTransitEstimate;
     window.openDirectionsLink = openDirectionsLink;
 }
+
+// --- PLACE SEARCH WHILE TYPING ---
+// OpenStreetMap's Nominatim forbids search-as-you-type, so suggestions come from Photon (the same
+// OpenStreetMap data, built for type-ahead, reachable in mainland China), biased toward `near`.
+// Results use Nominatim's shape { name, display_name, lat, lon }; if Photon is down, one Nominatim search instead.
+export async function searchOSM(query, { near = null, cities = false, limit = 6, signal } = {}) {
+    const q = String(query || '').trim();
+    if (q.length < 2) return [];
+    try {
+        const bias = near && Number.isFinite(Number(near.lat)) && Number.isFinite(Number(near.lon)) && !(Number(near.lat) === 0 && Number(near.lon) === 0)
+            ? `&lat=${Number(near.lat)}&lon=${Number(near.lon)}` : '';
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=${limit + 4}&lang=en${bias}${cities ? '&osm_tag=place' : ''}`, { signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const out = [];
+        for (const f of data.features || []) {
+            const p = f.properties || {};
+            const [lon, lat] = (f.geometry && f.geometry.coordinates) || [];
+            const name = p.name || p.street || '';
+            if (!name || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+            // the same place is often several map objects: show it once
+            if (out.some(o => o.name.toLowerCase() === name.toLowerCase() && getDistance(o.lat, o.lon, lat, lon) < 0.6)) continue;
+            const street = p.street && p.street !== name ? (p.housenumber ? `${p.housenumber} ${p.street}` : p.street) : '';
+            const parts = [street, p.district || p.locality || '', p.city && p.city !== name ? p.city : '', p.state || '', p.country || ''];
+            out.push({ name, display_name: [name, ...new Set(parts.filter(Boolean))].join(', '), lat, lon, type: p.osm_value || '' });
+            if (out.length >= limit) break;
+        }
+        return out;
+    } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=${limit}&q=${encodeURIComponent(q)}`, { signal });
+        const data = res.ok ? await res.json() : [];
+        return (Array.isArray(data) ? data : []).map(d => ({ name: d.name || String(d.display_name || '').split(',')[0], display_name: d.display_name || '', lat: Number(d.lat), lon: Number(d.lon) }));
+    }
+}

@@ -32,12 +32,13 @@ import {
     openDirectionsLink,
     getTempUnit,
     icon,
+    formatTime,
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal, hasCoords } from './maps.js';
 import { inMainlandChina } from './state.js';
 import { ticketLink } from './travel-payouts.js';
-import { plannerCardHTML } from './day-planner.js';
+import { plannerCardHTML, searchPlacesNear, fmtDur } from './day-planner.js';
 
 export let poiSearchTimeout = null;
 let poiSearchAbortController = null;
@@ -506,6 +507,7 @@ export function renderCityPlaces() {
                     ${badge}
                     ${svButton}
                 </div>
+                ${p.time && !it.virtual ? `<div class="place-time">${icon('clock')}${escapeHTML(formatTime(p.time))}${Number(p.duration) > 0 ? ` · ${fmtDur(Number(p.duration))}` : ''}</div>` : ''}
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${escapeHTML(p.name)}</h4>
                 ${p.localName ? `<span class="place-local-name">${escapeHTML(p.localName)}</span>` : ''}
                 ${p.address ? `<p style="margin: 0; font-size: 12px; color: #728481;"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"></use></svg>${escapeHTML(p.address.substring(0, 36))}${p.address.length > 36 ? '...' : ''}</p>` : ''}
@@ -598,6 +600,12 @@ export function openPlaceSearchModal() {
     if (clearBtn) clearBtn.style.display = 'none';
     const results = document.getElementById('place-search-results');
     if (results) results.innerHTML = '';
+    // A new search starts clean (the last place's name and pin used to carry over)
+    ['add-poi-name', 'add-poi-address', 'add-poi-notes', 'add-poi-lat', 'add-poi-lon', 'add-poi-time'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    fillAddPlaceDays();
 
     const picker = document.getElementById('place-wishlist-picker');
     if (picker) picker.style.display = 'none';
@@ -609,6 +617,75 @@ export function openPlaceSearchModal() {
     }
 
     setTimeout(() => { if (input) input.focus(); }, 150);
+}
+
+function fillAddPlaceDays() {
+    const sel = document.getElementById('add-poi-day');
+    const btn = document.getElementById('add-poi-save-btn');
+    if (!sel) return;
+    const trip = trips.find(t => t.id === activePlacesTripId);
+    const stop = trip && trip.stops && trip.stops[activePlacesStopIndex];
+    const n = Math.max(1, stop ? Number(stop.nights) || 1 : 1);
+    sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i}"${i === activePlacesDayIndex ? ' selected' : ''}>Day ${i + 1}</option>`).join('');
+    const label = () => { if (btn) btn.textContent = `Add to Day ${Number(sel.value) + 1}`; };
+    sel.onchange = label;
+    label();
+}
+
+// Place suggestions while typing (OpenStreetMap's Photon, biased to this city; works in mainland China too)
+function attachPlaceSuggest(input, onPick) {
+    if (!input || input.dataset.suggest) return;
+    input.dataset.suggest = '1';
+    const box = document.createElement('div');
+    box.className = 'dp-ac place-suggest';
+    box.style.display = 'none';
+    input.insertAdjacentElement('afterend', box);
+    const keep = e => e.preventDefault();
+    box.addEventListener('mousedown', keep);
+    box.addEventListener('pointerdown', keep);
+    const hide = () => { box.style.display = 'none'; box.innerHTML = ''; };
+    let timer = null, seq = 0;
+    input.addEventListener('input', () => {
+        clearTimeout(timer);
+        const q = input.value.trim();
+        if (q.length < 2) { hide(); return; }
+        const my = ++seq;
+        timer = setTimeout(async () => {
+            const trip = trips.find(t => t.id === activePlacesTripId);
+            const stop = (trip && trip.stops && trip.stops[activePlacesStopIndex]) || { name: '' };
+            let list = [];
+            try { list = await searchPlacesNear(q, stop); } catch (e) { list = []; }
+            if (my !== seq || document.activeElement !== input) return;
+            if (!list.length) { hide(); return; }
+            box._list = list;
+            box.innerHTML = list.map((r, i) => `<button type="button" class="dp-ac-item" data-i="${i}">${icon('map-pin')}<span><strong>${escapeHTML(r.name)}</strong>${r.sub ? `<small>${escapeHTML(r.sub)}</small>` : ''}</span></button>`).join('');
+            box.style.display = 'flex';
+        }, 280);
+    });
+    box.addEventListener('click', e => {
+        const b = e.target.closest('.dp-ac-item');
+        if (!b) return;
+        const r = box._list[Number(b.dataset.i)];
+        hide();
+        if (r) onPick(r);
+    });
+    input.addEventListener('blur', () => setTimeout(hide, 150));
+}
+
+// A place saved without a location sits on the city centre until OpenStreetMap finds it
+async function locatePlaceLater(trip, place, stop) {
+    if (!hasCoords(stop) || !place.name) return;
+    try {
+        const box = `${stop.lon - 0.5},${Number(stop.lat) + 0.5},${Number(stop.lon) + 0.5},${stop.lat - 0.5}`;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(place.name)}&viewbox=${box}&bounded=1`, { headers: { 'Accept-Language': 'en' } });
+        const hit = res.ok ? (await res.json())[0] : null;
+        if (!hit || !(trip.places || []).includes(place)) return;
+        place.lat = Number(hit.lat);
+        place.lon = Number(hit.lon);
+        if (!place.address || place.address === stop.name) place.address = String(hit.display_name || '').split(',').slice(0, 3).join(',').trim();
+        saveTrips();
+        if (activePlacesTripId === trip.id) renderCityPlaces();
+    } catch (e) { /* stays on the city centre; the user can still edit it */ }
 }
 
 export function togglePlaceWishlistPicker() {
@@ -700,66 +777,55 @@ export function searchPOI(query) {
     const resultsDiv = document.getElementById('place-search-results');
     if (!resultsDiv) return;
 
-    if (!query || query.trim().length < 2) {
+    const q = String(query || '').trim();
+    if (q.length < 2) {
         resultsDiv.innerHTML = '';
         resultsDiv.style.display = 'none';
         return;
     }
 
     poiSearchTimeout = setTimeout(async () => {
+        const ctrl = new AbortController();
+        poiSearchAbortController = ctrl;
+        const trip = trips.find(t => t.id === activePlacesTripId);
+        const stop = trip?.stops?.[activePlacesStopIndex];
+        let list = [];
         try {
-            poiSearchAbortController = new AbortController();
-            const trip = trips.find(t => t.id === activePlacesTripId);
-            const stop = trip?.stops?.[activePlacesStopIndex];
-            
-            // Search query with stop name context if available, fallback to pure query
-            let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`;
-            if (stop && stop.name && !query.toLowerCase().includes(stop.name.toLowerCase())) {
-                searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' ' + stop.name)}&limit=6`;
-            }
-
-            let res = await fetch(searchUrl, { signal: poiSearchAbortController.signal });
-            let data = await res.json();
-
-            // If contextual search returned nothing, fallback to global query
-            if ((!data || data.length === 0) && stop && stop.name) {
-                res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`, {
-                    signal: poiSearchAbortController.signal
-                });
-                data = await res.json();
-            }
-
-            if (data && data.length > 0) {
-                resultsDiv.innerHTML = data.map(item => {
-                    const rawName = item.name || item.display_name.split(',')[0];
-                    const safeName = escapeJS(rawName);
-                    const safeAddr = escapeJS(item.display_name || '');
-                    return `
-                    <div class="search-result" onclick="selectPOI('${safeName}', '${safeAddr}', ${Number(item.lat)}, ${Number(item.lon)})">
-                        <strong>${escapeHTML(rawName)}</strong><br>
-                        <small style="color:var(--text-muted, #777);">${escapeHTML(item.display_name.substring(0, 52))}...</small>
-                    </div>`;
-                }).join('');
-                resultsDiv.style.display = 'block';
-            } else {
-                resultsDiv.innerHTML = `
-                    <div style="padding: 12px 16px; font-size: 13px; color: var(--text-muted, #777); text-align: center;">
-                        No matches found for "${escapeHTML(query)}". You can fill in the details manually below.
-                    </div>`;
-                resultsDiv.style.display = 'block';
-                const form = document.getElementById('place-add-form');
-                if (form) {
-                    form.style.display = 'block';
-                    const nameInput = document.getElementById('add-poi-name');
-                    if (nameInput && !nameInput.value) nameInput.value = query;
-                }
-            }
+            list = await searchPlacesNear(q, stop || { name: '' });
         } catch (e) {
-            if (e.name !== 'AbortError') {
-                console.error("POI search failed:", e);
+            // Photon unreachable: one OpenStreetMap search near the city instead
+            try {
+                const near = stop && hasCoords(stop) ? `&viewbox=${stop.lon - 0.5},${Number(stop.lat) + 0.5},${Number(stop.lon) + 0.5},${stop.lat - 0.5}&bounded=1` : '';
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=6&q=${encodeURIComponent(q)}${near}`, { signal: ctrl.signal });
+                const data = res.ok ? await res.json() : [];
+                list = (Array.isArray(data) ? data : []).map(d => ({
+                    name: d.name || String(d.display_name || '').split(',')[0],
+                    sub: String(d.display_name || '').split(',').slice(1, 4).join(',').trim(),
+                    address: d.display_name || '', lat: Number(d.lat), lon: Number(d.lon)
+                }));
+            } catch (err) {
+                if (err.name === 'AbortError') return;
             }
         }
+        if (ctrl !== poiSearchAbortController) return;
+        resultsDiv.innerHTML = list.map(r => `
+            <div class="search-result" onclick="selectPOI('${escapeJS(r.name)}', '${escapeJS(r.address || r.sub || '')}', ${Number(r.lat)}, ${Number(r.lon)})">
+                <strong>${escapeHTML(r.name)}</strong><br>
+                <small style="color:var(--text-muted, #777);">${escapeHTML(r.sub || '')}</small>
+            </div>`).join('') + `
+            <div class="search-result search-result-typed" onclick="addPOIAsTyped()">
+                <strong>${icon('pencil')}Add “${escapeHTML(q)}” as written</strong><br>
+                <small style="color:var(--text-muted, #777);">${list.length ? 'Not in the list? ' : 'No matches on the map. '}Trippo pins it as close as it can.</small>
+            </div>`;
+        resultsDiv.style.display = 'block';
     }, 300);
+}
+
+// Use exactly what was typed (no search result picked)
+export function addPOIAsTyped() {
+    const q = document.getElementById('place-search-input')?.value.trim() || '';
+    if (!q) return;
+    selectPOI(q, '', '', '');
 }
 
 export function detectCategory(name = '', address = '') {
@@ -823,26 +889,37 @@ export function saveNewPlaceToTrip() {
     const rawLon = parseFloat(document.getElementById('add-poi-lon')?.value);
     const parentStop = (trip.stops && trip.stops[activePlacesStopIndex]) || { lat: 0, lon: 0, name: '' };
 
-    const finalLat = (!isNaN(rawLat) && rawLat !== 0) ? rawLat : parentStop.lat;
-    const finalLon = (!isNaN(rawLon) && rawLon !== 0) ? rawLon : parentStop.lon;
+    const located = !isNaN(rawLat) && !isNaN(rawLon) && !(rawLat === 0 && rawLon === 0);
+    const finalLat = located ? rawLat : parentStop.lat;
+    const finalLon = located ? rawLon : parentStop.lon;
+    const pickedDay = parseInt(document.getElementById('add-poi-day')?.value, 10);
+    const dayIndex = Number.isInteger(pickedDay) ? pickedDay : activePlacesDayIndex;
+    const time = document.getElementById('add-poi-time')?.value || '';
 
     if (!Array.isArray(trip.places)) trip.places = [];
-    trip.places.push({
+    const place = {
         id: `poi_${Date.now()}_${Math.random()}`,
         cityIndex: activePlacesStopIndex,
-        dayIndex: activePlacesDayIndex,
+        dayIndex,
         name: name,
         category: document.getElementById('add-poi-category')?.value || '● See & Do',
         address: document.getElementById('add-poi-address')?.value || parentStop.name,
         notes: document.getElementById('add-poi-notes')?.value || '',
         lat: finalLat,
         lon: finalLon
-    });
+    };
+    if (time) place.time = time;
+    trip.places.push(place);
     triggerHaptic('success');
     saveTrips();
     closeModal('place-search-modal');
+    if (dayIndex !== activePlacesDayIndex) {
+        setActivePlacesDayIndex(dayIndex);
+        renderPlacesDayTabs();
+    }
     renderCityPlaces();
-    showNotification(`Added ${name} to Day ${activePlacesDayIndex + 1}!`);
+    showNotification(`Added ${name} to Day ${dayIndex + 1}!`);
+    if (!located) locatePlaceLater(trip, place, parentStop);
 }
 
 export function openEditPlaceModal(placeIdentifier) {
@@ -868,9 +945,30 @@ export function openEditPlaceModal(placeIdentifier) {
     const notesInput = document.getElementById('edit-poi-notes');
 
     if (nameInput) nameInput.value = place.name;
-    if (catInput) catInput.value = place.category;
-    if (addrInput) addrInput.value = place.address;
+    if (catInput) catInput.value = place.category || '● See & Do';
+    if (addrInput) addrInput.value = place.address || '';
     if (notesInput) notesInput.value = place.notes || '';
+    const timeInput = document.getElementById('edit-poi-time');
+    if (timeInput) timeInput.value = /^\d{1,2}:\d{2}$/.test(String(place.time || '')) ? String(place.time).padStart(5, '0') : '';
+    const durSelect = document.getElementById('edit-poi-duration');
+    if (durSelect) {
+        const d = Number(place.duration) || 0;
+        if (d && ![...durSelect.options].some(o => Number(o.value) === d)) durSelect.add(new Option(fmtDur(d), String(d)));
+        durSelect.value = d ? String(d) : '';
+    }
+    const latInput = document.getElementById('edit-poi-lat');
+    const lonInput = document.getElementById('edit-poi-lon');
+    if (latInput) latInput.value = '';
+    if (lonInput) lonInput.value = '';
+    // Picking a suggestion renames the stop and moves its pin there
+    attachPlaceSuggest(nameInput, r => {
+        nameInput.value = r.name;
+        const a = document.getElementById('edit-poi-address');
+        if (a) a.value = r.address || r.sub || '';
+        const la = document.getElementById('edit-poi-lat'), lo = document.getElementById('edit-poi-lon');
+        if (la) la.value = r.lat;
+        if (lo) lo.value = r.lon;
+    });
 
     // Commute mode from previous stop
     const modeSelect = document.getElementById('edit-poi-transit-mode');
@@ -922,6 +1020,17 @@ export function savePlaceEdits() {
     place.dayIndex = targetDay;
     place.address = document.getElementById('edit-poi-address')?.value || '';
     place.notes = document.getElementById('edit-poi-notes')?.value || '';
+    const time = document.getElementById('edit-poi-time')?.value || '';
+    if (time) place.time = time; else delete place.time;
+    const duration = parseInt(document.getElementById('edit-poi-duration')?.value, 10);
+    if (duration > 0) place.duration = duration; else delete place.duration;
+    const newLat = parseFloat(document.getElementById('edit-poi-lat')?.value);
+    const newLon = parseFloat(document.getElementById('edit-poi-lon')?.value);
+    if (Number.isFinite(newLat) && Number.isFinite(newLon)) {
+        place.lat = newLat;
+        place.lon = newLon;
+        delete place.localName; // the local-language name belonged to the old place
+    }
 
     const modeSelect = document.getElementById('edit-poi-transit-mode');
     if (modeSelect && modeSelect.value) {

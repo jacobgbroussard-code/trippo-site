@@ -18,6 +18,7 @@ import {
 } from './state.js';
 import { askGeminiJSON, getGeminiApiKey, NoAIKeyError } from './ai.js';
 import { getTravelProfileText } from './travel-profile.js';
+import { insertStop } from './planner.js';
 
 const CACHE_KEY = 'trippo_daytrips_v1';
 const CACHE_CITIES = 8;
@@ -258,16 +259,12 @@ export function addStopoverAfter(optionId) {
     const o = ctx && session && session.results.find(x => x.id === optionId);
     if (!o) return;
     const { trip, stop, stopIndex } = ctx;
-    const next = trip.stops[stopIndex + 1];
     if (trip.stops.some(s => String(s.name).toLowerCase() === o.name.toLowerCase())) {
         showNotification(`${o.name} is already a stop on this trip.`);
         return;
     }
-    const lines = [`Add ${o.name} as a 1-night stop after ${stop.name}?`, '', 'Your trip gets 1 night longer, so later stops move 1 day later.'];
-    if (stop.transit && next) lines.push(`Your booked ${stop.transit.method === 'plane' ? 'flight' : stop.transit.method || 'transport'} from ${stop.name} to ${next.name} will move to the ${o.name} → ${next.name} leg, so check its date and station.`);
-    if (!confirm(lines.join('\n'))) return;
+    if (!confirm(`Add ${o.name} as a 1-night stop after ${stop.name}?\n\nYour trip gets 1 night longer, so later stops move 1 day later.`)) return;
 
-    const originalStops = [...trip.stops];
     const newStop = {
         id: `stop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         name: o.name,
@@ -279,23 +276,8 @@ export function addStopoverAfter(optionId) {
         lodging: null,
         locked: false
     };
-    trip.stops.splice(stopIndex + 1, 0, newStop);
-
-    // Places follow their stop (same approach as drag-reordering stops)
-    (trip.places || []).forEach(p => {
-        const target = originalStops[p.cityIndex];
-        if (target) p.cityIndex = trip.stops.findIndex(s => s === target);
-    });
-    // Round-trip legs after this stop shift by one
-    if (Array.isArray(trip.roundTripSegments)) trip.roundTripSegments = trip.roundTripSegments.map(i => (i >= stopIndex ? i + 1 : i));
-    // The booking that leaves this stop now leaves from the stopover, toward the same next city
-    if (stop.transit && next) {
-        newStop.transit = stop.transit;
-        stop.transit = null;
-        const oldKey = stop.id ? `bk_travel_${stop.id}` : null;
-        const moved = oldKey && (trip.expenses || []).find(e => e.id === oldKey);
-        if (moved) moved.id = `bk_travel_${newStop.id}`;
-    }
+    // Places, round-trip legs and a booked leg follow along (asks first if a booking moves)
+    if (!insertStop(trip, newStop, stopIndex)) return;
     saveTrips();
     if (typeof window.renderPlanner === 'function') window.renderPlanner();
     triggerHaptic('success');
