@@ -604,6 +604,84 @@ export function exportWishlistKML() {
 }
 
 // --- ADD WISHLIST PIN TO TRIP MODAL LOGIC ---
+// A wishlist pin goes on a trip either as a new stop on the route (a saved city that isn't a stop yet)
+// or as a place to visit on a day in one of its cities
+let addPinMode = 'place';
+let addPinModeTouched = false;
+
+function defaultAddPinMode(trip, pin) {
+    const stops = ((trip && trip.stops) || []).filter(hasCoords);
+    if (!trip || !(trip.stops || []).length) return 'stop';
+    // Sights stay places even far out (the Great Wall is a day out of Beijing); cities become stops unless already one
+    const isCity = String((pin && pin.category) || '').includes('Cities');
+    if (!isCity) return 'place';
+    if (!hasCoords(pin) || !stops.length) return 'stop';
+    const nearest = Math.min(...stops.map(st => getDistance(Number(pin.lat), Number(pin.lon), Number(st.lat), Number(st.lon))));
+    return nearest > 20 ? 'stop' : 'place';
+}
+
+// Where a new stop fits best: just before or after the trip's closest stop, whichever adds less distance
+// (never before the start, or after the trip's return home)
+function bestInsertAfter(trip, pin) {
+    const stops = trip.stops || [];
+    if (!stops.length) return -1;
+    const first = stops[0], last = stops[stops.length - 1];
+    const returnsHome = stops.length > 2 && hasCoords(first) && hasCoords(last) && getDistance(first.lat, first.lon, last.lat, last.lon) < 25;
+    const fallback = returnsHome ? stops.length - 2 : stops.length - 1;
+    if (!hasCoords(pin)) return fallback;
+    const d = (a, b) => (hasCoords(a) && hasCoords(b) ? getDistance(Number(a.lat), Number(a.lon), Number(b.lat), Number(b.lon)) : 0);
+    let nearest = -1, nearestKm = Infinity;
+    stops.forEach((st, i) => { if (hasCoords(st) && d(st, pin) < nearestKm) { nearestKm = d(st, pin); nearest = i; } });
+    let best = fallback, bestCost = Infinity;
+    [nearest - 1, nearest].forEach(i => {
+        if (i < 0 || (i === stops.length - 1 && returnsHome)) return;
+        const next = stops[i + 1];
+        const cost = next ? d(stops[i], pin) + d(pin, next) - d(stops[i], next) : d(stops[i], pin);
+        if (cost < bestCost) { bestCost = cost; best = i; }
+    });
+    return best;
+}
+
+function applyAddPinMode() {
+    const stopMode = addPinMode === 'stop';
+    document.getElementById('add-pin-mode-stop')?.classList.toggle('active', stopMode);
+    document.getElementById('add-pin-mode-place')?.classList.toggle('active', !stopMode);
+    const stopFields = document.getElementById('add-pin-stop-fields');
+    const placeFields = document.getElementById('add-pin-place-fields');
+    if (stopFields) stopFields.style.display = stopMode ? '' : 'none';
+    if (placeFields) placeFields.style.display = stopMode ? 'none' : '';
+    const sub = document.getElementById('add-pin-to-trip-sub');
+    if (sub) sub.textContent = stopMode ? 'as a new stop on your route' : 'to a day in one of your cities';
+    const trip = trips.find(t => t.id === document.getElementById('add-pin-to-trip-select-trip')?.value);
+    const hasStops = !!(trip && Array.isArray(trip.stops) && trip.stops.length);
+    const warningEl = document.getElementById('add-pin-to-trip-warning');
+    const submitBtn = document.getElementById('add-pin-to-trip-submit-btn');
+    if (warningEl) {
+        warningEl.textContent = 'This trip has no stops yet. Add it as a new stop instead.';
+        warningEl.style.display = !stopMode && !hasStops ? 'block' : 'none';
+    }
+    if (submitBtn) {
+        submitBtn.disabled = !stopMode && !hasStops;
+        submitBtn.textContent = stopMode ? 'Add to Route' : 'Add to Itinerary';
+    }
+}
+
+export function setAddPinMode(mode) {
+    addPinMode = mode === 'stop' ? 'stop' : 'place';
+    addPinModeTouched = true;
+    triggerHaptic('light');
+    applyAddPinMode();
+}
+
+function fillAddPinStopFields(trip, pin) {
+    const afterSelect = document.getElementById('add-pin-to-trip-select-after');
+    if (!afterSelect) return;
+    const stops = (trip && trip.stops) || [];
+    const best = trip ? bestInsertAfter(trip, pin) : -1;
+    afterSelect.innerHTML = `<option value="-1"${best === -1 ? ' selected' : ''}>${stops.length ? 'At the start' : 'First stop'}</option>` +
+        stops.map((st, idx) => `<option value="${idx}"${idx === best ? ' selected' : ''}>After ${idx + 1}. ${escapeHTML(st.name)}</option>`).join('');
+}
+
 export function openAddWishlistPinToTripModal(pinId) {
     const pin = wishlistPins.find(p => String(p.id) === String(pinId));
     if (!pin) {
@@ -627,6 +705,9 @@ export function openAddWishlistPinToTripModal(pinId) {
     if (idEl) idEl.value = pin.id;
     if (nameEl) nameEl.textContent = pin.name;
     if (notesEl) notesEl.value = pin.notes || '';
+    const nightsEl = document.getElementById('add-pin-to-trip-select-nights');
+    if (nightsEl) nightsEl.value = '2';
+    addPinModeTouched = false;
 
     // Smart-map category:
     if (catEl) {
@@ -664,6 +745,8 @@ export function updateAddPinModalStops(pin) {
 
     const selectedTripId = tripSelect.value;
     const trip = trips.find(t => t.id === selectedTripId);
+    fillAddPinStopFields(trip, pin);
+    if (!addPinModeTouched) addPinMode = defaultAddPinMode(trip, pin);
 
     if (!trip || !Array.isArray(trip.stops) || trip.stops.length === 0) {
         stopSelect.innerHTML = '<option value="-1">No stops in this trip</option>';
@@ -672,11 +755,7 @@ export function updateAddPinModalStops(pin) {
             daySelect.innerHTML = '<option value="0">Day 1</option>';
             daySelect.disabled = true;
         }
-        if (warningEl) {
-            warningEl.textContent = 'This trip has no stops yet. Add a stop in Route first!';
-            warningEl.style.display = 'block';
-        }
-        if (submitBtn) submitBtn.disabled = true;
+        applyAddPinMode();
         return;
     }
 
@@ -704,6 +783,7 @@ export function updateAddPinModalStops(pin) {
     }).join('');
 
     updateAddPinModalDays();
+    applyAddPinMode();
 }
 
 export function updateAddPinModalDays() {
@@ -749,6 +829,8 @@ export function confirmAddWishlistPinToTrip() {
         showNotification("Could not find wishlist item.");
         return;
     }
+
+    if (addPinMode === 'stop') { addWishlistPinAsStop(pin); return; }
 
     const tripSelect = document.getElementById('add-pin-to-trip-select-trip');
     const stopSelect = document.getElementById('add-pin-to-trip-select-stop');
@@ -802,4 +884,66 @@ export function confirmAddWishlistPinToTrip() {
     }
 
     showNotification(`✓ Added "${pin.name}" to ${trip.name} - ${stop.name} (Day ${dayIdx + 1})!`);
+}
+
+// Insert the pin into the trip's route as its own stop; places, round-trip legs and the booked leg follow their stops
+function addWishlistPinAsStop(pin) {
+    const trip = trips.find(t => t.id === document.getElementById('add-pin-to-trip-select-trip')?.value);
+    if (!trip) { showNotification('Pick a trip first.'); return; }
+    if (!Array.isArray(trip.stops)) trip.stops = [];
+    if (!Array.isArray(trip.places)) trip.places = [];
+    const picked = parseInt(document.getElementById('add-pin-to-trip-select-after')?.value, 10);
+    const afterIdx = Math.min(trip.stops.length - 1, Number.isNaN(picked) ? trip.stops.length - 1 : picked);
+    const nights = Math.max(0, parseInt(document.getElementById('add-pin-to-trip-select-nights')?.value, 10) || 0);
+    const notes = document.getElementById('add-pin-to-trip-notes')?.value.trim() || pin.notes || '';
+    const name = String(pin.name || 'New stop');
+    const key = name.toLowerCase().split(',')[0].trim();
+    if (trip.stops.some(st => String(st.name || '').toLowerCase().split(',')[0].trim() === key) &&
+        !confirm(`${name} is already a stop on ${trip.name}. Add it again?`)) return;
+
+    const prev = afterIdx >= 0 ? trip.stops[afterIdx] : null;
+    const next = trip.stops[afterIdx + 1] || null;
+    const booked = t => !!t && Boolean(t.bookingNumber || t.date || t.depTime || t.arrTime || t.depStation || t.price);
+    if (prev && next && booked(prev.transit) &&
+        !confirm(`Your booked ${prev.transit.method === 'plane' ? 'flight' : prev.transit.method || 'transport'} from ${prev.name} to ${next.name} will move to the ${name} → ${next.name} leg, so check its date and station.\n\nAdd ${name} after ${prev.name}?`)) return;
+
+    const originalStops = [...trip.stops];
+    const newStop = {
+        id: `stop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        name,
+        lat: hasCoords(pin) ? Number(pin.lat) : Number(prev && prev.lat) || 0,
+        lon: hasCoords(pin) ? Number(pin.lon) : Number(prev && prev.lon) || 0,
+        nights,
+        notes: Array.from({ length: Math.max(1, nights) }, (_, i) => (i === 0 ? notes : '')),
+        transit: null,
+        lodging: null,
+        locked: false
+    };
+    trip.stops.splice(afterIdx + 1, 0, newStop);
+    // Places follow their stop (same as drag-reordering stops)
+    trip.places.forEach(p => {
+        const target = originalStops[p.cityIndex];
+        if (target) p.cityIndex = trip.stops.indexOf(target);
+    });
+    if (Array.isArray(trip.roundTripSegments)) {
+        const from = prev ? afterIdx : 0;
+        trip.roundTripSegments = trip.roundTripSegments.map(i => (i >= from ? i + 1 : i));
+    }
+    // The leg that left the stop before now leaves the new one, toward the same next city
+    if (prev && next && prev.transit) {
+        newStop.transit = prev.transit;
+        if (booked(prev.transit)) {
+            prev.transit = null;
+            const moved = prev.id && (trip.expenses || []).find(e => e.id === `bk_travel_${prev.id}`);
+            if (moved) moved.id = `bk_travel_${newStop.id}`;
+        } else {
+            prev.transit = { method: prev.transit.method };
+        }
+    }
+
+    saveTrips();
+    if (typeof window.renderPlanner === 'function') window.renderPlanner();
+    triggerHaptic('success');
+    closeModal('add-wishlist-to-trip-modal');
+    showNotification(`Added ${name} to ${trip.name}${prev ? ` after ${prev.name}` : ''} · ${nights} night${nights === 1 ? '' : 's'}`);
 }

@@ -4724,6 +4724,55 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .dp-done strong { font-size: 17px; }
 .dp-done span { font-size: 13px; color: var(--text-light, #64748b); max-width: 420px; }
 .dp-free { margin: 2px 0 2px 76px; padding: 6px 10px; border-radius: 9px; background: var(--bg); font-size: 11.5px; color: var(--text-light, #64748b); }
+/* Plan my days: editable rows (rename with place search, retime, swipe left to remove) */
+.dp-time { width: 80px; padding-left: 5px; }
+.dp-travel { margin-left: 90px; }
+.dp-free { margin-left: 90px; }
+.dp-notes { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.dp-controls select { padding: 0 4px 0 8px; }
+.dp-controls .dp-remove { margin-left: auto; }
+.dp-swipe { position: relative; overflow: hidden; border-radius: 12px; touch-action: pan-y; }
+.dp-swipe-bg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-right: 18px; background: #f87171; color: #fff; font-size: 13px; font-weight: 800; border-radius: 12px; opacity: 0; transition: opacity 0.12s ease, background 0.12s ease; }
+.dp-swipe-bg .ico { width: 17px; height: 17px; margin: 0; }
+.dp-swipe.is-swiping .dp-swipe-bg, .dp-swipe.is-removing .dp-swipe-bg { opacity: 1; }
+.dp-swipe.will-remove .dp-swipe-bg { background: #dc2626; }
+.dp-swipe > .dp-row { position: relative; background: var(--card-bg); transition: transform 0.18s ease; }
+.dp-swipe.is-swiping > .dp-row { transition: none; }
+.dp-time-input { flex: none; width: 80px; height: 30px; padding: 0 4px; margin: 0; border: 1px dashed transparent; border-radius: 8px; background: transparent; color: var(--primary); font: inherit; font-size: 13px; font-weight: 800; -webkit-appearance: none; appearance: none; text-align: left; cursor: pointer; }
+.dp-time-input::-webkit-date-and-time-value { text-align: left; }
+.dp-time-input::-webkit-calendar-picker-indicator { display: none; }
+.dp-time-input:hover, .dp-time-input:focus { border-color: var(--border-subtle); background: var(--bg); outline: none; }
+.dp-time-input.is-set { background: var(--primary-light); border: 1px solid transparent; }
+.dp-name-wrap { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.dp-name-wrap > .dp-name-input { flex: 1; }
+.dp-name-wrap > .dp-ac { flex-basis: 100%; }
+.dp-name-input { width: 100%; min-width: 0; height: 30px; padding: 0 6px; margin: 0 0 0 -6px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text); font: inherit; font-size: 16px; font-weight: 700; text-overflow: ellipsis; }
+.dp-name-input:hover { border-color: var(--border-subtle); }
+.dp-name-input:focus { border-color: var(--primary); background: var(--bg); outline: none; text-overflow: clip; }
+.dp-tag { font-size: 10.5px; font-weight: 800; color: var(--primary); background: var(--primary-light); border-radius: 6px; padding: 2px 6px; letter-spacing: 0.02em; }
+.dp-auto { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--card-bg); color: var(--text-light, #64748b); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.dp-auto .ico { width: 13px; height: 13px; margin: 0; }
+.dp-ac { display: flex; flex-direction: column; margin: 4px 0 2px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--card-bg); box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14); overflow: hidden; }
+.dp-ac-item { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 9px 10px; border: 0; border-bottom: 1px solid var(--border-subtle); background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.dp-ac-item:last-child { border-bottom: 0; }
+.dp-ac-item:hover, .dp-ac-item.is-active { background: var(--primary-light); }
+.dp-ac-item .ico { flex: none; width: 15px; height: 15px; margin: 2px 0 0; color: var(--primary); }
+.dp-ac-item span { display: flex; flex-direction: column; min-width: 0; }
+.dp-ac-item strong { font-size: 14px; line-height: 1.3; }
+.dp-ac-item small { font-size: 11.5px; color: var(--text-light, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dp-ac-plain strong { font-weight: 600; }
+.dp-add { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 2px; padding: 0 10px; border: 1px dashed var(--border-subtle); border-radius: 12px; }
+.dp-add > .ico { flex: none; width: 16px; height: 16px; margin: 0; color: var(--primary); }
+.dp-add-input { flex: 1; min-width: 0; height: 40px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; outline: none; }
+.dp-add:focus-within { border-style: solid; border-color: var(--primary); }
+.dp-add > .dp-ac { flex-basis: 100%; margin: 0 -10px; border-radius: 0 0 12px 12px; border-width: 1px 0 0; box-shadow: none; }
+.dp-unfit { border-style: dashed; }
+.dp-unfit .dp-row { align-items: center; }
+.dp-undo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding: 8px 8px 8px 12px; border-radius: 12px; background: #1d2b29; color: #fff; font-size: 13px; font-weight: 600; }
+.dp-undo[hidden] { display: none; }
+.dp-undo span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-undo button { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.16); color: #6ee7b7; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.dp-actions .save-btn:disabled { opacity: 0.55; }
 
 /* Daily tab tool row + Day trips page (js/day-trips.js) */
 .places-tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }

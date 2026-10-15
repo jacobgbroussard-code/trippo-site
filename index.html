@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.53">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.53">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.53">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.53">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.53">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.54">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.54">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.54">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.54">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.54">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.53">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.53">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.54">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.54">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -452,7 +452,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.53</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.54</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -1434,7 +1434,7 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-modal" onclick="closeModal('add-wishlist-to-trip-modal')">✕</button>
             <h2 style="margin: 0 0 4px 0; font-size: 20px;"><svg class="ico" aria-hidden="true"><use href="#i-plane-departure"></use></svg>Add to Trip Itinerary</h2>
-            <p style="color: #71837f; font-size: 13px; margin: 0 0 16px 0;">Add <strong id="add-pin-to-trip-name" style="color:var(--primary);"></strong> to a trip stop</p>
+            <p style="color: #71837f; font-size: 13px; margin: 0 0 16px 0;">Add <strong id="add-pin-to-trip-name" style="color:var(--primary);"></strong> <span id="add-pin-to-trip-sub">to a trip</span></p>
             
             <input type="hidden" id="add-pin-to-trip-pin-id">
 
@@ -1443,6 +1443,28 @@
                 <select id="add-pin-to-trip-select-trip" class="form-control" onchange="handleAddPinTripChange()"></select>
             </div>
 
+            <div class="form-group">
+                <label>Add it as</label>
+                <div class="budget-style-row add-pin-mode">
+                    <button type="button" class="budget-style-chip" id="add-pin-mode-stop" onclick="setAddPinMode('stop')">New stop on the route</button>
+                    <button type="button" class="budget-style-chip" id="add-pin-mode-place" onclick="setAddPinMode('place')">Place to visit in a city</button>
+                </div>
+            </div>
+
+            <div id="add-pin-stop-fields" class="form-row" style="display:none;">
+                <div class="form-group" style="flex: 1.4;">
+                    <label>Add after</label>
+                    <select id="add-pin-to-trip-select-after" class="form-control"></select>
+                </div>
+                <div class="form-group" style="flex: 0.6;">
+                    <label>Nights</label>
+                    <select id="add-pin-to-trip-select-nights" class="form-control">
+                        <option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="10">10</option><option value="14">14</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="add-pin-place-fields">
             <div class="form-row">
                 <div class="form-group" style="flex: 1.2;">
                     <label>City / Stop</label>
@@ -1463,6 +1485,7 @@
                     <option value="🛍 Shopping">🛍 Shopping</option>
                     <option value="🏨 Hotel / Base">🏨 Hotel / Base</option>
                 </select>
+            </div>
             </div>
 
             <div class="form-group">
@@ -2219,6 +2242,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.53"></script>
+    <script type="module" src="js/app.js?v=2.4.54"></script>
 </body>
 </html>
