@@ -1978,13 +1978,13 @@ const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
 // skip search for the rest of the session.
 let geminiSearchUnavailable = false;
 
-async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch) {
+async function callGeminiDirectly(systemInstruction, conversationMessages, enableSearch, signalOverride = null) {
     const apiKey = getGeminiApiKey();
     const contents = conversationMessages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
-    const signal = aiFetchAbortController?.signal || copilotAbortController?.signal;
+    const signal = signalOverride || aiFetchAbortController?.signal || copilotAbortController?.signal;
 
     const request = (model, withSearch) => {
         const generationConfig = { temperature: 0.35, topP: 0.9 };
@@ -2038,6 +2038,20 @@ class GeminiKeyError extends Error {
 
 // Models sometimes wrap JSON in code fences or add a sentence around it (especially with search
 // grounding); take the outermost {...} block.
+// One-off JSON question for other features (e.g. the smart day planner in js/day-planner.js).
+// Throws NoAIKeyError when there's no Gemini key, so callers can fall back to local estimates.
+export async function askGeminiJSON(systemInstruction, userText, timeoutMs = 30000) {
+    if (!getGeminiApiKey()) throw new NoAIKeyError();
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const raw = await callGeminiDirectly(systemInstruction, [{ role: 'user', content: userText }], false, ctrl.signal);
+        return parseJsonReply(raw);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 function parseJsonReply(raw) {
     const text = String(raw || '').trim();
     try { return JSON.parse(text); } catch (e) {}

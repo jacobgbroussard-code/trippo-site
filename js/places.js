@@ -35,6 +35,7 @@ import {
 } from './state.js';
 
 import { initPlacesMap, placesMap, safeInvalidate, drawPlacesMapRoute, getStreetViewUrl, openStreetViewModal } from './maps.js';
+import { plannerCardHTML } from './day-planner.js';
 
 export let poiSearchTimeout = null;
 let poiSearchAbortController = null;
@@ -819,7 +820,8 @@ export function openDailyNotes(index, startDateStr) {
     const titleEl = document.getElementById('notes-city-title');
     if (titleEl) titleEl.innerText = `${stop.name} Planner`;
 
-    let html = '';
+    // "Plan my days" list on top, the per-day notes below it
+    let html = plannerCardHTML(index, stop) + `<div class="day-notes-heading">Day notes</div>`;
     const hasDate = Boolean(startDateStr && startDateStr.trim());
     let currentD = hasDate ? parseLocalDate(startDateStr) : null;
     const displayDays = Math.max(1, Number(stop.nights) || 1);

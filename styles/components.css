@@ -4612,3 +4612,56 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .ai-cmp-foot .save-btn { margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; padding: 10px 6px; }
 .ai-cmp-foot .budget-link-btn { justify-content: center; }
 @media (min-width: 768px) { .ai-cmp-cell { font-size: 13.5px; } .ai-cmp-grid { gap: 10px 16px; } }
+
+/* Plan my days (js/day-planner.js) */
+.day-plan-card { background: var(--primary-light); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 12px 14px; margin: 0 0 18px; }
+.day-plan-card-head { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--primary); }
+.day-plan-card-head .ico { margin-right: 0; }
+.day-plan-card-hint { font-size: 12px; line-height: 1.4; color: var(--text-light, #64748b); margin: 4px 0 8px; }
+.day-plan-card textarea { font-size: 16px; min-height: 96px; }
+.day-plan-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.day-plan-go { width: auto; margin: 0; padding: 10px 16px; display: inline-flex; align-items: center; gap: 6px; }
+.day-plan-go .ico { margin-right: 0; }
+.day-notes-heading { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light, #64748b); margin: 0 0 8px; }
+.day-plan-page { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-bottom: 0 !important; }
+.day-plan-page > * { width: 100%; max-width: 720px; margin-left: auto; margin-right: auto; }
+.day-plan-page > .close-modal { width: 36px; }
+.day-plan-title { margin: 0 44px 2px 0 !important; font-size: 20px; font-weight: 800; }
+.day-plan-sub { font-size: 12.5px; color: var(--text-light, #64748b); margin: 0 0 12px; }
+.day-plan-body { flex: 1; }
+.day-plan-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 48px 0; font-size: 14px; font-weight: 700; color: var(--text-light, #64748b); }
+.dp-day { border: 1px solid var(--border-subtle); border-radius: 16px; background: var(--card-bg); padding: 4px 12px 10px; margin-bottom: 12px; }
+.dp-day.packed { border-color: #f59e0b; }
+.dp-day-head { display: flex; flex-direction: column; padding: 10px 0 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 6px; }
+.dp-day-head strong { font-size: 15px; }
+.dp-day-head span { font-size: 12px; color: var(--text-light, #64748b); }
+.dp-day.packed .dp-day-head span { color: #b45309; }
+.dp-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; }
+.dp-time { flex: none; width: 66px; font-size: 12.5px; font-weight: 800; color: var(--primary); padding-top: 1px; }
+.dp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.dp-main strong { font-size: 14px; line-height: 1.3; }
+.dp-meta { font-size: 11.5px; color: var(--text-light, #64748b); }
+.dp-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dp-controls select { height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
+.dp-meal .dp-main strong, .dp-meal .dp-time { color: #b45309; }
+.dp-fixed { opacity: 0.6; }
+.dp-travel { display: flex; align-items: center; gap: 4px; margin-left: 76px; font-size: 11px; color: var(--text-light, #64748b); }
+.dp-travel .ico { width: 13px; height: 13px; margin-right: 0; }
+.dp-empty { font-size: 12.5px; color: var(--text-light, #64748b); margin: 8px 0 4px; }
+.dp-note { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.4; padding: 10px 12px; border-radius: 12px; background: var(--primary-light); margin-bottom: 8px; }
+.dp-note .ico { flex: none; margin: 1px 0 0; width: 16px; height: 16px; color: var(--primary); }
+.dp-note.warn { background: rgba(245, 158, 11, 0.12); }
+.dp-note.warn .ico { color: #b45309; }
+.day-plan-footer { position: sticky; bottom: 0; background: var(--card-bg); border-top: 1px solid var(--border-subtle); padding: 10px 0 calc(12px + env(safe-area-inset-bottom, 0px)); margin-top: 8px; }
+.day-plan-footer:empty { display: none; }
+.dp-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text); margin-bottom: 8px; }
+.dp-check input { width: 18px; height: 18px; accent-color: var(--primary); }
+.dp-actions { display: flex; gap: 8px; }
+.dp-actions .btn-secondary { margin: 0; flex: 0 0 auto; }
+.dp-actions .save-btn { margin: 0; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.dp-actions .save-btn .ico { margin-right: 0; }
+.dp-done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 40px 12px; }
+.dp-done > .ico { width: 40px; height: 40px; color: #fff; background: var(--primary); border-radius: 50%; padding: 8px; }
+.dp-done strong { font-size: 17px; }
+.dp-done span { font-size: 13px; color: var(--text-light, #64748b); max-width: 420px; }
+.dp-free { margin: 2px 0 2px 76px; padding: 6px 10px; border-radius: 9px; background: var(--bg); font-size: 11.5px; color: var(--text-light, #64748b); }
