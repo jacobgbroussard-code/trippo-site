@@ -30,12 +30,11 @@ import * as today from './today.js';
 import * as fareWatch from './fare-watch.js';
 import * as exploreLayers from './explore-layers.js';
 import * as memberships from './memberships.js';
-import * as travelStats from './travel-stats.js';
 import * as travelDays from './travel-days.js';
 import * as tripDocs from './trip-docs.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.57';
+const CURRENT_VERSION = '2.4.58';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -95,7 +94,6 @@ Object.assign(window, {
     ...fareWatch,
     ...exploreLayers,
     ...memberships,
-    ...travelStats,
     ...travelDays,
     ...tripDocs
 });

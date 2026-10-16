@@ -1,4 +1,4 @@
-// Travel stats, memberships, calendar export, leave-by on travel days and documents on bookings (v2.4.57).
+// Memberships, calendar export, leave-by on travel days and documents on bookings (v2.4.57).
 // Needs the dev server on :8080. Uses a fresh Chrome profile, so no real trips are touched.
 const { spawn } = require('child_process');
 const path = require('path');
@@ -155,24 +155,16 @@ const check = (name, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} $
         check('restore merges memberships', rest.length === 3 && rest.find(m => m.program === 'Marriott Bonvoy').number === 'NEW', JSON.stringify(rest));
         await ev(`document.querySelectorAll('.modal').forEach(m => { m.style.display = 'none'; m.classList.remove('active'); })`);
 
-        // 8. home stats + map
+        // 8. home Today card + country lookup for the leave-by
         await ev(`window.switchTab('home')`);
         await sleep(400);
         await ev(`window.renderHome && window.renderHome()`);
-        for (let i = 0; i < 30; i++) { if (await ev(`!!document.querySelector('.stats-flags')`)) break; await sleep(500); }
-        const stats = await ev(`(() => { const s = window.computeTravelStats(); return { countries: [...s.countries.keys()], cities: s.cities, nights: s.nights, km: Math.round(s.flownKm), unknown: s.unknown, card: document.getElementById('home-travel-stats').innerText.replace(/\\s+/g, ' ') }; })()`);
-        check('stats: 2 cities, 6 nights', stats.cities === 2 && stats.nights === 6, JSON.stringify(stats));
-        check('stats: countries looked up', stats.unknown === 0 && stats.countries.length >= 1, JSON.stringify(stats.countries));
-        check('stats: flown km (LFT-HKG + SHA-LFT)', stats.km > 20000 && stats.km < 26000, String(stats.km));
+        for (let i = 0; i < 30; i++) { if (await ev(`!!window.cachedCountry(window.getActiveTrip().stops[1])`)) break; await sleep(500); }
+        check('countries looked up for today\'s flight', await ev(`!!window.cachedCountry(window.getActiveTrip().stops[0]) && !!window.cachedCountry(window.getActiveTrip().stops[1])`));
         const homeToday = await ev(`document.getElementById('home-today-card').innerText`);
         check('home Today card shows leave by', /leave by 7:45 PM/.test(homeToday), homeToday);
-        await ev(`document.getElementById('home-travel-stats').scrollIntoView({ block: 'center' })`);
+        check('no Your travels card', await ev(`!document.getElementById('home-travel-stats') && !document.querySelector('.stats-card')`));
         await shot('5-home');
-        await ev(`window.openTravelStats()`);
-        await sleep(1500);
-        const map = await ev(`({ markers: document.querySelectorAll('#travel-stats-map path.leaflet-interactive').length, tiles: document.querySelectorAll('#travel-stats-map .leaflet-tile').length })`);
-        check('stats map shows 2 places', map.markers === 2 && map.tiles > 0, JSON.stringify(map));
-        await shot('6-stats-map');
 
         // 9. calendar export entry points don't throw
         await ev(`window.exportTripICS(); window.exportTripToICS();`);

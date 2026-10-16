@@ -2,9 +2,8 @@
    TRAVEL DAYS: every leg of a trip with its date, "leave by" times for flights and trains,
    and the trip calendar (.ics): stays, legs with check-in and leave-by alerts, and timed plans.
    ========================================================================== */
-import { getActiveTrip, showNotification, parseLocalDate, formatLocalDate, formatTime, getDistance, inMainlandChina, escapeHTML, escapeJS, icon } from './state.js';
+import { getActiveTrip, safeGetStorage, safeSetStorage, showNotification, parseLocalDate, formatLocalDate, formatTime, getDistance, inMainlandChina, escapeHTML, escapeJS, icon } from './state.js';
 import { hasCoords } from './maps.js';
-import { cachedCountry } from './travel-stats.js';
 import { membershipFor, membershipChipHTML } from './memberships.js';
 
 const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(String(t || '')); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
@@ -29,6 +28,50 @@ export function travelLegs(trip) {
         legs.push({ index: i, from: s, to: next, transit: t || {}, method: (t && t.method) || '', date });
     });
     return legs;
+}
+
+/* ---------- country of a stop, for "is this flight international?": Photon reverse lookup, cached ---------- */
+const COUNTRY_KEY = 'trippo_country_cache_v1';
+let countryCache = null;
+let lookupBusy = false;
+const coordKey = s => `${Number(s.lat).toFixed(2)},${Number(s.lon).toFixed(2)}`;
+function countryStore() {
+    if (!countryCache) {
+        try { countryCache = JSON.parse(safeGetStorage(COUNTRY_KEY) || '{}') || {}; } catch (e) { countryCache = {}; }
+    }
+    return countryCache;
+}
+// { code: 'CN', name: 'China' }, or null until it's been looked up
+export function cachedCountry(stop) {
+    if (!hasCoords(stop)) return null;
+    const hit = countryStore()[coordKey(stop)];
+    return hit && hit[0] ? { code: hit[0], name: hit[1] } : null;
+}
+async function lookupCountries(stops) {
+    const todo = stops.filter(s => hasCoords(s) && !(coordKey(s) in countryStore()));
+    if (lookupBusy || !todo.length || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+    lookupBusy = true;
+    let found = 0;
+    try {
+        for (const s of todo.slice(0, 6)) {
+            if (coordKey(s) in countryStore()) continue;
+            try {
+                const res = await fetch(`https://photon.komoot.io/reverse?lat=${Number(s.lat)}&lon=${Number(s.lon)}&lang=en&limit=1`);
+                const data = res.ok ? await res.json() : null;
+                const p = data && data.features && data.features[0] && data.features[0].properties;
+                countryStore()[coordKey(s)] = p && p.countrycode ? [String(p.countrycode).toUpperCase(), p.country || p.countrycode] : ['', ''];
+                found++;
+            } catch (e) { break; }
+        }
+        if (found) safeSetStorage(COUNTRY_KEY, JSON.stringify(countryStore()));
+    } finally {
+        lookupBusy = false;
+    }
+    if (!found) return;
+    // leave-by times may change (2 h domestic vs 3 h international): redraw what's showing them
+    if (window.renderHomeTodayCard) window.renderHomeTodayCard();
+    const modal = document.getElementById('today-modal');
+    if (modal && modal.style.display !== 'none' && window.renderToday) window.renderToday();
 }
 
 function isInternational(leg) {
@@ -75,7 +118,10 @@ export function departureMapUrl(leg) {
 
 /* ---------- Today: the travel card for a day ---------- */
 export function legsOnDate(trip, dateStr) {
-    return travelLegs(trip).filter(l => l.date === dateStr && l.method && l.method !== 'walk');
+    const legs = travelLegs(trip).filter(l => l.date === dateStr && l.method && l.method !== 'walk');
+    const unknown = legs.flatMap(l => [l.from, l.to]).filter(s => hasCoords(s) && !(coordKey(s) in countryStore()));
+    if (unknown.length) lookupCountries(unknown);
+    return legs;
 }
 
 export function travelDayCardHTML(trip, dateStr, isToday) {
