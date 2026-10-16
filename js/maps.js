@@ -61,10 +61,32 @@ const labelLayers = { planner: null, places: null, wishlist: null };
 // Free key from https://carto.com/basemaps/apikey (public by design, like the Mapbox token).
 const CARTO_KEY = 'cb1_459l_1_1ac1e85c030ff6961b6096e4';
 
+// Default map style. Mapbox used to be the default, on a token shared by every user; it hit its
+// usage limit in Oct 2026 and was revoked, so the default is CARTO Positron (closest look to
+// Mapbox Light) and Mapbox styles only work with the user's own token (Settings).
+export const DEFAULT_MAP_PROVIDER = 'carto-positron';
+// When Mapbox refuses tiles (bad token / over the limit), use the matching CARTO style for a day
+const MAPBOX_DOWN_KEY = 'trippo_mapbox_down';
+const MAPBOX_TO_CARTO = { 'mapbox-light': 'carto-positron', 'mapbox-dark': 'carto-dark', 'mapbox-streets': 'carto-voyager', 'mapbox-outdoors': 'carto-voyager' };
+const OLD_SHARED_MAPBOX = 'cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB';
+export function userMapboxKey() {
+    const key = String(safeGetStorage('trippo_mapbox_key', '') || '').trim();
+    try { if (btoa(key) === OLD_SHARED_MAPBOX) return ''; } catch (e) { /* non-latin text: not a token */ }
+    return key;
+}
+const mapboxDown = () => Date.now() - (Number(safeGetStorage(MAPBOX_DOWN_KEY, 0)) || 0) < 24 * 3600 * 1000;
+let mapboxErrors = 0;
+function noteMapboxError() {
+    if (++mapboxErrors < 4 || mapboxDown()) return;
+    safeSetStorage(MAPBOX_DOWN_KEY, String(Date.now()));
+    updateMapProvider();
+}
+
 // The base map the user picked in Settings: tile URL, options and (for some styles) a labels layer
 export function tileSpec() {
-    const provider = safeGetStorage('trippo_map_provider', 'mapbox-light');
-    const mapboxKey = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
+    let provider = safeGetStorage('trippo_map_provider', DEFAULT_MAP_PROVIDER);
+    const mapboxKey = userMapboxKey();
+    if (provider.startsWith('mapbox') && (!mapboxKey || mapboxDown())) provider = MAPBOX_TO_CARTO[provider] || DEFAULT_MAP_PROVIDER;
     
     let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
     let opts = {
@@ -140,6 +162,7 @@ export function updateMapProvider() {
         if (labelsUrl) labelLayers[key] = L.tileLayer(labelsUrl, { maxZoom: 19, maxNativeZoom: 16, zIndex: 5 }).addTo(mapObj);
         baseLayers[key] = L.tileLayer(url, opts);
         baseLayers[key].on('tileerror', (error) => {
+            if (url.includes('api.mapbox.com')) noteMapboxError();
             if (error.tile && !error.tile.dataset.fallback) {
                 error.tile.dataset.fallback = 'true';
                 const { z, x, y } = error.coords;

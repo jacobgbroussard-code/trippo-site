@@ -91,7 +91,7 @@ export function updateSettingsModalUI() {
     const mapboxKeyInput = document.getElementById('mapbox-api-key-input');
     
     if (providerSelect) {
-        const currentProvider = safeGetStorage('trippo_map_provider', 'mapbox-light');
+        const currentProvider = safeGetStorage('trippo_map_provider', 'carto-positron');
         providerSelect.value = currentProvider;
         if (mapboxKeyContainer) {
             mapboxKeyContainer.style.display = currentProvider.startsWith('mapbox') ? 'block' : 'none';
@@ -113,7 +113,7 @@ export function updateSettingsModalUI() {
     });
 
     if (mapboxKeyInput) {
-        const storedKey = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
+        const storedKey = window.userMapboxKey ? window.userMapboxKey() : '';
         mapboxKeyInput.value = storedKey;
         
         const overlay = document.getElementById('mapbox-lock-overlay');
@@ -224,16 +224,15 @@ export function saveMapProviderSetting(provider) {
 
 export function saveMapboxApiKey() {
     const key = document.getElementById('mapbox-api-key-input')?.value.trim();
+    localStorage.removeItem('trippo_mapbox_down'); // try Mapbox again with this key
     if (key) {
         safeSetStorage('trippo_mapbox_key', key);
         showNotification("Mapbox Key saved locally!");
-        if (window.updateMapProvider) {
-            window.updateMapProvider();
-        }
     } else {
         localStorage.removeItem('trippo_mapbox_key');
-        showNotification("Mapbox Key removed.");
+        showNotification("Mapbox Key removed. Mapbox styles show as CARTO until you add one.");
     }
+    if (window.updateMapProvider) window.updateMapProvider();
 }
 
 export function unlockMapboxKey() {

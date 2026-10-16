@@ -34,7 +34,7 @@ import * as travelDays from './travel-days.js';
 import * as tripDocs from './trip-docs.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.58';
+const CURRENT_VERSION = '2.4.59';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
