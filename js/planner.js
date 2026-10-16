@@ -368,7 +368,7 @@ export function toggleStopLock(event, index) {
     stop.locked = !stop.locked;
     triggerHaptic('light');
     saveTrips();
-    renderPlanner();
+    renderPlanner({ keepMapView: true });
     showNotification(stop.locked ? `🔒 Locked ${stop.name} in place` : `🔓 Unlocked ${stop.name}`);
 }
 
@@ -380,7 +380,7 @@ export function toggleLockAllStops() {
     trip.stops.forEach(s => { s.locked = newStatus; });
     triggerHaptic('medium');
     saveTrips();
-    renderPlanner();
+    renderPlanner({ keepMapView: true });
     showNotification(newStatus ? "🔒 All stops locked in place" : "🔓 All stops unlocked");
 }
 
@@ -407,7 +407,7 @@ export function updateNights(index, delta) {
     const orphaned = (trip.places || []).filter(p => p.cityIndex === index && Number.isInteger(p.dayIndex) && p.dayIndex >= days);
     orphaned.forEach(p => { p.dayIndex = days - 1; });
     saveTrips();
-    renderPlanner();
+    renderPlanner({ keepMapView: true });
     if (orphaned.length) showNotification(`${orphaned.length} planned stop${orphaned.length === 1 ? '' : 's'} moved to Day ${days} in ${stop.name}`);
 }
 
@@ -470,7 +470,7 @@ export function deleteStop(index) {
                 });
         }
         saveTrips();
-        renderPlanner();
+        renderPlanner({ keepMapView: true });
         showNotification("Stop removed.");
     }
 }
@@ -728,7 +728,7 @@ export function addCityStop(name, lat, lon) {
     if (!insertStop(trip, newStop, trip.stops.length - (home ? 2 : 1))) return;
     closeModal('city-search-modal');
     saveTrips();
-    renderPlanner();
+    renderPlanner({ focusStopId: newStop.id });
     showNotification(home ? `Added ${name} before ${trip.stops[trip.stops.length - 1].name}` : `Added ${name} to itinerary!`);
 }
 

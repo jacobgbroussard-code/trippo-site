@@ -16,7 +16,7 @@ export function setDistanceUnit(unit) {
     safeSetStorage('trippo_distance_unit', unit);
     triggerHaptic('light');
     updateSettingsModalUI();
-    renderPlanner();
+    renderPlanner({ keepMapView: true });
     showNotification(`Distance unit set to ${unit === 'mi' ? 'Miles (mi)' : 'Kilometers (km)'}`);
 }
 
@@ -28,7 +28,7 @@ export function setShowDistances(show) {
     safeSetStorage('trippo_show_distances', show ? 'true' : 'false');
     triggerHaptic('light');
     updateSettingsModalUI();
-    renderPlanner();
+    renderPlanner({ keepMapView: true });
     showNotification(show ? "Route distances enabled" : "Route distances hidden");
 }
 
@@ -204,7 +204,7 @@ function rerenderVisibleViews() {
     const active = document.querySelector('.view.active');
     const id = active ? active.id : '';
     try {
-        if (id === 'planner-view') renderPlanner();
+        if (id === 'planner-view') renderPlanner({ keepMapView: true });
         else if (id === 'places-view' && window.renderPlacesDayTabs) window.renderPlacesDayTabs();
         else if (id === 'bookings-view' && window.renderBookingsList) window.renderBookingsList();
         else if (id === 'transit-view' && window.renderTransitList) window.renderTransitList();

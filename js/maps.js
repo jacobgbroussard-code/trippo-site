@@ -189,7 +189,7 @@ export function attachMapResizeObserver(mapInstance, containerId) {
                 }
                 if (mapInstance && mapInstance._pendingBounds && typeof mapInstance.fitBounds === 'function') {
                     try {
-                        mapInstance.fitBounds(mapInstance._pendingBounds, { padding: [40, 40], maxZoom: 14 });
+                        mapInstance.fitBounds(mapInstance._pendingBounds, { padding: [40, 40], maxZoom: mapInstance._pendingMaxZoom || 14 });
                         mapInstance._pendingBounds = null;
                     } catch (e) {}
                 }
@@ -219,6 +219,24 @@ export function safeInvalidate(mapInstance, extraDelay = 0) {
     }, extraDelay);
 }
 
+// Zooming out stops where the world still fills the map, so it never shows rows of tiny repeated worlds.
+// Sideways panning stays free (legs across the Pacific are drawn past ±180°); the grey above and below the
+// world can't be dragged into.
+function limitWorldZoom(map) {
+    if (!map || map._trippoWorldLimit) return;
+    map._trippoWorldLimit = true;
+    map.setMaxBounds([[-85, -540], [85, 540]]);
+    map.options.maxBoundsViscosity = 1;
+    const apply = () => {
+        const size = map.getSize();
+        if (!size.x || !size.y) return;
+        const z = Math.max(1, Math.ceil(Math.log2(Math.max(size.x, size.y) / 256)));
+        if (map.getMinZoom() !== z) map.setMinZoom(z);
+    };
+    map.on('resize', apply);
+    apply();
+}
+
 export function setPlannerMap(m) { plannerMap = m; }
 export function setPlacesMap(m) { placesMap = m; }
 export function setWishlistMap(m) { wishlistMap = m; }
@@ -240,6 +258,7 @@ export function initPlannerMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([30.2241, -92.0198], 3);
+            limitWorldZoom(plannerMap);
             createBaseTileLayer('planner').addTo(plannerMap);
             updateMapProvider();
             attachMapResizeObserver(plannerMap, 'planner-map');
@@ -271,6 +290,7 @@ export function initPlacesMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([30.2241, -92.0198], 12);
+            limitWorldZoom(placesMap);
             createBaseTileLayer('places').addTo(placesMap);
             updateMapProvider();
             attachMapResizeObserver(placesMap, 'places-map');
@@ -302,6 +322,7 @@ export function initWishlistMap() {
                 doubleClickZoom: true,
                 boxZoom: true
             }).setView([20, 0], 2);
+            limitWorldZoom(wishlistMap);
             createBaseTileLayer('wishlist').addTo(wishlistMap);
             updateMapProvider();
             attachMapResizeObserver(wishlistMap, 'wishlist-map');
@@ -699,7 +720,36 @@ export function clearPlannerLegHighlight() {
     paintPlannerLegs();
 }
 
+// What the Route map fits to. A just-added stop: it and its neighbours, so its new legs are in view.
+// Otherwise the trip, leaving out a far-away home at either end: at world zoom a whole China route is
+// a few pixels wide and its city-to-city legs look missing.
+function plannerFitBounds(stops, opts) {
+    const km = (p, q) => getDistance(Number(p.lat), Number(p.lon), Number(q.lat), Number(q.lon));
+    const at = p => [Number(p.lat), Number(p.lon)];
+    if (opts && opts.focusStopId) {
+        const i = stops.findIndex(st => st.id === opts.focusStopId);
+        const st = stops[i];
+        if (st && hasCoords(st)) {
+            const near = [st, stops[i - 1], stops[i + 1]].filter(p => p && hasCoords(p) && km(p, st) < 2500);
+            return { bounds: L.latLngBounds(near.map(at)), maxZoom: 9 };
+        }
+    }
+    const located = stops.filter(hasCoords);
+    const farFromRest = st => {
+        const others = located.filter(o => km(o, st) > 25);
+        return others.length > 0 && Math.min(...others.map(o => km(o, st))) > 2500;
+    };
+    const core = located.filter((st, n) => !((n === 0 || n === located.length - 1) && farFromRest(st)));
+    const use = core.length >= 2 ? core : located;
+    return { bounds: L.latLngBounds(use.map(at)), maxZoom: 14 };
+}
+
+// The stops the Route map was last fitted to; a redraw with the same stops (e.g. coming back to the
+// Route tab) keeps whatever view the user has
+let plannerFitKey = '';
+
 // keepMapView: redraw without re-fitting the map (reordering keeps the same stops, so the view stays put)
+// focusStopId: fit the map to that (just-added) stop and its neighbours
 export function drawPlannerMapRoute(opts = {}) {
     if (!plannerMap) return;
     const keepView = !!(opts && opts.keepMapView === true && plannerMap._loaded);
@@ -803,18 +853,24 @@ export function drawPlannerMapRoute(opts = {}) {
     }
     sizePlannerLegBadges();
 
+    const fit = plannerFitBounds(stops, opts);
+    const focus = !!(opts && opts.focusStopId);
+    const fitKey = `${trip.id}|${stops.map(st => `${st.id || st.name}:${Number(st.lat).toFixed(3)},${Number(st.lon).toFixed(3)}`).join(';')}`;
+    const unchanged = fitKey === plannerFitKey && plannerMap._loaded;
+    plannerFitKey = fitKey;
     requestAnimationFrame(() => {
         if (plannerMap) {
             plannerMap.invalidateSize();
-            if (keepView) return;
+            if (keepView || (unchanged && !focus)) return;
             const size = plannerMap.getSize ? plannerMap.getSize() : null;
-            if (applyDefaultMapView(plannerMap, 'planner')) {
+            if (!(opts && opts.focusStopId) && applyDefaultMapView(plannerMap, 'planner')) {
                 plannerMap._pendingBounds = null;
-            } else if (bounds.isValid()) {
+            } else if (fit.bounds.isValid()) {
                 if (!size || size.x === 0 || size.y === 0) {
-                    plannerMap._pendingBounds = bounds;
+                    plannerMap._pendingBounds = fit.bounds;
+                    plannerMap._pendingMaxZoom = fit.maxZoom;
                 } else {
-                    plannerMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+                    plannerMap.fitBounds(fit.bounds, { padding: [40, 40], maxZoom: fit.maxZoom });
                     plannerMap._pendingBounds = null;
                 }
             }

@@ -279,7 +279,7 @@ export function addStopoverAfter(optionId) {
     // Places, round-trip legs and a booked leg follow along (asks first if a booking moves)
     if (!insertStop(trip, newStop, stopIndex)) return;
     saveTrips();
-    if (typeof window.renderPlanner === 'function') window.renderPlanner();
+    if (typeof window.renderPlanner === 'function') window.renderPlanner({ focusStopId: newStop.id });
     triggerHaptic('success');
     showNotification(`${o.name} added for 1 night after ${stop.name}`);
 }

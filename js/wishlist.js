@@ -914,7 +914,8 @@ function addWishlistPinAsStop(pin) {
     if (!insertStop(trip, newStop, afterIdx)) return;
 
     saveTrips();
-    if (typeof window.renderPlanner === 'function') window.renderPlanner();
+    // The Route map shows the new stop and its new legs
+    if (typeof window.renderPlanner === 'function') window.renderPlanner({ focusStopId: newStop.id });
     triggerHaptic('success');
     closeModal('add-wishlist-to-trip-modal');
     showNotification(`Added ${name} to ${trip.name}${prev ? ` after ${prev.name}` : ''} · ${nights} night${nights === 1 ? '' : 's'}`);
