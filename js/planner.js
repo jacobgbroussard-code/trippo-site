@@ -732,44 +732,9 @@ export function addCityStop(name, lat, lon) {
     showNotification(home ? `Added ${name} before ${trip.stops[trip.stops.length - 1].name}` : `Added ${name} to itinerary!`);
 }
 
+// Share sheet "Calendar": the full trip calendar (js/travel-days.js)
 export function exportTripICS() {
-    const trip = getActiveTrip();
-    if (!trip || !trip.stops || trip.stops.length === 0) {
-        showNotification("No stops to export.");
-        return;
-    }
-    if (!trip.startDate || !trip.startDate.trim()) {
-        showNotification("Please set a departure date to export calendar (.ics) events.");
-        if (window.openEditTripModal) window.openEditTripModal(trip.id);
-        return;
-    }
-    let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Trippo App//EN\n";
-    let currentDate = parseLocalDate(trip.startDate);
-
-    trip.stops.forEach((stop) => {
-        if (Number(stop.nights) === 0) return;
-        const checkInDate = new Date(currentDate);
-        const checkInStr = formatLocalDate(checkInDate).replace(/-/g, '');
-        currentDate.setDate(currentDate.getDate() + (Number(stop.nights) || 0));
-        const checkOutDate = new Date(currentDate);
-        const checkOutStr = formatLocalDate(checkOutDate).replace(/-/g, '');
-
-        ics += "BEGIN:VEVENT\n";
-        ics += `SUMMARY:Stay in ${stop.lodging?.name || stop.name}\n`;
-        ics += `DTSTART;VALUE=DATE:${checkInStr}\n`;
-        ics += `DTEND;VALUE=DATE:${checkOutStr}\n`;
-        ics += `DESCRIPTION:${stop.nights} nights.\n`;
-        ics += "END:VEVENT\n";
-    });
-    ics += "END:VCALENDAR";
-
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${trip.name.replace(/\s+/g, '_')}_Itinerary.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (window.exportTripCalendar) window.exportTripCalendar();
 }
 
 export function handleFileImport(event) {

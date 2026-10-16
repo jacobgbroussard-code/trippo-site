@@ -29,9 +29,13 @@ import * as tripCheckup from './trip-checkup.js';
 import * as today from './today.js';
 import * as fareWatch from './fare-watch.js';
 import * as exploreLayers from './explore-layers.js';
+import * as memberships from './memberships.js';
+import * as travelStats from './travel-stats.js';
+import * as travelDays from './travel-days.js';
+import * as tripDocs from './trip-docs.js';
 import { initKeyboardAccess } from './keyboard-access.js';
 
-const CURRENT_VERSION = '2.4.56';
+const CURRENT_VERSION = '2.4.57';
 const storedVersion = state.safeGetStorage('trippo_app_version', null);
 if (storedVersion !== CURRENT_VERSION) {
     state.safeSetStorage('trippo_app_version', CURRENT_VERSION);
@@ -89,7 +93,11 @@ Object.assign(window, {
     ...tripCheckup,
     ...today,
     ...fareWatch,
-    ...exploreLayers
+    ...exploreLayers,
+    ...memberships,
+    ...travelStats,
+    ...travelDays,
+    ...tripDocs
 });
 
 // Replay any early calls queued before module finished loading

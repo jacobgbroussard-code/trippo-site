@@ -44,6 +44,7 @@ export function renderHome() {
     if (!listEl) return;
     if (window.renderHomeTodayCard) window.renderHomeTodayCard();
     if (window.renderFareWatchCard) window.renderFareWatchCard();
+    if (window.renderTravelStatsCard) window.renderTravelStatsCard();
     if (trips.length === 0) {
         listEl.innerHTML = `
             <div style="text-align: center; color: #8fa39f; padding: 40px 20px;">
@@ -220,6 +221,7 @@ export function openEditTripModal(tripId) {
 
     const modal = document.getElementById('edit-trip-modal');
     if (modal) modal.style.display = 'flex';
+    if (window.renderTripDocs) window.renderTripDocs(trip.id);
 }
 
 export function clearEditTripDate() {
@@ -466,7 +468,7 @@ export function confirmExportSharedTrip(tripId) {
         return;
     }
     const exportPayload = {
-        trippoVersion: "2.4.56",
+        trippoVersion: "2.4.57",
         exportedAt: new Date().toISOString(),
         trip: trip
     };
@@ -512,11 +514,12 @@ export function importSharedTripJSON(event) {
 
 export function exportAppDataJSON() {
     const backup = {
-        version: "2.4.56",
+        version: "2.4.57",
         exportDate: new Date().toISOString(),
         trips: trips,
         wishlistCollections: wishlistCollections,
-        wishlistPins: wishlistPins
+        wishlistPins: wishlistPins,
+        memberships: window.getMemberships ? window.getMemberships() : []
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
     const link = document.createElement('a');
@@ -559,6 +562,10 @@ export function importAppDataJSON(event) {
                     }));
                 setTrips(validatedTrips);
                 restoredCount++;
+            }
+
+            if (Array.isArray(data.memberships) && data.memberships.length && window.restoreMemberships) {
+                window.restoreMemberships(data.memberships);
             }
 
             if (data.wishlistCollections && Array.isArray(data.wishlistCollections)) {
@@ -898,143 +905,9 @@ export function toggleAllPacking(checked) {
 /* ==========================================================================
    UNIVERSAL .ICS CALENDAR EXPORT
    ========================================================================== */
+// Sidebar "Export to calendar": the full trip calendar (stays, legs with alerts, timed plans)
 export function exportTripToICS() {
-    const trip = getActiveTrip();
-    if (!trip || !trip.stops || trip.stops.length === 0) {
-        showNotification("Please select or create a trip with stops first.");
-        return;
-    }
-    if (!trip.startDate || !trip.startDate.trim()) {
-        showNotification("Please set a departure date to export calendar (.ics) events.");
-        openEditTripModal(trip.id);
-        return;
-    }
-
-    const pad = (n) => String(n).padStart(2, '0');
-    const formatICSDate = (d) => {
-        return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
-    };
-    const formatICSAllDay = (d) => {
-        return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-    };
-    const escapeICS = (str) => {
-        if (!str) return '';
-        return String(str)
-            .replace(/\\/g, '\\\\')
-            .replace(/;/g, '\\;')
-            .replace(/,/g, '\\,')
-            .replace(/\n/g, '\\n');
-    };
-
-    const nowStr = formatICSDate(new Date());
-    let icsContent = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//Trippo Travel Planner//trippo.top//EN',
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH',
-        `X-WR-CALNAME:${escapeICS(trip.name)} - Itinerary`,
-        'X-WR-TIMEZONE:UTC'
-    ];
-
-    let currentDate = parseLocalDate(trip.startDate) || new Date();
-
-    trip.stops.forEach((stop, index) => {
-        const nights = Number(stop.nights) || 1;
-        const stopStart = new Date(currentDate);
-        const stopEnd = new Date(currentDate);
-        stopEnd.setDate(stopEnd.getDate() + nights);
-
-        const uidBase = `trippo-${trip.id}-stop-${index}`;
-
-        // 1. Destination Stay All-Day Event
-        icsContent.push('BEGIN:VEVENT');
-        icsContent.push(`UID:${uidBase}-stay@trippo.top`);
-        icsContent.push(`DTSTAMP:${nowStr}`);
-        icsContent.push(`DTSTART;VALUE=DATE:${formatICSAllDay(stopStart)}`);
-        icsContent.push(`DTEND;VALUE=DATE:${formatICSAllDay(stopEnd)}`);
-        icsContent.push(`SUMMARY:${escapeICS(`Trip: ${stop.name} (${nights} night${nights > 1 ? 's' : ''})`)}`);
-        icsContent.push(`DESCRIPTION:${escapeICS(`Trip: ${trip.name}\\nDestination: ${stop.name}\\nDuration: ${nights} nights${stop.notes ? `\\nNotes: ${stop.notes}` : ''}`)}`);
-        icsContent.push(`LOCATION:${escapeICS(stop.name)}`);
-        icsContent.push('STATUS:CONFIRMED');
-        icsContent.push('END:VEVENT');
-
-        // 2. Hotel / Lodging Booking Event (if present)
-        if (stop.lodging && (stop.lodging.name || stop.lodging.address)) {
-            const hStart = new Date(stopStart);
-            hStart.setHours(15, 0, 0); // Check-in 3:00 PM
-            const hEnd = new Date(stopEnd);
-            hEnd.setHours(11, 0, 0); // Check-out 11:00 AM
-
-            icsContent.push('BEGIN:VEVENT');
-            icsContent.push(`UID:${uidBase}-hotel@trippo.top`);
-            icsContent.push(`DTSTAMP:${nowStr}`);
-            icsContent.push(`DTSTART:${formatICSDate(hStart)}`);
-            icsContent.push(`DTEND:${formatICSDate(hEnd)}`);
-            icsContent.push(`SUMMARY:${escapeICS(`🏨 Hotel Check-In: ${stop.lodging.name || 'Lodging in ' + stop.name}`)}`);
-            let desc = `Hotel: ${stop.lodging.name || 'Accommodations'}\\nLocation: ${stop.name}`;
-            if (stop.lodging.address) desc += `\\nAddress: ${stop.lodging.address}`;
-            if (stop.lodging.notes) desc += `\\nNotes / Confirmation: ${stop.lodging.notes}`;
-            icsContent.push(`DESCRIPTION:${escapeICS(desc)}`);
-            if (stop.lodging.address) icsContent.push(`LOCATION:${escapeICS(stop.lodging.address)}`);
-            icsContent.push('STATUS:CONFIRMED');
-            icsContent.push('END:VEVENT');
-        }
-
-        // 3. Transit Event (if present)
-        const tr = stop.transit ? normalizeTransitFields(stop.transit) : null;
-        if (tr && (tr.type || tr.carrier || tr.departureTime || tr.confirmation)) {
-            // Transit is saved on the stop you leave from: its own date, else the end of the stay
-            let tDate = tr.date ? new Date(`${tr.date}T00:00:00`) : new Date(stopEnd);
-            if (isNaN(tDate)) tDate = new Date(stopEnd);
-            const depParts = (tr.departureTime || '09:00').split(':');
-            tDate.setHours(Number(depParts[0]) || 9, Number(depParts[1]) || 0, 0);
-            
-            const arrDate = new Date(tDate);
-            if (tr.arrivalTime) {
-                const arrParts = tr.arrivalTime.split(':');
-                arrDate.setHours(Number(arrParts[0]) || 12, Number(arrParts[1]) || 0, 0);
-                if (arrDate < tDate) arrDate.setDate(arrDate.getDate() + 1);
-            } else {
-                arrDate.setHours(arrDate.getHours() + 2);
-            }
-
-            const transitType = (tr.type || 'Transit').toUpperCase();
-            const fromCity = tr.depStation || stop.name;
-            const toCity = tr.arrStation || (trip.stops[index + 1] ? trip.stops[index + 1].name : 'Home');
-            icsContent.push('BEGIN:VEVENT');
-            icsContent.push(`UID:${uidBase}-transit@trippo.top`);
-            icsContent.push(`DTSTAMP:${nowStr}`);
-            icsContent.push(`DTSTART:${formatICSDate(tDate)}`);
-            icsContent.push(`DTEND:${formatICSDate(arrDate)}`);
-            icsContent.push(`SUMMARY:${escapeICS(`✈️ ${transitType}: ${fromCity} ➔ ${toCity}`)}`);
-            let tDesc = `Transit: ${transitType}\\nRoute: ${fromCity} to ${toCity}`;
-            if (tr.carrier) tDesc += `\\nCarrier: ${tr.carrier}`;
-            if (tr.confirmation) tDesc += `\\nConfirmation: ${tr.confirmation}`;
-            if (tr.notes) tDesc += `\\nNotes: ${tr.notes}`;
-            icsContent.push(`DESCRIPTION:${escapeICS(tDesc)}`);
-            icsContent.push(`LOCATION:${escapeICS(`${fromCity} to ${toCity}`)}`);
-            icsContent.push('STATUS:CONFIRMED');
-            icsContent.push('END:VEVENT');
-        }
-
-        currentDate.setDate(currentDate.getDate() + nights);
-    });
-
-    icsContent.push('END:VCALENDAR');
-    const icsString = icsContent.join('\r\n');
-
-    const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${trip.name.replace(/[^a-zA-Z0-9_-]/g, '_')}-Itinerary.ics`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    toggleSidebar(false);
-    showNotification("📅 Calendar file (.ics) downloaded! Open to add to Google/Apple Calendar.");
+    if (window.exportTripCalendar) window.exportTripCalendar();
 }
 
 /* ==========================================================================

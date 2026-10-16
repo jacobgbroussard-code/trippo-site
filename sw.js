@@ -3,7 +3,7 @@
    sw.js
    ========================================================================== */
 
-const CACHE_NAME = 'trippo-cache-v2.4.56';
+const CACHE_NAME = 'trippo-cache-v2.4.57';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -35,6 +35,10 @@ const STATIC_ASSETS = [
     './js/today.js',
     './js/fare-watch.js',
     './js/explore-layers.js',
+    './js/memberships.js',
+    './js/travel-stats.js',
+    './js/travel-days.js',
+    './js/trip-docs.js',
     './js/sync.js',
     './js/error-report.js',
     './js/keyboard-access.js',

@@ -123,6 +123,7 @@ export function renderToday() {
             </div>
             <button type="button" class="today-nav" onclick="shiftTodayView(1)" aria-label="Next day" ${pos >= days.length - 1 ? 'disabled' : ''}>›</button>
         </div>
+        ${day.date && window.travelDayCardHTML ? window.travelDayCardHTML(trip, formatLocalDate(day.date), isToday) : ''}
         ${note ? `<div class="today-note">${escapeHTML(note).replace(/\n/g, '<br>')}</div>` : ''}
         ${due.length ? `<div class="today-due">${icon('calendar-event')}<div><strong>Book ahead</strong>${due.map(b => `<span>${escapeHTML(b.what)}: by ${escapeHTML(parseLocalDate(b.by).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}</span>`).join('')}</div></div>` : ''}
         ${list.length ? `<div class="today-list">${list.map((p, i) => {
@@ -162,6 +163,7 @@ export function renderToday() {
                     </div>`).join('') : '<p class="checkup-ok">No good indoor swaps found nearby.</p>'}`
             : `<button type="button" class="budget-link-btn" onclick="planRainyDay()">${icon('cloud-rain')}Rain on the way? Get indoor swaps</button>`}
         </div>`;
+    if (window.revealDocChips) window.revealDocChips(body);
 }
 
 /* ---------- running late: push the rest of the day back ---------- */
@@ -319,8 +321,13 @@ export function renderHomeTodayCard() {
         const now = new Date();
         const nowMin = now.getHours() * 60 + now.getMinutes();
         const next = dayPlaces(trip, pos.stopIndex, pos.dayIndex).find(p => toMin(p.time) !== null && toMin(p.time) + (Number(p.duration) || 60) > nowMin);
+        // a flight or train still to catch today comes first
+        const leg = window.legsOnDate ? window.legsOnDate(trip, formatLocalDate(now)).find(l => toMin(l.transit.depTime) !== null && toMin(l.transit.depTime) > nowMin) : null;
+        const lb = leg && window.leaveBy ? window.leaveBy(leg) : null;
+        const line = leg ? `${window.methodName(leg.method)} at ${formatTime(leg.transit.depTime)}${lb ? ` · leave by ${formatTime(lb.at)}` : ''}`
+            : next ? `Next: ${next.name} at ${formatTime(next.time)}` : trip.name;
         html = `<button type="button" class="home-today-card" onclick="openTodayFor('${escapeJS(trip.id)}')">
-            ${icon('sun')}<span><strong>Today in ${escapeHTML(stop.name)}</strong><small>${next ? `Next: ${escapeHTML(next.name)} at ${escapeHTML(formatTime(next.time))}` : escapeHTML(trip.name)}</small></span><span aria-hidden="true">›</span>
+            ${icon(leg ? window.methodIcon(leg.method) : 'sun')}<span><strong>Today in ${escapeHTML(stop.name)}</strong><small>${escapeHTML(line)}</small></span><span aria-hidden="true">›</span>
         </button>`;
         break;
     }

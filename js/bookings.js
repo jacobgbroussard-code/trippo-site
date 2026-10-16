@@ -284,6 +284,7 @@ export function openLodgingModal(index) {
     const modal = document.getElementById('hotel-booking-modal');
     loadPartnerTracking();
     if (modal) modal.style.display = 'flex';
+    if (window.renderBookingExtras) window.renderBookingExtras('stay', index);
 }
 
 export function searchHotelAddress(query) {
@@ -685,6 +686,7 @@ export function openTransitBookingModal(index) {
 
     const modal = document.getElementById('transit-booking-modal');
     if (modal) modal.style.display = 'flex';
+    if (window.renderBookingExtras) window.renderBookingExtras('travel', index);
 }
 
 export function toggleTransitReturnDateField() {

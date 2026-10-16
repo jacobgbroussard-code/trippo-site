@@ -96,11 +96,14 @@ check('tools.js exports printPocketItinerary with complete itinerary sections', 
 check('tools.js exports exportTripToICS with RFC 5545 compliant calendar format', () => {
     assert(indexHtml.includes('onclick="exportTripToICS()"'), 'exportTripToICS onclick must exist in sidebar');
     assert(toolsJs.includes('export function exportTripToICS'), 'exportTripToICS must be exported');
-    assert(toolsJs.includes('BEGIN:VCALENDAR'), 'Must generate BEGIN:VCALENDAR');
-    assert(toolsJs.includes('VERSION:2.0'), 'Must specify VERSION:2.0');
-    assert(toolsJs.includes('BEGIN:VEVENT'), 'Must generate VEVENT blocks for stays');
-    assert(toolsJs.includes('UID:'), 'Must generate unique event IDs');
-    assert(toolsJs.includes('.ics'), 'Must download filename ending with .ics');
+    // since v2.4.57 the calendar is built in js/travel-days.js (stays, legs with alerts, timed plans)
+    const daysJs = fs.readFileSync('js/travel-days.js', 'utf8');
+    assert(toolsJs.includes('exportTripCalendar'), 'exportTripToICS must use exportTripCalendar');
+    assert(daysJs.includes('BEGIN:VCALENDAR'), 'Must generate BEGIN:VCALENDAR');
+    assert(daysJs.includes('VERSION:2.0'), 'Must specify VERSION:2.0');
+    assert(daysJs.includes('BEGIN:VEVENT'), 'Must generate VEVENT blocks for stays');
+    assert(daysJs.includes('UID:'), 'Must generate unique event IDs');
+    assert(daysJs.includes('.ics'), 'Must download filename ending with .ics');
 });
 
 console.log(`\n=============================================================`);

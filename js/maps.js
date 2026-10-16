@@ -61,7 +61,8 @@ const labelLayers = { planner: null, places: null, wishlist: null };
 // Free key from https://carto.com/basemaps/apikey (public by design, like the Mapbox token).
 const CARTO_KEY = 'cb1_459l_1_1ac1e85c030ff6961b6096e4';
 
-export function updateMapProvider() {
+// The base map the user picked in Settings: tile URL, options and (for some styles) a labels layer
+export function tileSpec() {
     const provider = safeGetStorage('trippo_map_provider', 'mapbox-light');
     const mapboxKey = safeGetStorage('trippo_mapbox_key', atob('cGsuZXlKMUlqb2ljMjV2YjNCcGRIa2lMQ0poSWpvaVkyMTFlVE4xZDNFNU1ESTNNako2Y0hFNWIzbDFaamd3Y2lKOS51SnRoR0tnMmsweTJKOUtycTRvMWdB'));
     
@@ -127,6 +128,11 @@ export function updateMapProvider() {
         };
     }
 
+    return { url, opts, labelsUrl };
+}
+
+export function updateMapProvider() {
+    const { url, opts, labelsUrl } = tileSpec();
     const replaceLayer = (mapObj, key) => {
         if (!mapObj) return;
         if (baseLayers[key]) mapObj.removeLayer(baseLayers[key]);
@@ -222,7 +228,7 @@ export function safeInvalidate(mapInstance, extraDelay = 0) {
 // Zooming out stops where the world still fills the map, so it never shows rows of tiny repeated worlds.
 // Sideways panning stays free (legs across the Pacific are drawn past ±180°); the grey above and below the
 // world can't be dragged into.
-function limitWorldZoom(map) {
+export function limitWorldZoom(map) {
     if (!map || map._trippoWorldLimit) return;
     map._trippoWorldLimit = true;
     map.setMaxBounds([[-85, -540], [85, 540]]);

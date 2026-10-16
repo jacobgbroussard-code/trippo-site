@@ -23,6 +23,11 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   Gemini review, book-ahead .ics, before-you-go list), `today.js` (Day view / Today: now-next, running late,
   rainy-day swaps, driver cards, home Today card), `fare-watch.js` (home "Flight prices" card: real fares
   for each upcoming trip's first flight leg, checked every 12 h, drop alerts),
+  `memberships.js` (loyalty numbers in Settings, matched to flights by airline code and stays by hotel brand, copy chip),
+  `travel-stats.js` (home "Your travels" card + map of everywhere; country per stop from Photon reverse, cached),
+  `travel-days.js` (every leg with its date, "Leave by" for flights/trains on the Day view, the trip calendar .ics with
+  check-in and leave-by alerts), `trip-docs.js` (boarding passes / PDFs on a flight, stay or trip; IndexedDB on the
+  device only, not synced or backed up),
   `explore-layers.js` (map Layers: Sights from OpenStreetMap/Overpass, Famous nearby from Wikipedia, AI Neighborhoods
   fetched for the whole trip at once, Metro & tram per city, High-speed rail; caches in IndexedDB, not localStorage)
 - `styles/main.css`, `styles/components.css`

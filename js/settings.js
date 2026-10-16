@@ -35,6 +35,7 @@ export function setShowDistances(show) {
 export function openSettingsModal() {
     toggleSidebar(false);
     updateSettingsModalUI();
+    if (window.renderMembershipsSettings) window.renderMembershipsSettings();
     const modal = document.getElementById('settings-modal');
     if (modal) {
         modal.style.display = 'flex';

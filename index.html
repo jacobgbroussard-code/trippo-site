@@ -44,11 +44,11 @@
     <meta name="apple-mobile-web-app-title" content="Trippo">
     <meta name="theme-color" content="#124b43">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.56">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.56">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.56">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.56">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.56">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.4.57">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180x180.png?v=2.4.57">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.4.57">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2.4.57">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=2.4.57">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,8 +62,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Modular App Styles -->
-    <link rel="stylesheet" href="styles/main.css?v=2.4.56">
-    <link rel="stylesheet" href="styles/components.css?v=2.4.56">
+    <link rel="stylesheet" href="styles/main.css?v=2.4.57">
+    <link rel="stylesheet" href="styles/components.css?v=2.4.57">
 
     <!-- Leaflet, Sortable & Supabase Libraries (version-pinned + integrity hashes: a tampered CDN file is refused) -->
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -254,6 +254,8 @@
 <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/></symbol>
 <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M9.58 5.548c.24 -.11 .492 -.207 .752 -.286c1.88 -.572 3.956 -.193 5.444 1c1.488 1.19 2.162 3.007 1.77 4.769h.99c1.913 0 3.464 1.56 3.464 3.486c0 .957 -.383 1.824 -1.003 2.454m-2.997 1.033h-11.343c-2.572 -.004 -4.657 -2.011 -4.657 -4.487c0 -2.475 2.085 -4.482 4.657 -4.482c.13 -.582 .37 -1.128 .7 -1.62"/><path d="M3 3l18 18"/></symbol>
 <symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/></symbol>
 </svg>
 
     <!-- SIDEBAR DRAWER & BACKDROP -->
@@ -452,7 +454,7 @@
         <h1 class="header-title">
             <div style="display:flex; align-items:center; gap:12px;">
                 <button onclick="toggleSidebar(true)" class="header-icon-btn" aria-label="Open Menu">☰</button>
-                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.56</span></span>
+                <span>My Trips <span style="font-size:12px; color:#8fa39f; font-weight:500; margin-left:4px;">v2.4.57</span></span>
             </div>
             <button onclick="toggleSidebar(true)" class="header-icon-btn" style="font-size:12px; padding:8px 14px; border-radius:14px;" id="cloud-status-badge"><svg class="ico" aria-hidden="true"><use href="#i-cloud-check"></use></svg>Cloud Sync</button>
         </h1>
@@ -467,6 +469,7 @@
             </button>
             <div id="home-today-card" style="width: 100%;"></div>
             <div id="home-fare-watch" style="width: 100%;"></div>
+            <div id="home-travel-stats" style="width: 100%;"></div>
             <div id="trip-list" style="width: 100%;"></div>
         </div>
     </div>
@@ -1129,6 +1132,8 @@
             <input type="hidden" id="hotel-lat-input">
             <input type="hidden" id="hotel-lon-input">
 
+            <div id="lodging-extras" class="booking-extras"></div>
+
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="save-btn" style="flex:1; margin-top:0;" onclick="saveLodgingBooking()">Save Stay Info</button>
                 <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteLodgingBooking()"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
@@ -1177,6 +1182,7 @@
                 <input type="checkbox" id="edit-trip-roundtrip" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
                 <label for="edit-trip-roundtrip" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-repeat"></use></svg>Round-Trip Itinerary</label>
             </div>
+            <div id="trip-docs-extras" class="booking-extras"></div>
             <div style="display:flex; gap:10px;">
                 <button class="save-btn" onclick="saveEditedTrip()" style="flex:1;">Save Changes</button>
                 <button type="button" class="btn-secondary" onclick="closeModal('edit-trip-modal')">Cancel</button>
@@ -1624,7 +1630,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Booking #</label>
+                    <label>Flight / booking #</label>
                     <input type="text" id="transit-booking-num" class="form-control" placeholder="e.g. DL1284">
                 </div>
             </div>
@@ -1699,6 +1705,8 @@
                 </div>
             </div>
 
+            <div id="transit-extras" class="booking-extras"></div>
+
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="save-btn" style="flex:1; margin-top:0;" onclick="saveTransitBooking()">Save Transit Details</button>
                 <button class="optimize-btn" style="width:auto; margin:0;" onclick="deleteTransitBooking()"><svg class="ico ico-only" aria-hidden="true"><use href="#i-trash"></use></svg></button>
@@ -1714,6 +1722,12 @@
                 <span><svg class="ico ico-only" aria-hidden="true"><use href="#i-settings"></use></svg></span> App Settings
             </h2>
             <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">Manage your distance units, travel preferences, and data backups</p>
+
+            <!-- Loyalty memberships -->
+            <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted, #71837f); margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg>Memberships</div>
+                <div id="memberships-settings"></div>
+            </div>
 
             <!-- Distance & Route Units -->
             <div style="background:var(--bg); border:1px solid var(--border-subtle); border-radius:16px; padding:16px; margin-bottom:14px;">
@@ -2251,6 +2265,6 @@
     <div id="printable-itinerary-container"></div>
 
     <!-- Application ES Module Entry Point -->
-    <script type="module" src="js/app.js?v=2.4.56"></script>
+    <script type="module" src="js/app.js?v=2.4.57"></script>
 </body>
 </html>
