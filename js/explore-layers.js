@@ -6,6 +6,8 @@
    - Neighborhoods: Gemini names the areas worth exploring, one request for every city on the trip
    - Metro & tram: the city's metro, light rail and tram lines in their own colors (Overpass API)
    - High-speed rail: data/highspeed-rail.json, built by data/build-highspeed-rail.js
+   - Thrift & vintage: second-hand, charity, vintage and antique shops and flea markets (Overpass API),
+     from the shopping-bag button on the Daily and Wishlist maps
    Whatever is fetched is kept in IndexedDB (not localStorage, which holds the trips), so it keeps
    working offline and in mainland China, where Google and Wikipedia are blocked, once loaded.
    ========================================================================== */
@@ -16,7 +18,7 @@ import {
 import { plannerMap, placesMap, wishlistMap, hasCoords, refreshLayersButton } from './maps.js';
 import { askGeminiJSON, NoAIKeyError } from './ai.js';
 
-const KINDS = ['sights', 'famous', 'areas', 'metro', 'hsr'];
+const KINDS = ['sights', 'famous', 'areas', 'metro', 'hsr', 'thrift'];
 const PREFS_KEY = 'trippo_map_layers_v1';
 // Public Overpass servers are often busy: try each in turn, starting with whichever answered last
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
@@ -45,6 +47,9 @@ function setState(target, kind, text) {
     if (!el) return;
     el.textContent = text;
     el.classList.toggle('on', text !== 'Off');
+    // layers with their own map button (Thrift & vintage) light it up
+    const btn = document.getElementById(`${target}-${kind}-btn`);
+    if (btn) { btn.classList.toggle('active-mode', text !== 'Off'); btn.setAttribute('aria-pressed', String(text !== 'Off')); }
     refreshLayersButton(target);
 }
 
@@ -172,7 +177,8 @@ function syncMarkers(c, kind, items) {
     items.forEach(it => { if (!have.has(it.id)) { const m = it.make(); m.addTo(g); have.set(it.id, m); } });
 }
 
-export function toggleExploreLayer(target, kind) {
+export function toggleExploreLayer(target, kind, e) {
+    if (e && e.stopPropagation) e.stopPropagation();
     setExploreLayer(target, kind, !isOn(target, kind), true);
 }
 
@@ -200,7 +206,7 @@ function refresh(target) {
 }
 
 function run(target, c, kind, announce) {
-    const fn = { sights: drawSights, famous: drawFamous, areas: drawAreas, metro: drawMetro, hsr: drawHsr }[kind];
+    const fn = { sights: drawSights, famous: drawFamous, areas: drawAreas, metro: drawMetro, hsr: drawHsr, thrift: drawThrift }[kind];
     if (fn) fn(target, c, announce).catch(e => console.warn('Explore layer failed:', kind, e));
 }
 
@@ -229,11 +235,13 @@ function popupHTML(target, p) {
         <div class="explore-pop-kind" style="color:${p.color || 'var(--primary)'}">${escapeHTML(p.kindLabel || '')}</div>
         <strong class="explore-pop-title">${escapeHTML(p.name)}</strong>
         ${p.local ? `<div class="explore-pop-local">${escapeHTML(p.local)}</div>` : ''}
+        ${p.address ? `<div class="explore-pop-local">${escapeHTML(p.address)}</div>` : ''}
         ${p.desc ? `<p class="explore-pop-desc">${escapeHTML(p.desc)}</p>` : ''}
         <div class="explore-pop-actions">
             ${add}
             <span class="explore-pop-links">
                 ${p.wiki ? `<a href="${escapeHTML(p.wiki)}" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>` : ''}
+                ${p.website ? `<a href="${escapeHTML(p.website)}" target="_blank" rel="noopener noreferrer">Website ↗</a>` : ''}
                 <a href="${escapeHTML(mapLink(p))}" target="_blank" rel="noopener noreferrer">${inMainlandChina(p.lat, p.lon) ? 'Amap' : 'Maps'} ↗</a>
             </span>
         </div>
@@ -257,7 +265,7 @@ export function addExploreToDay(id) {
         name: p.name,
         localName: p.local || '',
         category: p.category || '● See & Do',
-        address: '',
+        address: p.address || '',
         notes: p.desc || '',
         lat: p.lat,
         lon: p.lon,
@@ -374,6 +382,94 @@ async function drawSights(target, c, announce) {
             keyboard: false,
             title: p.name,
             icon: L.divIcon({ className: 'explore-pin-icon', html: `<div class="explore-pin${notable ? ' is-notable' : ''}" style="--pin:${k.color}">${icon(k.icon, 'ico-only')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] })
+        }).bindPopup(() => popupHTML(target, p), POPUP_OPTS);
+    } })));
+}
+
+/* --- Thrift & vintage (OpenStreetMap shops) --- */
+const THRIFT_CELL = 0.05;
+const THRIFT_MAX_AGE = 30 * 24 * 3600 * 1000; // shops open and close: refetch an area after a month
+const THRIFT_TYPES = {
+    thrift: { color: '#0f766e', label: 'Thrift / second-hand' },
+    vintage: { color: '#c2410c', label: 'Vintage' },
+    antiques: { color: '#92400e', label: 'Antiques' },
+    flea: { color: '#7c3aed', label: 'Flea market' }
+};
+// Chains and words that mean second-hand, in the languages of places people thrift
+const THRIFT_NAMES = 'thrift|vintage|second.?hand|consign|resale|goodwill|salvation army|savers|value village|plato.?s closet|buffalo exchange|crossroads trading|st.? ?vincent de paul|habitat.*restore|clothes mentor|oxfam|friperie|fripes|brocante|emma[uü]s|d[eé]p[oô]t.?vente|segunda mano|flohmarkt|2nd ?street|セカンドストリート|book ?off|ブックオフ|hard ?off|ハードオフ|off ?house|オフハウス|mode ?off|kindal|カインドオル|ragtag|treasure factory|トレジャーファクトリー|古着|中古|リサイクル|二手|复古|빈티지|구제';
+function thriftQuery(s, w, n, e) {
+    const b = `(${s},${w},${n},${e})`;
+    return `[out:json][timeout:25];(
+nwr["shop"~"^(second_hand|charity|vintage|antiques)$"]${b};
+nwr["shop"]["second_hand"~"^(yes|only)$"]${b};
+nwr["shop"]["name"~"${THRIFT_NAMES}",i]${b};
+nwr["amenity"="marketplace"]["name"~"flea|vintage|antique|swap meet|蚤の市|骨董|跳蚤|旧货|古玩|벼룩",i]${b};
+);out tags center 600;`;
+}
+function thriftType(t) {
+    const text = `${t.name || ''} ${t['name:en'] || ''} ${t.shop || ''}`.toLowerCase();
+    if (t.amenity === 'marketplace') return 'flea';
+    if (t.shop === 'antiques' || /antique|骨董|古玩/.test(text)) return 'antiques';
+    if (t.shop === 'vintage' || /vintage|retro|古着|复古|빈티지|구제|friperie|fripes/.test(text)) return 'vintage';
+    return 'thrift';
+}
+const safeUrl = u => (/^https?:\/\//i.test(u || '') ? u : (u && /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(u) ? `https://${u}` : ''));
+
+async function drawThrift(target, c, announce) {
+    const map = c.map;
+    if (map.getZoom() < 12) {
+        syncMarkers(c, 'thrift', []);
+        setState(target, 'thrift', 'Zoom in');
+        if (announce) showNotification('Zoom in on a city to see thrift and vintage shops');
+        return;
+    }
+    setState(target, 'thrift', 'On');
+    const view = map.getBounds().pad(0.1);
+    const i0 = Math.floor(view.getSouth() / THRIFT_CELL), i1 = Math.floor(view.getNorth() / THRIFT_CELL);
+    const j0 = Math.floor(view.getWest() / THRIFT_CELL), j1 = Math.floor(view.getEast() / THRIFT_CELL);
+    if ((i1 - i0 + 1) * (j1 - j0 + 1) > 60) return;
+    const keys = [];
+    for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) keys.push(`thrift:${i}:${j}`);
+    const cells = (await Promise.all(keys.map(cacheGet))).map(x => (x && Date.now() - (x.t || 0) < THRIFT_MAX_AGE ? x : null));
+    if (cells.some(x => !x) && canFetch('thrift')) {
+        try {
+            if (announce) showNotification('Looking for thrift and vintage shops…');
+            const data = await overpass(thriftQuery(i0 * THRIFT_CELL, j0 * THRIFT_CELL, (i1 + 1) * THRIFT_CELL, (j1 + 1) * THRIFT_CELL));
+            const byCell = new Map(keys.map(k => [k, []]));
+            for (const el of data.elements || []) {
+                const t = el.tags || {};
+                const lat = el.lat ?? (el.center && el.center.lat), lon = el.lon ?? (el.center && el.center.lon);
+                if (!Number.isFinite(lat) || !Number.isFinite(lon) || !t.name) continue;
+                const k = `thrift:${Math.floor(lat / THRIFT_CELL)}:${Math.floor(lon / THRIFT_CELL)}`;
+                const addr = t['addr:full'] || [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' ');
+                if (byCell.has(k)) byCell.get(k).push([round5(lat), round5(lon), t.name, t['name:en'] || '', thriftType(t), String(t.opening_hours || '').slice(0, 90), safeUrl(t.website || t['contact:website'] || ''), addr]);
+            }
+            await Promise.all(keys.map((k, n) => (cells[n] ? null : cacheSet(k, { t: Date.now(), items: byCell.get(k) }))));
+            keys.forEach((k, n) => { if (!cells[n]) cells[n] = memo.get(k); });
+        } catch (e) {
+            failed('thrift', 'Thrift & vintage shops', map.getCenter().lat, map.getCenter().lng);
+            // the public servers are often just busy: try again once they'll take a request, if still on
+            setTimeout(() => { const c2 = setup(target); if (c2 && isOn(target, 'thrift')) run(target, c2, 'thrift', false); }, 61000);
+        }
+    }
+    if (!isOn(target, 'thrift') || map.getZoom() < 12) return;
+    const seen = new Set();
+    const items = cells.filter(Boolean).flatMap(x => x.items || [])
+        .filter(it => map.getBounds().pad(0.1).contains([it[0], it[1]]))
+        .filter(it => { const k = `${it[2]}|${it[0].toFixed(3)}`; if (seen.has(k)) return false; seen.add(k); return true; })
+        .slice(0, 150);
+    if (announce && cells.every(Boolean)) {
+        showNotification(items.length ? `${items.length} thrift & vintage shop${items.length === 1 ? '' : 's'} on the map` : 'No thrift or vintage shops mapped around here yet. Try zooming out a little.');
+    }
+    syncMarkers(c, 'thrift', items.map(([lat, lon, name, nameEn, type, hours, website, addr]) => ({ id: `${name}|${lat}|${lon}`, make: () => {
+        const k = THRIFT_TYPES[type] || THRIFT_TYPES.thrift;
+        const p = { name: nameEn || name, local: nameEn && nameEn !== name ? name : '', lat, lon, kindLabel: k.label, color: k.color, website, address: addr,
+            desc: hours ? `Hours: ${hours}` : '', wishCat: 'Shopping', category: '🛍 Shopping' };
+        return L.marker([lat, lon], {
+            pane: 'exploreMarkers',
+            keyboard: false,
+            title: p.name,
+            icon: L.divIcon({ className: 'explore-pin-icon', html: `<div class="explore-pin" style="--pin:${k.color}">${icon('shopping-bag', 'ico-only')}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] })
         }).bindPopup(() => popupHTML(target, p), POPUP_OPTS);
     } })));
 }

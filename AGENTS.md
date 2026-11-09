@@ -28,7 +28,8 @@ ES modules — **no build step, no bundler, no npm dependencies** for the site i
   check-in and leave-by alerts; country per stop from Photon reverse, cached, decides international), `trip-docs.js` (boarding passes / PDFs on a flight, stay or trip; IndexedDB on the
   device only, not synced or backed up),
   `explore-layers.js` (map Layers: Sights from OpenStreetMap/Overpass, Famous nearby from Wikipedia, AI Neighborhoods
-  fetched for the whole trip at once, Metro & tram per city, High-speed rail; caches in IndexedDB, not localStorage)
+  fetched for the whole trip at once, Metro & tram per city, High-speed rail, Thrift & vintage shops from the
+  shopping-bag button on the Daily and Wishlist maps; caches in IndexedDB, not localStorage)
 - `styles/main.css`, `styles/components.css`
 - `sw.js` — service worker with a static-asset cache list
 - `data/highspeed-rail.json` — the Route map's High-speed rail layer (OSM railway=rail + highspeed=yes, simplified);

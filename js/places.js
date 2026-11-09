@@ -757,6 +757,7 @@ export function selectWishlistPinForPlace(pinId) {
     const catSelect = document.getElementById('add-poi-category');
     if (catSelect) {
         if (pin.category === 'Food') catSelect.value = '🍽 Food & Drink';
+        else if (/Shopping|Thrift/.test(pin.category || '')) catSelect.value = '🛍 Shopping';
         else catSelect.value = '● See & Do';
     }
 

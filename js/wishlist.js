@@ -177,6 +177,7 @@ export async function handleWishlistMapClick(e) {
                     <option value="Attractions">🏛 Attractions</option>
                     <option value="Fun">🎉 Fun</option>
                     <option value="Food">🍽 Food</option>
+                    <option value="Shopping">🛍 Shopping</option>
                 </select>
             </div>
 
@@ -427,6 +428,7 @@ export function renderWishlistPins(autoFit = true) {
                     <option value="Attractions" ${normCat === 'Attractions' ? 'selected' : ''}>🏛 Attractions</option>
                     <option value="Fun" ${normCat === 'Fun' ? 'selected' : ''}>🎉 Fun</option>
                     <option value="Food" ${normCat === 'Food' ? 'selected' : ''}>🍽 Food</option>
+                    <option value="Shopping" ${normCat === 'Shopping' ? 'selected' : ''}>🛍 Shopping</option>
                 </select>
                 <h4 style="margin: 0 0 4px 0; font-size: 16px; color: var(--primary); font-weight:700;">${safeName}</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:3px;">
@@ -474,6 +476,7 @@ export function renderWishlistPins(autoFit = true) {
                         <option value="Attractions" ${normCat === 'Attractions' ? 'selected' : ''}>🏛 Attractions</option>
                         <option value="Fun" ${normCat === 'Fun' ? 'selected' : ''}>🎉 Fun</option>
                         <option value="Food" ${normCat === 'Food' ? 'selected' : ''}>🍽 Food</option>
+                    <option value="Shopping" ${normCat === 'Shopping' ? 'selected' : ''}>🛍 Shopping</option>
                     </select>
                 </div>
 
@@ -711,6 +714,7 @@ export function openAddWishlistPinToTripModal(pinId) {
     if (catEl) {
         const norm = normalizeCategory(pin.category);
         if (norm === 'Food') catEl.value = '🍽 Food & Drink';
+        else if (norm === 'Shopping') catEl.value = '🛍 Shopping';
         else catEl.value = '● See & Do';
     }
 

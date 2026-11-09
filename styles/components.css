@@ -5052,3 +5052,7 @@ body.hide-map-btn-trains.hide-map-btn-trails.hide-map-btn-alltrails .map-layers-
 .today-leave small { font-size: 11.5px; color: var(--text-light, #6b7c78); }
 .today-travel .today-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .today-travel .budget-link-btn { margin-bottom: 8px; }
+
+/* ---------- Thrift & vintage map button (Daily + Wishlist maps): its own line under the top row ---------- */
+.map-row-break { flex-basis: 100%; height: 0; }
+.map-btn.map-btn-thrift { padding: 7px 12px; font-size: 13px; }

@@ -217,6 +217,7 @@ export function normalizeCategory(catStr) {
     if (raw.includes('Attractions')) return 'Attractions';
     if (raw.includes('Fun')) return 'Fun';
     if (raw.includes('Food')) return 'Food';
+    if (raw.includes('Shopping') || raw.includes('Thrift')) return 'Shopping';
     return 'Cities';
 }
 
@@ -227,6 +228,7 @@ export function getCategoryVisuals(categoryStr) {
     if (cat === 'Attractions') return { emoji: '🏛️', color: '#6c5ce7' };
     if (cat === 'Fun') return { emoji: '🎉', color: '#ff4757' };
     if (cat === 'Food') return { emoji: '🍽️', color: '#e67e22' };
+    if (cat === 'Shopping') return { emoji: '🛍️', color: '#db2777' };
     return { emoji: '🌟', color: '#ff4757' };
 }
 
